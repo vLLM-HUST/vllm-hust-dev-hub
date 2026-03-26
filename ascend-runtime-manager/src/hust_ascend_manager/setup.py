@@ -3,10 +3,15 @@ import grp
 import os
 import shlex
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
 from .doctor import collect_report
+
+
+GROUP_MEMBERSHIP_REQUIRED_EXIT_CODE = 32
+SUDO_INTERACTION_REQUIRED_EXIT_CODE = 33
 
 
 def _user_in_group(group_name: str) -> bool:
@@ -21,15 +26,36 @@ def _user_in_group(group_name: str) -> bool:
     return target_gid in os.getgroups()
 
 
-def _run_shell(cmd: str, use_sudo: bool = False, requires_group: str | None = None) -> int:
+def _run_shell(
+    cmd: str,
+    use_sudo: bool = False,
+    requires_group: str | None = None,
+    non_interactive: bool = False,
+) -> int:
     shell_cmd = cmd
     if requires_group and not _user_in_group(requires_group):
+        if non_interactive or not sys.stdin.isatty():
+            print(
+                f"[setup] current user is not in required group '{requires_group}'. "
+                "Refusing to enter an interactive 'sg' password prompt in non-interactive mode."
+            )
+            print(
+                f"[setup] add the user to '{requires_group}' and re-login, "
+                "or run hust-ascend-manager setup manually from an interactive shell after switching groups."
+            )
+            return GROUP_MEMBERSHIP_REQUIRED_EXIT_CODE
         shell_cmd = f"sg {shlex.quote(requires_group)} -c {shlex.quote(shell_cmd)}"
 
     if use_sudo:
-        shell_cmd = f"sudo {shell_cmd}"
+        if non_interactive or not sys.stdin.isatty():
+            shell_cmd = f"sudo -n {shell_cmd}"
+        else:
+            shell_cmd = f"sudo {shell_cmd}"
 
     proc = subprocess.run(["bash", "-lc", shell_cmd])
+    if proc.returncode != 0 and use_sudo and (non_interactive or not sys.stdin.isatty()):
+        print("[setup] sudo authentication is required for a system step, but non-interactive mode is enabled.")
+        return SUDO_INTERACTION_REQUIRED_EXIT_CODE
     return proc.returncode
 
 
@@ -69,6 +95,7 @@ def setup_environment(
     apply_system: bool,
     install_python_stack: bool,
     dry_run: bool,
+    non_interactive: bool = False,
 ) -> int:
     _ensure_conda_env_metadata()
 
@@ -118,7 +145,12 @@ def setup_environment(
             print(f"[setup][run] requires group: {requires_group}")
         if dry_run:
             continue
-        rc = _run_shell(cmd, use_sudo=use_sudo, requires_group=requires_group)
+        rc = _run_shell(
+            cmd,
+            use_sudo=use_sudo,
+            requires_group=requires_group,
+            non_interactive=non_interactive,
+        )
         if rc != 0:
             print(f"[setup] failed step: {desc}")
             return rc

@@ -61,3 +61,24 @@ def test_collect_report_includes_manager_import_probe(tmp_path: Path):
     assert report["ascend"]["manager_env_torch_npu_import_ok"] is True
     assert report["ascend"]["manager_env_torch_npu_import_error"] is None
     assert report["ascend"]["manager_env_ld_library_path"] == fake_env["LD_LIBRARY_PATH"]
+
+
+def test_collect_report_tolerates_incomplete_runtime_env(tmp_path: Path):
+    toolkit = tmp_path / "ascend" / "latest"
+    (toolkit / "runtime/lib64").mkdir(parents=True)
+    (toolkit / "runtime/version.info").write_text("version=8.5.0\n")
+
+    with (
+        patch("hust_ascend_manager.doctor._find_toolkit_root", return_value=str(toolkit)),
+        patch("hust_ascend_manager.doctor._find_hccl", return_value=None),
+        patch("hust_ascend_manager.doctor._run", return_value=(0, "", "")),
+        patch("hust_ascend_manager.doctor._ascend_has_stream_attr", return_value=False),
+        patch("hust_ascend_manager.doctor._find_atb_set_env", return_value=None),
+        patch("hust_ascend_manager.doctor._pip_version", side_effect=[None, None]),
+        patch("hust_ascend_manager.doctor._read_os_release", return_value={}),
+    ):
+        report = doctor.collect_report()
+
+    assert report["ascend"]["manager_env_torch_npu_import_ok"] is False
+    assert "libhccl.so" in report["ascend"]["manager_env_torch_npu_import_error"]
+    assert report["ascend"]["manager_env_ld_library_path"] is None

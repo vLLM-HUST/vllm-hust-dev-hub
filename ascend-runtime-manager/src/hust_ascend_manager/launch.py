@@ -73,6 +73,7 @@ def launch_vllm(
     port: int,
     served_model_name: str | None,
     enable_prefill_compat_mode: bool,
+    non_interactive: bool,
     extra_args: list[str],
 ) -> int:
     if not skip_setup:
@@ -81,6 +82,7 @@ def launch_vllm(
             apply_system=apply_system,
             install_python_stack=install_python_stack,
             dry_run=False,
+            non_interactive=non_interactive,
         )
         if rc != 0:
             return rc

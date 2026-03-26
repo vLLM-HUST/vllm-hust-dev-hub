@@ -311,10 +311,18 @@ def collect_report() -> dict[str, Any]:
             runtime_version = m.group(1) if m else None
 
     atb_set_env = _find_atb_set_env(root=toolkit)
-    env_exports = build_env_dict(toolkit) if toolkit else None
-    torch_npu_import_ok, torch_npu_import_error = (
-        _probe_torch_npu_import(env_exports) if env_exports else (False, "toolkit not found")
-    )
+    env_exports = None
+    torch_npu_import_ok = False
+    torch_npu_import_error = None
+    if toolkit:
+        try:
+            env_exports = build_env_dict(toolkit)
+        except RuntimeError as exc:
+            torch_npu_import_error = str(exc)
+        else:
+            torch_npu_import_ok, torch_npu_import_error = _probe_torch_npu_import(env_exports)
+    else:
+        torch_npu_import_error = "toolkit not found"
 
     return {
         "host": {

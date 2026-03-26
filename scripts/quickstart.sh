@@ -7,6 +7,8 @@ HUB_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 WORKSPACE_ROOT="$(cd -- "$HUB_ROOT/.." && pwd)"
 CLONE_SCRIPT="$SCRIPT_DIR/clone-workspace-repos.sh"
 MINICONDA_INSTALL_SCRIPT="$SCRIPT_DIR/install-miniconda.sh"
+MANAGER_REPO="$HUB_ROOT/ascend-runtime-manager"
+MANAGER_MANIFEST_DEFAULT="$MANAGER_REPO/manifests/euleros-910b.json"
 
 ENV_NAME="vllm-hust-dev"
 PYTHON_VERSION="3.10"
@@ -283,6 +285,7 @@ read_project_name_from_pyproject() {
 build_installable_repo_entries() {
   local scope="$1"
   local core_repo_candidates=(
+    "$MANAGER_REPO"
     "$WORKSPACE_ROOT/vllm-hust"
     "$WORKSPACE_ROOT/vllm-ascend-hust"
     "$WORKSPACE_ROOT/vllm-hust-benchmark"
@@ -293,7 +296,6 @@ build_installable_repo_entries() {
     "$WORKSPACE_ROOT/vllm-hust-docs"
     "$WORKSPACE_ROOT/vllm-hust-website"
     "$WORKSPACE_ROOT/EvoScientist"
-    "$HUB_ROOT/ascend-runtime-manager"
   )
 
   local repo_candidates=()
@@ -324,6 +326,58 @@ is_package_installed_in_env() {
   local project_name="$2"
 
   run_conda_env_cmd "$env_name" python -m pip show "$project_name" >/dev/null 2>&1
+}
+
+should_reconcile_ascend_runtime() {
+  if [[ ! -f "$WORKSPACE_ROOT/vllm-ascend-hust/pyproject.toml" ]]; then
+    return 1
+  fi
+
+  if command -v npu-smi >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if [[ -n "${ASCEND_HOME_PATH:-}" || -d "/usr/local/Ascend" ]]; then
+    return 0
+  fi
+
+  if [[ -n "${CONDA_PREFIX:-}" && -d "${CONDA_PREFIX}/Ascend" ]]; then
+    return 0
+  fi
+
+  return 1
+}
+
+reconcile_ascend_runtime_with_manager() {
+  if ! should_reconcile_ascend_runtime; then
+    log "Skipping Ascend runtime reconciliation because no Ascend runtime was detected on this host."
+    return 0
+  fi
+
+  if ! is_package_installed_in_env "$ENV_NAME" "hust-ascend-manager"; then
+    if [[ -f "$MANAGER_REPO/pyproject.toml" ]]; then
+      log "Installing ascend-runtime-manager before Ascend runtime reconciliation"
+      run_with_heartbeat \
+        "installing editable package from $MANAGER_REPO" \
+        run_conda_env_cmd "$ENV_NAME" python -m pip install -v -e "$MANAGER_REPO"
+    else
+      log "Warning: hust-ascend-manager is not installed and local repo is unavailable; skipping Ascend runtime reconciliation"
+      return 0
+    fi
+  fi
+
+  local manager_args=(setup --install-python-stack --apply-system)
+  if [[ -f "$MANAGER_MANIFEST_DEFAULT" ]]; then
+    manager_args+=(--manifest "$MANAGER_MANIFEST_DEFAULT")
+  fi
+  if (( AUTO_YES == 1 )); then
+    manager_args+=(--non-interactive)
+  fi
+
+  log "Reconciling Ascend runtime via hust-ascend-manager"
+  run_with_heartbeat \
+    "reconciling Ascend runtime via hust-ascend-manager" \
+    run_conda_env_cmd "$ENV_NAME" python -m hust_ascend_manager.cli "${manager_args[@]}"
 }
 
 install_workspace_repos_into_env() {
@@ -359,9 +413,40 @@ install_workspace_repos_into_env() {
   fi
 
   local entry
+  local manager_entry=""
+  local non_manager_entries=()
   local repo_path
   local project_name
   for entry in "${repo_entries[@]}"; do
+    repo_path="${entry%%|*}"
+    project_name="${entry#*|}"
+    if [[ "$project_name" == "hust-ascend-manager" ]]; then
+      manager_entry="$entry"
+    else
+      non_manager_entries+=("$entry")
+    fi
+  done
+
+  if [[ -n "$manager_entry" ]]; then
+    repo_path="${manager_entry%%|*}"
+    project_name="${manager_entry#*|}"
+
+    if [[ "$install_mode" == "install" ]] && is_package_installed_in_env "$ENV_NAME" "$project_name"; then
+      log "Skipping already installed package '$project_name' from: $repo_path"
+      skipped_list+=("$repo_path ($project_name)")
+    else
+      log "Installing editable package from: $repo_path"
+      run_with_heartbeat \
+        "installing editable package from $repo_path" \
+        run_conda_env_cmd "$ENV_NAME" python -m pip install -v -e "$repo_path"
+      installed_any=1
+      installed_list+=("$repo_path ($project_name)")
+    fi
+  fi
+
+  reconcile_ascend_runtime_with_manager
+
+  for entry in "${non_manager_entries[@]}"; do
     repo_path="${entry%%|*}"
     project_name="${entry#*|}"
 

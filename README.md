@@ -27,6 +27,7 @@ The default workspace includes these repositories when they exist under `/home/s
 - `scripts/clone-workspace-repos.sh`: clone the common workspace repositories in parallel.
 - `scripts/install-miniconda.sh`: download and install Miniconda into the current user's home directory.
 - `scripts/quickstart.sh`: interactive one-command bootstrap for clone + conda environment setup.
+- `scripts/ascend-official-container.sh`: start, reuse, and enter the official Ascend vLLM container from the host.
 
 ## Usage
 
@@ -66,8 +67,8 @@ The install flow first lets you choose an action:
 
 Then it lets you choose a scope:
 
-- `core`: `vllm-hust`, `vllm-ascend-hust`, `vllm-hust-benchmark`
-- `full`: core repos plus extra local repos such as workstation, docs, website, EvoScientist, and ascend-runtime-manager when they are installable
+- `core`: `ascend-runtime-manager`, `vllm-hust`, `vllm-ascend-hust`, `vllm-hust-benchmark`
+- `full`: core repos plus extra local repos such as workstation, docs, website, and EvoScientist when they are installable
 
 If `conda` is not available yet, `quickstart.sh` can automatically call the Miniconda installer script for you.
 
@@ -79,9 +80,14 @@ After ToS is accepted, quickstart records a local marker under `~/.config/vllm-h
 
 During environment setup, `quickstart.sh` installs both sibling repositories in editable mode when available:
 
+- `ascend-runtime-manager`
 - `vllm-hust`
 - `vllm-ascend-hust`
 - `vllm-hust-benchmark`
+
+On Ascend-capable hosts, quickstart now treats `ascend-runtime-manager` as the source of truth for environment repair. After the core repos are installed, it calls `hust-ascend-manager setup --install-python-stack --apply-system` with the local workspace manifest so Python stack reconciliation and CANN package installation stay centralized in the manager rather than being reimplemented in `vllm-hust` or `vllm-ascend-hust`.
+
+In non-interactive mode, manager now fails fast instead of hanging on `Password:` when a system step requires `HwHiAiUser` membership or sudo authentication. This keeps quickstart observable and makes the missing permission explicit.
 
 `reference-repos/*` is for upstream comparison only and is not installed by quickstart.
 
@@ -112,7 +118,28 @@ bash scripts/clone-workspace-repos.sh --yes
 
 # install Miniconda explicitly
 bash scripts/install-miniconda.sh
+
+# create or start the official Ascend container on this host
+bash scripts/ascend-official-container.sh start
+
+# enter the container with Ascend env sourced and workspace mounted at /workspace
+bash scripts/ascend-official-container.sh shell
+
+# run a quick sanity check without opening a shell
+bash scripts/ascend-official-container.sh exec -- python -c 'import torch; import torch_npu; print(torch.npu.device_count())'
+
+# helper for SSH RemoteCommand: open the container directly after SSH login
+bash scripts/ssh-into-ascend-container.sh
 ```
+
+For direct host-to-container development on the official Huawei image, use `scripts/ascend-official-container.sh`.
+
+- It uses `docker` directly when available, otherwise falls back to `sudo -n docker`.
+- It mounts the whole workspace parent directory into `/workspace`, so sibling repos like `/home/shuhao/vllm-hust` become available inside the container at `/workspace/vllm-hust`.
+- It reuses a persistent container named `vllm-ascend-dev` by default, so repeated `shell` and `exec` calls do not need to rebuild the mount/device list.
+- It sources `/usr/local/Ascend/ascend-toolkit/set_env.sh` and `/usr/local/Ascend/nnal/atb/set_env.sh` automatically before dropping you into the shell or running your command.
+- If you need to recreate the container with different settings, run `bash scripts/ascend-official-container.sh rm` first.
+- For remote Windows SSH, see [docs/train8-container-quickstart.md](docs/train8-container-quickstart.md) for the generic team setup for direct SSH-to-container access.
 
 The script skips destinations that already exist. Set `CLONE_JOBS` to control the parallelism level, for example:
 
