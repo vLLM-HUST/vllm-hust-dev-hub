@@ -15,10 +15,9 @@
 1. 在目标机器上准备或创建官方 Ascend Docker instance。
 2. 如果需要从本地直接连进容器，在本地配置 `~/.ssh/config` 指向该 instance。
 3. 在容器内或目标开发机上克隆 `vllm-hust-dev-hub`。
-4. 执行 `bash scripts/quickstart.sh`，选择 `Setup user-space environment -> Full bootstrap (sync repos + conda env)`。
-5. 如果需要启动 `vllm-hust-workstation`，复制 `.env.example` 为 `.env` 并填写实例地址。
-6. 需要时执行 `conda activate vllm-hust-dev` 进入环境。
-7. 只有在补装、重装或刷新源码安装时，才需要再次运行 `quickstart.sh` 或手动 `pip install -e .`。
+4. 执行 `bash scripts/quickstart.sh`，选择 `Recommended bootstrap (sync repos + conda env)`。
+5. 需要时执行 `conda activate vllm-hust-dev` 进入环境。
+6. 只有在补装、重装或刷新源码安装时，才需要再次运行 `quickstart.sh` 或手动 `pip install -e .`。
 
 注意：`quickstart.sh` 已经会负责“克隆相关仓库 + 创建 conda 环境 + 安装核心仓库 editable 包”。
 不需要把“先建 conda，再手工去 `vllm-hust` 里装源码”当成默认主流程。
@@ -74,13 +73,9 @@ PYTHONPATH=src python3 -m hust_ascend_manager.cli container ssh-deploy \
 - 暴露容器 SSH 端口到宿主机，例如 `2222`
 - 复制 `authorized_keys` 到容器用户目录
 
-## 第 2 步：配置 config，连接 instance
+## 第 2 步：配置 SSH，连接 instance
 
-这一步最容易混淆。这里有两类完全不同的“配置文件”：
-
-### 场景 A：连接开发容器
-
-如果你的意思是“本地机器要直连 Docker instance”，要配置的是本地 `~/.ssh/config`，不是工作站的 `config.ini`。
+默认开发流程里，连接容器所需配置是本地 `~/.ssh/config`，不是应用侧的 `config.ini` 或 `.env`。
 
 示例：
 
@@ -106,26 +101,6 @@ ssh train8-container
 ```
 
 如果使用 VS Code，直接通过 Remote SSH 连接这个 host alias 即可。
-
-### 场景 B：连接工作站前端到某个 vLLM-HUST 服务实例
-
-如果你的意思是“让 `vllm-hust-workstation` 指向某个已有实例”，优先配置的是：
-
-- `vllm-hust-workstation/.env`
-
-最关键的字段是：
-
-```dotenv
-VLLM_HUST_BASE_URL=http://localhost:8080
-VLLM_HUST_API_KEY=not-required
-DEFAULT_MODEL=Qwen2.5-7B-Instruct
-```
-
-说明：
-
-- 这套 `.env` 配置是当前 `vllm-hust-workstation` README 里主推的入口
-- 仓库里虽然还有 `config.ini.example`，但它对应的是旧的 Python `server.py` 路径，不应和容器 SSH 配置混为一步
-- 如果只是给团队做开发环境 onboarding，通常先完成容器与源码环境即可，不必在主流程里强制要求配置工作站 `.env`
 
 ## 第 3 步：克隆 `vllm-hust-dev-hub`
 
@@ -154,8 +129,7 @@ bash scripts/quickstart.sh
 交互菜单请选择：
 
 ```text
-1) Setup user-space environment
-1) Full bootstrap (sync repos + conda env)
+1) Recommended bootstrap (sync repos + conda env)
 ```
 
 这一步会自动完成：
@@ -184,8 +158,9 @@ bash scripts/quickstart.sh
 
 补充说明：
 
-- `Setup user-space environment` 流程会执行完整的用户态 Python 环境准备，并在 Ascend 场景下做 Python 栈对齐
-- 纯 `--install` 或 `Install repositories into existing env` 流程默认只处理本地 editable 安装，不再重复触发 Python 栈对齐
+- `Recommended bootstrap` 会执行完整的用户态 Python 环境准备，并在 Ascend 场景下做 Python 栈对齐
+- 顶层的 `Refresh local repositories in existing env` 默认走 `refresh + core`，适合最常见的日常更新场景
+- `Advanced options` 里仍然保留 conda-only、install-missing 和 bashrc-only 等低频操作
 - 如果只是想补装或刷新仓库，同时希望把当前环境名写入 `~/.bashrc` 自动激活块，也可以直接运行 install-only 流程
 
 如果某台宿主机还缺少系统级 Ascend 组件，或需要 `HwHiAiUser` 组权限，那是宿主机初始化问题，不属于 `quickstart.sh` 的职责范围。请单独使用 `hust-ascend-manager setup` 或宿主机运维流程处理。
@@ -200,23 +175,6 @@ bash scripts/quickstart.sh --all -y
 ```
 
 ## 第 5 步：进入 conda 环境，并按需继续安装或刷新源码
-
-如果团队成员还要使用 `vllm-hust-workstation`，建议在这一步之前或之后补上 `.env` 配置：
-
-```bash
-cd /home/<your-user>/vllm-hust-workstation
-cp .env.example .env
-```
-
-最少需要确认这些字段：
-
-```dotenv
-VLLM_HUST_BASE_URL=http://localhost:8080
-VLLM_HUST_API_KEY=not-required
-DEFAULT_MODEL=Qwen2.5-7B-Instruct
-```
-
-如果 `VLLM_HUST_BASE_URL` 指向远端服务，`vllm-hust-workstation/quickstart.sh` 会按远端模式处理，不会擅自帮你在本机拉起服务。
 
 ### 默认推荐
 
@@ -240,7 +198,7 @@ conda run -n vllm-hust-dev vllm --help
 
 - 第一次安装中断，需要补装缺失仓库
 - `git pull` 后需要刷新 editable 安装
-- 想把 `workstation`、`website`、`docs`、`EvoScientist` 也一起装进环境
+- 想把额外本地仓库也一起装进环境
 
 命令示例：
 
@@ -261,9 +219,9 @@ bash scripts/quickstart.sh --install --install-mode refresh --install-scope full
 
 只有在以下场景才建议手工执行：
 
-- 你明确只想重装某一个仓库
-- 你在调试某个仓库自己的依赖安装问题
-- 你不想让 hub 脚本处理整套工作区
+- 只想重装某一个仓库
+- 正在调试某个仓库自己的依赖安装问题
+- 不希望由 hub 脚本统一处理整套工作区
 
 示例：
 
@@ -288,10 +246,31 @@ python -m pip install -e .
 2. 如果需要从本地直连容器，在本地 ~/.ssh/config 增加容器别名。
 3. 在容器内克隆 vllm-hust-dev-hub 到 /home/<user>/vllm-hust-dev-hub。
 4. 在仓库根目录执行 bash scripts/quickstart.sh。
-5. 菜单选择 Setup user-space environment -> Full bootstrap (sync repos + conda env)。
+5. 菜单选择 Recommended bootstrap (sync repos + conda env)。
 6. 完成后进入 conda activate vllm-hust-dev。
 7. 如需补装或刷新源码，优先再次运行 quickstart.sh --install；只有特殊情况再手工 pip install -e .。
 ```
+
+## 可选：vllm-hust-workstation
+
+`vllm-hust-workstation` 是独立应用，不属于默认开发环境主流程。
+
+只有在需要联调或运行这个应用时，才需要额外配置：
+
+```bash
+cd /home/<your-user>/vllm-hust-workstation
+cp .env.example .env
+```
+
+至少确认以下字段：
+
+```dotenv
+VLLM_HUST_BASE_URL=http://localhost:8080
+VLLM_HUST_API_KEY=not-required
+DEFAULT_MODEL=Qwen2.5-7B-Instruct
+```
+
+如果 `VLLM_HUST_BASE_URL` 指向远端服务，`vllm-hust-workstation/quickstart.sh` 会按远端模式处理，不会在本机自动拉起服务。
 
 ## 常见问题
 

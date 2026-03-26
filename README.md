@@ -57,17 +57,19 @@ For an interactive bootstrap (clone repositories and create/update a conda envir
 bash scripts/quickstart.sh
 ```
 
-Interactive mode is organized into two main flows:
+Interactive mode keeps the common paths at the top level:
 
-- `Setup user-space environment`: sync repositories and/or create or repair the conda environment
-- `Install repositories into existing env`: install or reinstall local repositories without recloning or recreating the env
+- `Recommended bootstrap`: sync repositories, prepare the conda env, and refresh core local installs
+- `Refresh local repositories in existing env`: reinstall selected local repos without recloning or recreating the env
+- `Sync repositories only`: update or clone workspace repositories without touching the env
+- `Advanced options`: conda-only repair, install-missing mode, and bashrc-only registration
 
-The install flow first lets you choose an action:
+The advanced install flows still support two install actions:
 
 - `install`: only install packages that are missing from the selected conda environment
 - `refresh`: reinstall selected editable local repositories even if they are already present
 
-Then it lets you choose a scope:
+Then they let you choose a scope:
 
 - `core`: `ascend-runtime-manager`, `vllm-hust`, `vllm-ascend-hust`, `vllm-hust-benchmark`
 - `full`: core repos plus extra local repos such as workstation, docs, website, and EvoScientist when they are installable

@@ -599,27 +599,32 @@ Workspace root : $WORKSPACE_ROOT
 Conda env name : $ENV_NAME
 Python version : $PYTHON_VERSION
 ===================================
-1) Setup user-space environment
-2) Install repositories into existing env
-3) Only update ~/.bashrc auto-activate for current env name
-4) Exit
+1) Recommended bootstrap (sync repos + conda env)
+2) Refresh local repositories in existing env
+3) Sync repositories only
+4) Advanced options
+5) Exit
 EOF
 
-  read -r -p "Select an option [1-4]: " choice
+  read -r -p "Select an option [1-5]: " choice
   case "$choice" in
     1)
-      run_setup_submenu
+      DO_CLONE=1
+      DO_CONDA=1
+      MENU_CONFIRMED=1
       ;;
     2)
-      run_install_submenu
+      INSTALL_MODE="refresh"
+      run_install_scope_submenu
       ;;
     3)
-      ensure_conda_available
-      configure_bashrc_auto_activate_env
-      log "Finished updating ~/.bashrc auto-activate settings."
-      exit 0
+      DO_CLONE=1
+      MENU_CONFIRMED=1
       ;;
     4)
+      run_advanced_menu
+      ;;
+    5)
       log "Exit."
       exit 0
       ;;
@@ -630,79 +635,18 @@ EOF
   esac
 }
 
-run_setup_submenu() {
+run_install_scope_submenu() {
   local choice=""
 
   cat <<EOF
---- Setup user-space environment ---
-1) Full bootstrap (sync repos + conda env)
-2) Setup/repair conda environment only
-3) Sync repositories only
-4) Back
-EOF
-
-  read -r -p "Select an option [1-4]: " choice
-  case "$choice" in
-    1)
-      DO_CLONE=1
-      DO_CONDA=1
-      MENU_CONFIRMED=1
-      ;;
-    2)
-      DO_CONDA=1
-      MENU_CONFIRMED=1
-      ;;
-    3)
-      DO_CLONE=1
-      MENU_CONFIRMED=1
-      ;;
-    4)
-      run_interactive_menu
-      ;;
-    *)
-      log "Invalid option: $choice"
-      exit 2
-      ;;
-  esac
-}
-
-run_install_submenu() {
-  local mode_choice=""
-  local scope_choice=""
-
-  cat <<EOF
---- Install repositories ---
-1) Install missing repos only
-2) Refresh/reinstall repos
-3) Back
-EOF
-
-  read -r -p "Select an option [1-3]: " mode_choice
-  case "$mode_choice" in
-    1)
-      INSTALL_MODE="install"
-      ;;
-    2)
-      INSTALL_MODE="refresh"
-      ;;
-    3)
-      run_interactive_menu
-      ;;
-    *)
-      log "Invalid option: $mode_choice"
-      exit 2
-      ;;
-  esac
-
-  cat <<EOF
 --- Install scope ---
-1) Core repos only (vllm-hust, vllm-ascend-hust, vllm-hust-benchmark)
+1) Core repos only (recommended)
 2) Core repos + extra local repos
 3) Back
 EOF
 
-  read -r -p "Select an option [1-3]: " scope_choice
-  case "$scope_choice" in
+  read -r -p "Select an option [1-3]: " choice
+  case "$choice" in
     1)
       DO_INSTALL=1
       INSTALL_SCOPE="core"
@@ -714,10 +658,52 @@ EOF
       MENU_CONFIRMED=1
       ;;
     3)
-      run_install_submenu
+      run_interactive_menu
       ;;
     *)
-      log "Invalid option: $scope_choice"
+      log "Invalid option: $choice"
+      exit 2
+      ;;
+  esac
+}
+
+run_advanced_menu() {
+  local choice=""
+
+  cat <<EOF
+--- Advanced options ---
+1) Setup/repair conda environment only
+2) Install missing repos into existing env
+3) Refresh/reinstall repos in existing env
+4) Only update ~/.bashrc auto-activate for current env name
+5) Back
+EOF
+
+  read -r -p "Select an option [1-5]: " choice
+  case "$choice" in
+    1)
+      DO_CONDA=1
+      MENU_CONFIRMED=1
+      ;;
+    2)
+      INSTALL_MODE="install"
+      run_install_scope_submenu
+      ;;
+    3)
+      INSTALL_MODE="refresh"
+      run_install_scope_submenu
+      ;;
+    4)
+      ensure_conda_available
+      configure_bashrc_auto_activate_env
+      log "Finished updating ~/.bashrc auto-activate settings."
+      exit 0
+      ;;
+    5)
+      run_interactive_menu
+      ;;
+    *)
+      log "Invalid option: $choice"
       exit 2
       ;;
   esac
