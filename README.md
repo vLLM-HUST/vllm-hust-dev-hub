@@ -6,6 +6,8 @@ It provides a single VS Code multi-root workspace centered on `vllm-hust`, with 
 
 It also ships with a bootstrap script that can clone the common workspace repositories in parallel.
 
+Team onboarding reference: [docs/team-onboarding.md](docs/team-onboarding.md)
+
 ## Included Repositories
 
 The default workspace includes these repositories when they exist under `/home/shuhao`:
@@ -57,7 +59,7 @@ bash scripts/quickstart.sh
 
 Interactive mode is organized into two main flows:
 
-- `Setup environment`: sync repositories and/or create or repair the conda environment
+- `Setup user-space environment`: sync repositories and/or create or repair the conda environment
 - `Install repositories into existing env`: install or reinstall local repositories without recloning or recreating the env
 
 The install flow first lets you choose an action:
@@ -85,9 +87,9 @@ During environment setup, `quickstart.sh` installs both sibling repositories in 
 - `vllm-ascend-hust`
 - `vllm-hust-benchmark`
 
-On Ascend-capable hosts, quickstart now treats `ascend-runtime-manager` as the source of truth for environment repair. After the core repos are installed, it calls `hust-ascend-manager setup --install-python-stack --apply-system` with the local workspace manifest so Python stack reconciliation and CANN package installation stay centralized in the manager rather than being reimplemented in `vllm-hust` or `vllm-ascend-hust`.
+On Ascend-capable hosts, quickstart treats `ascend-runtime-manager` as the source of truth for user-space Python stack repair. After the core repos are installed, it calls `hust-ascend-manager setup --install-python-stack` with the local workspace manifest so `torch` and `torch-npu` stay aligned without attempting host-level CANN or group-managed system changes.
 
-In non-interactive mode, manager now fails fast instead of hanging on `Password:` when a system step requires `HwHiAiUser` membership or sudo authentication. This keeps quickstart observable and makes the missing permission explicit.
+`quickstart.sh` is intentionally user-space only. It does not attempt `sudo`, `sg`, `HwHiAiUser`, or other system-level setup. If a machine still needs host-level Ascend packages or permissions, run `hust-ascend-manager setup` manually with the appropriate privileges outside quickstart.
 
 `reference-repos/*` is for upstream comparison only and is not installed by quickstart.
 

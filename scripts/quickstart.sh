@@ -110,8 +110,14 @@ run_with_heartbeat() {
 }
 
 find_conda_bin() {
-  if command -v conda >/dev/null 2>&1; then
-    command -v conda
+  if [[ -n "${CONDA_EXE:-}" && -x "${CONDA_EXE}" ]]; then
+    printf '%s\n' "$CONDA_EXE"
+    return 0
+  fi
+
+  local resolved_path
+  if resolved_path="$(type -P conda 2>/dev/null)" && [[ -n "$resolved_path" ]]; then
+    printf '%s\n' "$resolved_path"
     return 0
   fi
 
@@ -133,13 +139,36 @@ find_conda_bin() {
   return 1
 }
 
+source_conda_sh_if_present() {
+  local conda_base="$1"
+  local conda_sh="$conda_base/etc/profile.d/conda.sh"
+
+  if [[ -f "$conda_sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$conda_sh"
+  fi
+}
+
+get_conda_base() {
+  local conda_bin="$1"
+
+  if command -v conda >/dev/null 2>&1; then
+    run_conda_cmd info --base 2>/dev/null || true
+    return 0
+  fi
+
+  "$conda_bin" info --base 2>/dev/null || true
+}
+
 ensure_conda_available() {
   local conda_bin
   if conda_bin="$(find_conda_bin)"; then
     local conda_root
-    conda_root="$(cd -- "$(dirname -- "$conda_bin")/.." && pwd)"
-    # shellcheck disable=SC1091
-    source "$conda_root/etc/profile.d/conda.sh"
+    conda_root="$(get_conda_base "$conda_bin")"
+    if [[ -z "$conda_root" ]]; then
+      conda_root="$(cd -- "$(dirname -- "$conda_bin")/.." && pwd)"
+    fi
+    source_conda_sh_if_present "$conda_root"
     return 0
   fi
 
@@ -158,9 +187,11 @@ ensure_conda_available() {
 
     if conda_bin="$(find_conda_bin)"; then
       local conda_root
-      conda_root="$(cd -- "$(dirname -- "$conda_bin")/.." && pwd)"
-      # shellcheck disable=SC1091
-      source "$conda_root/etc/profile.d/conda.sh"
+      conda_root="$(get_conda_base "$conda_bin")"
+      if [[ -z "$conda_root" ]]; then
+        conda_root="$(cd -- "$(dirname -- "$conda_bin")/.." && pwd)"
+      fi
+      source_conda_sh_if_present "$conda_root"
       return 0
     fi
   fi
@@ -252,15 +283,13 @@ create_or_update_conda_env() {
     "installing pytest and pre-commit into $ENV_NAME" \
     run_conda_env_cmd "$ENV_NAME" python -m pip install pytest pre-commit
 
-  install_workspace_repos_into_env "refresh" "$INSTALL_SCOPE"
+  install_workspace_repos_into_env "refresh" "$INSTALL_SCOPE" "with-runtime-reconcile"
 
   if run_conda_cmd run -n "$ENV_NAME" vllm --help >/dev/null 2>&1; then
     log "Verified: 'vllm' command is available in conda env '$ENV_NAME'"
   else
     log "Warning: 'vllm' command is still unavailable in conda env '$ENV_NAME'"
   fi
-
-  configure_bashrc_auto_activate_env
 
   log "Conda env ready: $ENV_NAME"
   log "Activate with: conda activate $ENV_NAME"
@@ -350,7 +379,7 @@ should_reconcile_ascend_runtime() {
 
 reconcile_ascend_runtime_with_manager() {
   if ! should_reconcile_ascend_runtime; then
-    log "Skipping Ascend runtime reconciliation because no Ascend runtime was detected on this host."
+    log "Skipping Ascend Python stack reconciliation because no Ascend runtime was detected on this host."
     return 0
   fi
 
@@ -366,23 +395,25 @@ reconcile_ascend_runtime_with_manager() {
     fi
   fi
 
-  local manager_args=(setup --install-python-stack --apply-system)
+  local manager_args=(setup --install-python-stack)
   if [[ -f "$MANAGER_MANIFEST_DEFAULT" ]]; then
     manager_args+=(--manifest "$MANAGER_MANIFEST_DEFAULT")
   fi
+
   if (( AUTO_YES == 1 )); then
     manager_args+=(--non-interactive)
   fi
 
-  log "Reconciling Ascend runtime via hust-ascend-manager"
+  log "Reconciling Ascend Python stack via hust-ascend-manager (user-space only; no system changes)"
   run_with_heartbeat \
-    "reconciling Ascend runtime via hust-ascend-manager" \
+    "reconciling Ascend Python stack via hust-ascend-manager" \
     run_conda_env_cmd "$ENV_NAME" python -m hust_ascend_manager.cli "${manager_args[@]}"
 }
 
 install_workspace_repos_into_env() {
   local install_mode="${1:-$INSTALL_MODE}"
   local install_scope="${2:-$INSTALL_SCOPE}"
+  local reconcile_mode="${3:-without-runtime-reconcile}"
 
   ensure_conda_available
 
@@ -390,6 +421,8 @@ install_workspace_repos_into_env() {
     log "Conda env '$ENV_NAME' does not exist yet. Create it first with --conda."
     return 2
   fi
+
+  configure_bashrc_auto_activate_env
 
   if [[ "$install_mode" != "install" && "$install_mode" != "refresh" ]]; then
     echo "Invalid install mode: $install_mode" >&2
@@ -444,7 +477,11 @@ install_workspace_repos_into_env() {
     fi
   fi
 
-  reconcile_ascend_runtime_with_manager
+  if [[ "$reconcile_mode" == "with-runtime-reconcile" ]]; then
+    reconcile_ascend_runtime_with_manager
+  else
+    log "Skipping Ascend Python stack reconciliation for install-only flow. Use --conda to refresh the user-space environment."
+  fi
 
   for entry in "${non_manager_entries[@]}"; do
     repo_path="${entry%%|*}"
@@ -536,6 +573,7 @@ configure_bashrc_auto_activate_env() {
 
   rm -f "$tmp_file"
   log "Updated ~/.bashrc to auto-activate conda env '$ENV_NAME' in interactive shells"
+  log "Current shell is unchanged. Open a new interactive shell or run: conda activate $ENV_NAME"
 }
 
 ask_yes_no() {
@@ -561,7 +599,7 @@ Workspace root : $WORKSPACE_ROOT
 Conda env name : $ENV_NAME
 Python version : $PYTHON_VERSION
 ===================================
-1) Setup environment
+1) Setup user-space environment
 2) Install repositories into existing env
 3) Only update ~/.bashrc auto-activate for current env name
 4) Exit
@@ -596,7 +634,7 @@ run_setup_submenu() {
   local choice=""
 
   cat <<EOF
---- Setup environment ---
+--- Setup user-space environment ---
 1) Full bootstrap (sync repos + conda env)
 2) Setup/repair conda environment only
 3) Sync repositories only
@@ -767,7 +805,7 @@ main() {
 
   if (( DO_INSTALL == 1 )) && (( DO_CONDA == 0 )); then
     if (( MENU_CONFIRMED == 1 )) || (( AUTO_YES == 1 )) || ask_yes_no "Run '$INSTALL_MODE' install step for local repositories now?"; then
-      install_workspace_repos_into_env "$INSTALL_MODE" "$INSTALL_SCOPE"
+      install_workspace_repos_into_env "$INSTALL_MODE" "$INSTALL_SCOPE" "without-runtime-reconcile"
     fi
   fi
 
