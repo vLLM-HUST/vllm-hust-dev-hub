@@ -6,12 +6,23 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 HUB_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 WORKSPACE_ROOT="$(cd -- "$HUB_ROOT/.." && pwd)"
 CLONE_SCRIPT="$SCRIPT_DIR/clone-workspace-repos.sh"
+MINICONDA_INSTALL_SCRIPT="$SCRIPT_DIR/install-miniconda.sh"
 
 ENV_NAME="vllm-hust-dev"
 PYTHON_VERSION="3.10"
 AUTO_YES=0
 DO_CLONE=0
 DO_CONDA=0
+DO_INSTALL=0
+INSTALL_MODE="install"
+INSTALL_SCOPE="core"
+MENU_CONFIRMED=0
+BASHRC_BEGIN="# >>> vllm-hust-dev-hub auto-activate >>>"
+BASHRC_END="# <<< vllm-hust-dev-hub auto-activate <<<"
+CONDA_MAIN_CHANNEL="https://repo.anaconda.com/pkgs/main"
+CONDA_R_CHANNEL="https://repo.anaconda.com/pkgs/r"
+TOS_MARKER_ROOT="$HOME/.config/vllm-hust-dev-hub"
+CONDA_RUN_STREAM_FLAG=""
 
 print_help() {
   cat <<'EOF'
@@ -20,6 +31,9 @@ Usage: bash scripts/quickstart.sh [options]
 Options:
   --clone                  Clone workspace repositories.
   --conda                  Create or update conda environment.
+  --install                Install local repos into existing conda env.
+  --install-mode MODE      Install mode: install or refresh (default: install).
+  --install-scope SCOPE    Install scope: core or full (default: core).
   --all                    Run clone + conda steps.
   --env-name NAME          Conda environment name (default: vllm-hust-dev).
   --python VERSION         Python version for conda env (default: 3.10).
@@ -32,6 +46,65 @@ EOF
 
 log() {
   printf '[quickstart] %s\n' "$1"
+}
+
+run_conda_cmd() {
+  # Keep conda operations isolated from external PYTHONPATH overrides.
+  (unset PYTHONPATH; conda "$@")
+}
+
+detect_conda_run_stream_flag() {
+  if [[ -n "$CONDA_RUN_STREAM_FLAG" ]]; then
+    return 0
+  fi
+
+  local help_text
+  help_text="$(run_conda_cmd run --help 2>/dev/null || true)"
+  if grep -q -- '--no-capture-output' <<< "$help_text"; then
+    CONDA_RUN_STREAM_FLAG="--no-capture-output"
+  elif grep -q -- '--live-stream' <<< "$help_text"; then
+    CONDA_RUN_STREAM_FLAG="--live-stream"
+  else
+    CONDA_RUN_STREAM_FLAG=""
+  fi
+}
+
+run_conda_env_cmd() {
+  local env_name="$1"
+  shift
+
+  detect_conda_run_stream_flag
+  if [[ -n "$CONDA_RUN_STREAM_FLAG" ]]; then
+    run_conda_cmd run "$CONDA_RUN_STREAM_FLAG" -n "$env_name" "$@"
+  else
+    run_conda_cmd run -n "$env_name" "$@"
+  fi
+}
+
+run_with_heartbeat() {
+  local description="$1"
+  shift
+  local pid
+  local heartbeat_pid
+
+  "$@" &
+  pid=$!
+
+  (
+    while kill -0 "$pid" >/dev/null 2>&1; do
+      sleep 30
+      if kill -0 "$pid" >/dev/null 2>&1; then
+        log "Still running: $description"
+      fi
+    done
+  ) &
+  heartbeat_pid=$!
+
+  wait "$pid"
+  local exit_code=$?
+  kill "$heartbeat_pid" >/dev/null 2>&1 || true
+  wait "$heartbeat_pid" >/dev/null 2>&1 || true
+  return "$exit_code"
 }
 
 find_conda_bin() {
@@ -68,10 +141,29 @@ ensure_conda_available() {
     return 0
   fi
 
-  cat <<'EOF' >&2
-[quickstart] conda was not found.
-Install Miniconda/Anaconda first, then re-run this script.
-EOF
+  log "conda was not found."
+  if [[ ! -f "$MINICONDA_INSTALL_SCRIPT" ]]; then
+    echo "[quickstart] Miniconda installer script not found: $MINICONDA_INSTALL_SCRIPT" >&2
+    return 1
+  fi
+
+  if (( AUTO_YES == 1 )) || ask_yes_no "Download and install Miniconda automatically now?"; then
+    if (( AUTO_YES == 1 )); then
+      bash "$MINICONDA_INSTALL_SCRIPT" --yes
+    else
+      bash "$MINICONDA_INSTALL_SCRIPT"
+    fi
+
+    if conda_bin="$(find_conda_bin)"; then
+      local conda_root
+      conda_root="$(cd -- "$(dirname -- "$conda_bin")/.." && pwd)"
+      # shellcheck disable=SC1091
+      source "$conda_root/etc/profile.d/conda.sh"
+      return 0
+    fi
+  fi
+
+  echo "[quickstart] conda is still unavailable after installation attempt." >&2
   return 1
 }
 
@@ -89,7 +181,54 @@ clone_repositories() {
 }
 
 conda_env_exists() {
-  conda env list | awk '{print $1}' | grep -Fxq "$ENV_NAME"
+  run_conda_cmd env list | awk '{print $1}' | grep -Fxq "$ENV_NAME"
+}
+
+accept_conda_tos_if_needed() {
+  if ! run_conda_cmd tos --help >/dev/null 2>&1; then
+    return 0
+  fi
+
+  local conda_base
+  local safe_base
+  local marker_file
+  conda_base="$(run_conda_cmd info --base 2>/dev/null || true)"
+  safe_base="${conda_base:-default}"
+  safe_base="${safe_base//\//_}"
+  safe_base="${safe_base// /_}"
+  marker_file="$TOS_MARKER_ROOT/conda_tos_${safe_base}.marker"
+
+  if [[ -f "$marker_file" ]] \
+     && grep -Fxq "$CONDA_MAIN_CHANNEL" "$marker_file" \
+     && grep -Fxq "$CONDA_R_CHANNEL" "$marker_file"; then
+    return 0
+  fi
+
+  local accepted=0
+
+  if (( AUTO_YES == 1 )); then
+    log "Accepting conda channel Terms of Service in non-interactive mode..."
+    if run_conda_cmd tos accept --override-channels --channel "$CONDA_MAIN_CHANNEL" >/dev/null 2>&1 \
+      && run_conda_cmd tos accept --override-channels --channel "$CONDA_R_CHANNEL" >/dev/null 2>&1; then
+      accepted=1
+    fi
+  elif ask_yes_no "Accept Anaconda channel Terms of Service automatically?"; then
+    if run_conda_cmd tos accept --override-channels --channel "$CONDA_MAIN_CHANNEL" >/dev/null 2>&1 \
+      && run_conda_cmd tos accept --override-channels --channel "$CONDA_R_CHANNEL" >/dev/null 2>&1; then
+      accepted=1
+    fi
+  fi
+
+  if (( accepted == 1 )); then
+    mkdir -p "$TOS_MARKER_ROOT"
+    {
+      printf '%s\n' "$CONDA_MAIN_CHANNEL"
+      printf '%s\n' "$CONDA_R_CHANNEL"
+    } > "$marker_file"
+    log "Recorded conda ToS acceptance marker: $marker_file"
+  elif (( AUTO_YES == 1 )); then
+    log "Warning: could not confirm conda ToS acceptance automatically"
+  fi
 }
 
 create_or_update_conda_env() {
@@ -98,22 +237,220 @@ create_or_update_conda_env() {
   if conda_env_exists; then
     log "Conda env '$ENV_NAME' already exists. Updating core tools..."
   else
+    accept_conda_tos_if_needed
     log "Creating conda env '$ENV_NAME' (python=$PYTHON_VERSION)..."
-    conda create -y -n "$ENV_NAME" "python=$PYTHON_VERSION" pip
+    run_conda_cmd create -y -n "$ENV_NAME" "python=$PYTHON_VERSION" pip
   fi
 
   log "Installing baseline tools into '$ENV_NAME'..."
-  conda run -n "$ENV_NAME" python -m pip install --upgrade pip setuptools wheel
-  conda run -n "$ENV_NAME" python -m pip install pytest pre-commit
+  run_with_heartbeat \
+    "installing baseline Python tooling into $ENV_NAME" \
+    run_conda_env_cmd "$ENV_NAME" python -m pip install --upgrade pip setuptools wheel
+  run_with_heartbeat \
+    "installing pytest and pre-commit into $ENV_NAME" \
+    run_conda_env_cmd "$ENV_NAME" python -m pip install pytest pre-commit
 
-  local benchmark_repo="$WORKSPACE_ROOT/vllm-hust-benchmark"
-  if [[ -f "$benchmark_repo/pyproject.toml" ]]; then
-    log "Installing vllm-hust-benchmark (editable) into '$ENV_NAME'..."
-    conda run -n "$ENV_NAME" python -m pip install -e "$benchmark_repo"
+  install_workspace_repos_into_env "refresh" "$INSTALL_SCOPE"
+
+  if run_conda_cmd run -n "$ENV_NAME" vllm --help >/dev/null 2>&1; then
+    log "Verified: 'vllm' command is available in conda env '$ENV_NAME'"
+  else
+    log "Warning: 'vllm' command is still unavailable in conda env '$ENV_NAME'"
   fi
+
+  configure_bashrc_auto_activate_env
 
   log "Conda env ready: $ENV_NAME"
   log "Activate with: conda activate $ENV_NAME"
+}
+
+read_project_name_from_pyproject() {
+  local repo_path="$1"
+
+  awk '
+    /^\[project\]/ { in_project=1; next }
+    /^\[/ && in_project { exit }
+    in_project && $1 == "name" {
+      match($0, /"[^"]+"/)
+      if (RSTART > 0) {
+        print substr($0, RSTART + 1, RLENGTH - 2)
+        exit
+      }
+    }
+  ' "$repo_path/pyproject.toml"
+}
+
+build_installable_repo_entries() {
+  local scope="$1"
+  local core_repo_candidates=(
+    "$WORKSPACE_ROOT/vllm-hust"
+    "$WORKSPACE_ROOT/vllm-ascend-hust"
+    "$WORKSPACE_ROOT/vllm-hust-benchmark"
+  )
+
+  local extra_repo_candidates=(
+    "$WORKSPACE_ROOT/vllm-hust-workstation"
+    "$WORKSPACE_ROOT/vllm-hust-docs"
+    "$WORKSPACE_ROOT/vllm-hust-website"
+    "$WORKSPACE_ROOT/EvoScientist"
+    "$HUB_ROOT/ascend-runtime-manager"
+  )
+
+  local repo_candidates=()
+  repo_candidates+=("${core_repo_candidates[@]}")
+  if [[ "$scope" == "full" ]]; then
+    repo_candidates+=("${extra_repo_candidates[@]}")
+  fi
+
+  local repo_path
+  local project_name
+  for repo_path in "${repo_candidates[@]}"; do
+    if [[ ! -d "$repo_path" || ! -f "$repo_path/pyproject.toml" ]]; then
+      continue
+    fi
+
+    project_name="$(read_project_name_from_pyproject "$repo_path")"
+    if [[ -z "$project_name" ]]; then
+      log "Warning: could not determine project name from $repo_path/pyproject.toml, skipped"
+      continue
+    fi
+
+    printf '%s|%s\n' "$repo_path" "$project_name"
+  done
+}
+
+is_package_installed_in_env() {
+  local env_name="$1"
+  local project_name="$2"
+
+  run_conda_env_cmd "$env_name" python -m pip show "$project_name" >/dev/null 2>&1
+}
+
+install_workspace_repos_into_env() {
+  local install_mode="${1:-$INSTALL_MODE}"
+  local install_scope="${2:-$INSTALL_SCOPE}"
+
+  ensure_conda_available
+
+  if ! conda_env_exists; then
+    log "Conda env '$ENV_NAME' does not exist yet. Create it first with --conda."
+    return 2
+  fi
+
+  if [[ "$install_mode" != "install" && "$install_mode" != "refresh" ]]; then
+    echo "Invalid install mode: $install_mode" >&2
+    return 2
+  fi
+
+  if [[ "$install_scope" != "core" && "$install_scope" != "full" ]]; then
+    echo "Invalid install scope: $install_scope" >&2
+    return 2
+  fi
+
+  local installed_any=0
+  local installed_list=()
+  local skipped_list=()
+  local repo_entries=()
+  mapfile -t repo_entries < <(build_installable_repo_entries "$install_scope")
+
+  if (( ${#repo_entries[@]} == 0 )); then
+    log "No installable local repositories found (pyproject.toml missing or project name unavailable)."
+    return 0
+  fi
+
+  local entry
+  local repo_path
+  local project_name
+  for entry in "${repo_entries[@]}"; do
+    repo_path="${entry%%|*}"
+    project_name="${entry#*|}"
+
+    if [[ "$install_mode" == "install" ]] && is_package_installed_in_env "$ENV_NAME" "$project_name"; then
+      log "Skipping already installed package '$project_name' from: $repo_path"
+      skipped_list+=("$repo_path ($project_name)")
+      continue
+    fi
+
+    log "Installing editable package from: $repo_path"
+    run_with_heartbeat \
+      "installing editable package from $repo_path" \
+      run_conda_env_cmd "$ENV_NAME" python -m pip install -v -e "$repo_path"
+    installed_any=1
+    installed_list+=("$repo_path ($project_name)")
+  done
+
+  if (( installed_any == 0 )); then
+    if [[ "$install_mode" == "install" && ${#skipped_list[@]} -gt 0 ]]; then
+      log "All selected repositories are already installed in '$ENV_NAME' (scope=$install_scope)."
+    else
+      log "No repositories were installed into '$ENV_NAME' (mode=$install_mode, scope=$install_scope)."
+    fi
+  else
+    log "Installed editable repositories into '$ENV_NAME' (mode=$install_mode, scope=$install_scope):"
+    local item
+    for item in "${installed_list[@]}"; do
+      log "  - $item"
+    done
+  fi
+
+  if [[ "$install_mode" == "install" && ${#skipped_list[@]} -gt 0 ]]; then
+    local skipped_item
+    log "Skipped already installed repositories:"
+    for skipped_item in "${skipped_list[@]}"; do
+      log "  - $skipped_item"
+    done
+  fi
+
+  if [[ -d "$WORKSPACE_ROOT/vllm-ascend-hust" && ! -f "$WORKSPACE_ROOT/vllm-ascend-hust/pyproject.toml" ]]; then
+    log "Warning: vllm-ascend-hust exists but has no pyproject.toml, skipped install"
+  fi
+
+  if run_conda_env_cmd "$ENV_NAME" vllm --help >/dev/null 2>&1; then
+    log "Verified: 'vllm' command is available in conda env '$ENV_NAME'"
+  else
+    log "Warning: 'vllm' command is still unavailable in conda env '$ENV_NAME'"
+  fi
+}
+
+configure_bashrc_auto_activate_env() {
+  local conda_base
+  local conda_sh
+  local bashrc_file
+  local tmp_file
+
+  conda_base="$(run_conda_cmd info --base 2>/dev/null || true)"
+  if [[ -z "$conda_base" ]]; then
+    conda_base="$HOME/miniconda3"
+  fi
+  conda_sh="$conda_base/etc/profile.d/conda.sh"
+
+  if [[ ! -f "$conda_sh" ]]; then
+    log "Skip bashrc auto-activate setup because conda.sh was not found: $conda_sh"
+    return 0
+  fi
+
+  bashrc_file="$HOME/.bashrc"
+  touch "$bashrc_file"
+  tmp_file="$(mktemp)"
+
+  awk -v begin="$BASHRC_BEGIN" -v end="$BASHRC_END" '
+    $0 == begin {skip=1; next}
+    $0 == end {skip=0; next}
+    !skip {print}
+  ' "$bashrc_file" > "$tmp_file"
+
+  {
+    cat "$tmp_file"
+    printf '\n%s\n' "$BASHRC_BEGIN"
+    printf 'if [[ "$-" == *i* ]] && [[ -f "%s" ]]; then\n' "$conda_sh"
+    printf '  source "%s"\n' "$conda_sh"
+    printf '  conda activate "%s" >/dev/null 2>&1 || true\n' "$ENV_NAME"
+    printf 'fi\n'
+    printf '%s\n' "$BASHRC_END"
+  } > "$bashrc_file"
+
+  rm -f "$tmp_file"
+  log "Updated ~/.bashrc to auto-activate conda env '$ENV_NAME' in interactive shells"
 }
 
 ask_yes_no() {
@@ -130,6 +467,8 @@ ask_yes_no() {
 }
 
 run_interactive_menu() {
+  local choice=""
+
   cat <<EOF
 === vllm-hust-dev-hub quickstart ===
 Hub root       : $HUB_ROOT
@@ -137,24 +476,25 @@ Workspace root : $WORKSPACE_ROOT
 Conda env name : $ENV_NAME
 Python version : $PYTHON_VERSION
 ===================================
-1) Clone workspace repositories
-2) Create or update conda environment
-3) Clone + conda environment
+1) Setup environment
+2) Install repositories into existing env
+3) Only update ~/.bashrc auto-activate for current env name
 4) Exit
 EOF
 
-  local choice=""
   read -r -p "Select an option [1-4]: " choice
   case "$choice" in
     1)
-      DO_CLONE=1
+      run_setup_submenu
       ;;
     2)
-      DO_CONDA=1
+      run_install_submenu
       ;;
     3)
-      DO_CLONE=1
-      DO_CONDA=1
+      ensure_conda_available
+      configure_bashrc_auto_activate_env
+      log "Finished updating ~/.bashrc auto-activate settings."
+      exit 0
       ;;
     4)
       log "Exit."
@@ -162,6 +502,99 @@ EOF
       ;;
     *)
       log "Invalid option: $choice"
+      exit 2
+      ;;
+  esac
+}
+
+run_setup_submenu() {
+  local choice=""
+
+  cat <<EOF
+--- Setup environment ---
+1) Full bootstrap (sync repos + conda env)
+2) Setup/repair conda environment only
+3) Sync repositories only
+4) Back
+EOF
+
+  read -r -p "Select an option [1-4]: " choice
+  case "$choice" in
+    1)
+      DO_CLONE=1
+      DO_CONDA=1
+      MENU_CONFIRMED=1
+      ;;
+    2)
+      DO_CONDA=1
+      MENU_CONFIRMED=1
+      ;;
+    3)
+      DO_CLONE=1
+      MENU_CONFIRMED=1
+      ;;
+    4)
+      run_interactive_menu
+      ;;
+    *)
+      log "Invalid option: $choice"
+      exit 2
+      ;;
+  esac
+}
+
+run_install_submenu() {
+  local mode_choice=""
+  local scope_choice=""
+
+  cat <<EOF
+--- Install repositories ---
+1) Install missing repos only
+2) Refresh/reinstall repos
+3) Back
+EOF
+
+  read -r -p "Select an option [1-3]: " mode_choice
+  case "$mode_choice" in
+    1)
+      INSTALL_MODE="install"
+      ;;
+    2)
+      INSTALL_MODE="refresh"
+      ;;
+    3)
+      run_interactive_menu
+      ;;
+    *)
+      log "Invalid option: $mode_choice"
+      exit 2
+      ;;
+  esac
+
+  cat <<EOF
+--- Install scope ---
+1) Core repos only (vllm-hust, vllm-ascend-hust, vllm-hust-benchmark)
+2) Core repos + extra local repos
+3) Back
+EOF
+
+  read -r -p "Select an option [1-3]: " scope_choice
+  case "$scope_choice" in
+    1)
+      DO_INSTALL=1
+      INSTALL_SCOPE="core"
+      MENU_CONFIRMED=1
+      ;;
+    2)
+      DO_INSTALL=1
+      INSTALL_SCOPE="full"
+      MENU_CONFIRMED=1
+      ;;
+    3)
+      run_install_submenu
+      ;;
+    *)
+      log "Invalid option: $scope_choice"
       exit 2
       ;;
   esac
@@ -176,9 +609,22 @@ parse_args() {
       --conda)
         DO_CONDA=1
         ;;
+      --install)
+        DO_INSTALL=1
+        ;;
+      --install-mode)
+        INSTALL_MODE="$2"
+        shift
+        ;;
+      --install-scope)
+        INSTALL_SCOPE="$2"
+        shift
+        ;;
       --all)
         DO_CLONE=1
         DO_CONDA=1
+        DO_INSTALL=1
+        INSTALL_SCOPE="core"
         ;;
       --env-name)
         ENV_NAME="$2"
@@ -203,24 +649,40 @@ parse_args() {
     esac
     shift
   done
+
+  if [[ "$INSTALL_SCOPE" != "core" && "$INSTALL_SCOPE" != "full" ]]; then
+    echo "Invalid --install-scope: $INSTALL_SCOPE (expected: core or full)" >&2
+    exit 2
+  fi
+
+  if [[ "$INSTALL_MODE" != "install" && "$INSTALL_MODE" != "refresh" ]]; then
+    echo "Invalid --install-mode: $INSTALL_MODE (expected: install or refresh)" >&2
+    exit 2
+  fi
 }
 
 main() {
   parse_args "$@"
 
-  if (( DO_CLONE == 0 && DO_CONDA == 0 )); then
+  if (( DO_CLONE == 0 && DO_CONDA == 0 && DO_INSTALL == 0 )); then
     run_interactive_menu
   fi
 
   if (( DO_CLONE == 1 )); then
-    if (( AUTO_YES == 1 )) || ask_yes_no "Run repository clone step now?"; then
+    if (( MENU_CONFIRMED == 1 )) || (( AUTO_YES == 1 )) || ask_yes_no "Run repository sync step now?"; then
       clone_repositories
     fi
   fi
 
   if (( DO_CONDA == 1 )); then
-    if (( AUTO_YES == 1 )) || ask_yes_no "Run conda environment setup now?"; then
+    if (( MENU_CONFIRMED == 1 )) || (( AUTO_YES == 1 )) || ask_yes_no "Run conda environment setup now?"; then
       create_or_update_conda_env
+    fi
+  fi
+
+  if (( DO_INSTALL == 1 )) && (( DO_CONDA == 0 )); then
+    if (( MENU_CONFIRMED == 1 )) || (( AUTO_YES == 1 )) || ask_yes_no "Run '$INSTALL_MODE' install step for local repositories now?"; then
+      install_workspace_repos_into_env "$INSTALL_MODE" "$INSTALL_SCOPE"
     fi
   fi
 
