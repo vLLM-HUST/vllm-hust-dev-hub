@@ -131,19 +131,19 @@ maybe_pull_updates() {
   fi
 }
 
-# Default to HTTPS so the bootstrap works without requiring GitHub SSH setup.
+# Use SSH URLs to avoid HTTPS connectivity issues.
 # Keep upstream comparison repos under reference-repos/ rather than as top-level siblings.
 REPOS=(
-  "vllm-hust|https://github.com/intellistream/vllm-hust.git"
-  "vllm-hust-workstation|https://github.com/intellistream/vllm-hust-workstation.git"
-  "vllm-hust-website|https://github.com/intellistream/vllm-hust-website.git"
-  "vllm-hust-docs|https://github.com/intellistream/vllm-hust-docs.git"
-  "vllm-ascend-hust|https://github.com/intellistream/vllm-ascend-hust.git"
-  "reference-repos/vllm|https://github.com/vllm-project/vllm.git"
-  "reference-repos/sglang|https://github.com/sgl-project/sglang.git"
-  "reference-repos/vllm-ascend|https://github.com/vllm-project/vllm-ascend.git"
-  "EvoScientist|https://github.com/intellistream/EvoScientist.git"
-  "vllm-hust-benchmark|https://github.com/intellistream/vllm-hust-benchmark.git"
+  "vllm-hust|git@github.com:intellistream/vllm-hust.git"
+  "vllm-hust-workstation|git@github.com:intellistream/vllm-hust-workstation.git"
+  "vllm-hust-website|git@github.com:intellistream/vllm-hust-website.git"
+  "vllm-hust-docs|git@github.com:intellistream/vllm-hust-docs.git"
+  "vllm-ascend-hust|git@github.com:intellistream/vllm-ascend-hust.git"
+  "reference-repos/vllm|git@github.com:vllm-project/vllm.git"
+  "reference-repos/sglang|git@github.com:sgl-project/sglang.git"
+  "reference-repos/vllm-ascend|git@github.com:vllm-project/vllm-ascend.git"
+  "EvoScientist|git@github.com:intellistream/EvoScientist.git"
+  "vllm-hust-benchmark|git@github.com:intellistream/vllm-hust-benchmark.git"
 )
 
 parse_args "$@"
