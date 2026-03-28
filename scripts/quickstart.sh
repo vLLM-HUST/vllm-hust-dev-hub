@@ -342,7 +342,9 @@ build_installable_repo_entries() {
 
     project_name="$(read_project_name_from_pyproject "$repo_path")"
     if [[ -z "$project_name" ]]; then
-      log "Warning: could not determine project name from $repo_path/pyproject.toml, skipped"
+      # log "Warning: could not determine project name from $repo_path/pyproject.toml, skipped"
+      echo "[quickstart] Warning: could not determine project name from $repo_path/pyproject.toml,    
+  skipped" >&2  
       continue
     fi
 
