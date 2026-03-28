@@ -58,6 +58,12 @@ run_conda_cmd() {
   (unset PYTHONPATH; conda "$@")
 }
 
+get_conda_env_prefix() {
+  local env_name="$1"
+
+  run_conda_cmd env list | awk -v target_env="$env_name" '$1 == target_env { print $NF; exit }'
+}
+
 detect_conda_run_stream_flag() {
   if [[ -n "$CONDA_RUN_STREAM_FLAG" ]]; then
     return 0
@@ -77,12 +83,19 @@ detect_conda_run_stream_flag() {
 run_conda_env_cmd() {
   local env_name="$1"
   shift
+  local env_prefix=""
+  local wrapped_cmd=("$@")
 
   detect_conda_run_stream_flag
+  env_prefix="$(get_conda_env_prefix "$env_name")"
+  if [[ -n "$env_prefix" && -d "$env_prefix/lib" ]]; then
+    wrapped_cmd=(env "LD_LIBRARY_PATH=$env_prefix/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "$@")
+  fi
+
   if [[ -n "$CONDA_RUN_STREAM_FLAG" ]]; then
-    run_conda_cmd run "$CONDA_RUN_STREAM_FLAG" -n "$env_name" "$@"
+    run_conda_cmd run "$CONDA_RUN_STREAM_FLAG" -n "$env_name" "${wrapped_cmd[@]}"
   else
-    run_conda_cmd run -n "$env_name" "$@"
+    run_conda_cmd run -n "$env_name" "${wrapped_cmd[@]}"
   fi
 }
 
@@ -302,7 +315,7 @@ create_or_update_conda_env() {
 
   install_workspace_repos_into_env "refresh" "$INSTALL_SCOPE" "with-runtime-reconcile"
 
-  if run_conda_cmd run -n "$ENV_NAME" vllm --help >/dev/null 2>&1; then
+  if run_conda_env_cmd "$ENV_NAME" vllm --help >/dev/null 2>&1; then
     log "Verified: 'vllm' command is available in conda env '$ENV_NAME'"
   else
     log "Warning: 'vllm' command is still unavailable in conda env '$ENV_NAME'"
@@ -654,6 +667,12 @@ configure_bashrc_auto_activate_env() {
     printf 'if [[ "$-" == *i* ]] && [[ -f "%s" ]]; then\n' "$conda_sh"
     printf '  source "%s"\n' "$conda_sh"
     printf '  conda activate "%s" >/dev/null 2>&1 || true\n' "$ENV_NAME"
+    printf '  if [[ -n "$CONDA_PREFIX" && -d "$CONDA_PREFIX/lib" ]]; then\n'
+    printf '    case ":${LD_LIBRARY_PATH:-}:" in\n'
+    printf '      *":$CONDA_PREFIX/lib:"*) ;;\n'
+    printf '      *) export LD_LIBRARY_PATH="$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" ;;\n'
+    printf '    esac\n'
+    printf '  fi\n'
     printf 'fi\n'
     printf '%s\n' "$BASHRC_END"
   } > "$bashrc_file"
