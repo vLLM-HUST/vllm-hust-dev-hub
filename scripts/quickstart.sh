@@ -23,26 +23,29 @@ BASHRC_BEGIN="# >>> vllm-hust-dev-hub auto-activate >>>"
 BASHRC_END="# <<< vllm-hust-dev-hub auto-activate <<<"
 CONDA_MAIN_CHANNEL="https://repo.anaconda.com/pkgs/main"
 CONDA_R_CHANNEL="https://repo.anaconda.com/pkgs/r"
+CONDA_ASCEND_CHANNEL="https://repo.huaweicloud.com/ascend/repos/conda/"
+CONDA_FORGE_MIRROR_CHANNEL="https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/"
+CONDA_FORGE_FALLBACK_CHANNEL="conda-forge"
 TOS_MARKER_ROOT="$HOME/.config/vllm-hust-dev-hub"
 CONDA_RUN_STREAM_FLAG=""
 
 print_help() {
   cat <<'EOF'
-Usage: bash scripts/quickstart.sh [options]
+用法: bash scripts/quickstart.sh [选项]
 
-Options:
-  --clone                  Clone workspace repositories.
-  --conda                  Create or update conda environment.
-  --install                Install local repos into existing conda env.
-  --install-mode MODE      Install mode: install or refresh (default: install).
-  --install-scope SCOPE    Install scope: core or full (default: core).
-  --all                    Run clone + conda steps.
-  --env-name NAME          Conda environment name (default: vllm-hust-dev).
-  --python VERSION         Python version for conda env (default: 3.10).
-  -y, --yes                Non-interactive mode.
-  -h, --help               Show this help message.
+选项:
+  --clone                  同步工作区仓库。
+  --conda                  创建或更新 conda 环境。
+  --install                在已有 conda 环境中安装本地仓库。
+  --install-mode MODE      安装模式: install 或 refresh (默认: install)。
+  --install-scope SCOPE    安装范围: core 或 full (默认: core)。
+  --all                    执行 clone + conda + install(core)。
+  --env-name NAME          conda 环境名 (默认: vllm-hust-dev)。
+  --python VERSION         conda 环境 Python 版本 (默认: 3.10)。
+  -y, --yes                非交互模式。
+  -h, --help               显示本帮助。
 
-If no action flags are provided, an interactive menu is shown.
+未提供动作参数时，将进入交互式菜单。
 EOF
 }
 
@@ -272,7 +275,21 @@ create_or_update_conda_env() {
   else
     accept_conda_tos_if_needed
     log "Creating conda env '$ENV_NAME' (python=$PYTHON_VERSION)..."
-    run_conda_cmd create -y -n "$ENV_NAME" "python=$PYTHON_VERSION" pip
+    log "Using explicit channels for env creation:"
+    log "  - $CONDA_ASCEND_CHANNEL"
+    log "  - $CONDA_FORGE_MIRROR_CHANNEL"
+    if ! run_conda_cmd create -y -n "$ENV_NAME" \
+      --override-channels \
+      -c "$CONDA_ASCEND_CHANNEL" \
+      -c "$CONDA_FORGE_MIRROR_CHANNEL" \
+      "python=$PYTHON_VERSION" pip; then
+      log "Mirror-based env creation failed; retrying with fallback channel '$CONDA_FORGE_FALLBACK_CHANNEL'"
+      run_conda_cmd create -y -n "$ENV_NAME" \
+        --override-channels \
+        -c "$CONDA_ASCEND_CHANNEL" \
+        -c "$CONDA_FORGE_FALLBACK_CHANNEL" \
+        "python=$PYTHON_VERSION" pip
+    fi
   fi
 
   log "Installing baseline tools into '$ENV_NAME'..."
@@ -311,6 +328,42 @@ read_project_name_from_pyproject() {
   ' "$repo_path/pyproject.toml"
 }
 
+read_project_name_from_setup_py() {
+  local repo_path="$1"
+
+  awk '
+    /setup[[:space:]]*\(/ { in_setup=1 }
+    in_setup && /^[[:space:]]*name[[:space:]]*=/ {
+      line = $0
+      sub(/^[[:space:]]*name[[:space:]]*=[[:space:]]*["\047]/, "", line)
+      sub(/["\047][[:space:]]*,?[[:space:]]*$/, "", line)
+      print line
+      exit
+    }
+  ' "$repo_path/setup.py"
+}
+
+read_project_name() {
+  local repo_path="$1"
+  local project_name=""
+
+  if [[ -f "$repo_path/pyproject.toml" ]]; then
+    project_name="$(read_project_name_from_pyproject "$repo_path")"
+    if [[ -n "$project_name" ]]; then
+      printf '%s\n' "$project_name"
+      return 0
+    fi
+  fi
+
+  if [[ -f "$repo_path/setup.py" ]]; then
+    project_name="$(read_project_name_from_setup_py "$repo_path")"
+    if [[ -n "$project_name" ]]; then
+      printf '%s\n' "$project_name"
+      return 0
+    fi
+  fi
+}
+
 build_installable_repo_entries() {
   local scope="$1"
   local core_repo_candidates=(
@@ -340,11 +393,9 @@ build_installable_repo_entries() {
       continue
     fi
 
-    project_name="$(read_project_name_from_pyproject "$repo_path")"
+    project_name="$(read_project_name "$repo_path")"
     if [[ -z "$project_name" ]]; then
-      # log "Warning: could not determine project name from $repo_path/pyproject.toml, skipped"
-      echo "[quickstart] Warning: could not determine project name from $repo_path/pyproject.toml,    
-  skipped" >&2  
+      log "Warning: could not determine project name from $repo_path metadata, skipped" >&2
       continue
     fi
 
@@ -357,6 +408,43 @@ is_package_installed_in_env() {
   local project_name="$2"
 
   run_conda_env_cmd "$env_name" python -m pip show "$project_name" >/dev/null 2>&1
+}
+
+repo_requires_ascend_runtime() {
+  local repo_path="$1"
+
+  [[ "$repo_path" == "$WORKSPACE_ROOT/vllm-ascend-hust" ]]
+}
+
+install_editable_repo_into_env() {
+  local repo_path="$1"
+  local reconcile_mode="${2:-without-runtime-reconcile}"
+  local pip_args=(-v -e "$repo_path")
+
+  if repo_requires_ascend_runtime "$repo_path"; then
+    if ! should_reconcile_ascend_runtime; then
+      log "Skipping Ascend-only repo '$repo_path' because no Ascend runtime was detected on this host."
+      return 10
+    fi
+
+    if ! is_package_installed_in_env "$ENV_NAME" "torch-npu"; then
+      if [[ "$reconcile_mode" == "with-runtime-reconcile" ]]; then
+        log "Skipping Ascend-only repo '$repo_path' because torch-npu is still unavailable after runtime reconciliation."
+      else
+        log "Skipping Ascend-only repo '$repo_path' because torch-npu is not installed in '$ENV_NAME'. Run quickstart with --conda to reconcile the Ascend Python stack first."
+      fi
+      return 11
+    fi
+
+    # vllm-ascend documents editable installs with --no-build-isolation to
+    # avoid torch/torch-npu resolver conflicts in the temporary build env.
+    pip_args=(-v --no-build-isolation -e "$repo_path")
+  fi
+
+  log "Installing editable package from: $repo_path"
+  run_with_heartbeat \
+    "installing editable package from $repo_path" \
+    run_conda_env_cmd "$ENV_NAME" python -m pip install "${pip_args[@]}"
 }
 
 should_reconcile_ascend_runtime() {
@@ -470,10 +558,7 @@ install_workspace_repos_into_env() {
       log "Skipping already installed package '$project_name' from: $repo_path"
       skipped_list+=("$repo_path ($project_name)")
     else
-      log "Installing editable package from: $repo_path"
-      run_with_heartbeat \
-        "installing editable package from $repo_path" \
-        run_conda_env_cmd "$ENV_NAME" python -m pip install -v -e "$repo_path"
+      install_editable_repo_into_env "$repo_path" "$reconcile_mode"
       installed_any=1
       installed_list+=("$repo_path ($project_name)")
     fi
@@ -495,10 +580,10 @@ install_workspace_repos_into_env() {
       continue
     fi
 
-    log "Installing editable package from: $repo_path"
-    run_with_heartbeat \
-      "installing editable package from $repo_path" \
-      run_conda_env_cmd "$ENV_NAME" python -m pip install -v -e "$repo_path"
+    if ! install_editable_repo_into_env "$repo_path" "$reconcile_mode"; then
+      skipped_list+=("$repo_path ($project_name)")
+      continue
+    fi
     installed_any=1
     installed_list+=("$repo_path ($project_name)")
   done
@@ -601,111 +686,71 @@ Workspace root : $WORKSPACE_ROOT
 Conda env name : $ENV_NAME
 Python version : $PYTHON_VERSION
 ===================================
-1) Recommended bootstrap (sync repos + conda env)
-2) Refresh local repositories in existing env
-3) Sync repositories only
-4) Advanced options
-5) Exit
+1) 一键初始化（同步仓库 + 创建/修复环境 + 安装核心仓库）
+2) 仅同步仓库
+3) 仅创建/修复 conda 环境
+4) 安装缺失本地仓库（核心）
+5) 安装缺失本地仓库（核心 + 扩展）
+6) 刷新重装本地仓库（核心）
+7) 刷新重装本地仓库（核心 + 扩展）
+8) 仅更新 ~/.bashrc 自动激活
+9) 退出
 EOF
 
-  read -r -p "Select an option [1-5]: " choice
+  read -r -p "请选择 [1-9]: " choice
   case "$choice" in
     1)
       DO_CLONE=1
       DO_CONDA=1
-      MENU_CONFIRMED=1
-      ;;
-    2)
-      INSTALL_MODE="refresh"
-      run_install_scope_submenu
-      ;;
-    3)
-      DO_CLONE=1
-      MENU_CONFIRMED=1
-      ;;
-    4)
-      run_advanced_menu
-      ;;
-    5)
-      log "Exit."
-      exit 0
-      ;;
-    *)
-      log "Invalid option: $choice"
-      exit 2
-      ;;
-  esac
-}
-
-run_install_scope_submenu() {
-  local choice=""
-
-  cat <<EOF
---- Install scope ---
-1) Core repos only (recommended)
-2) Core repos + extra local repos
-3) Back
-EOF
-
-  read -r -p "Select an option [1-3]: " choice
-  case "$choice" in
-    1)
       DO_INSTALL=1
+      INSTALL_MODE="refresh"
       INSTALL_SCOPE="core"
       MENU_CONFIRMED=1
       ;;
     2)
-      DO_INSTALL=1
-      INSTALL_SCOPE="full"
+      DO_CLONE=1
       MENU_CONFIRMED=1
       ;;
     3)
-      run_interactive_menu
-      ;;
-    *)
-      log "Invalid option: $choice"
-      exit 2
-      ;;
-  esac
-}
-
-run_advanced_menu() {
-  local choice=""
-
-  cat <<EOF
---- Advanced options ---
-1) Setup/repair conda environment only
-2) Install missing repos into existing env
-3) Refresh/reinstall repos in existing env
-4) Only update ~/.bashrc auto-activate for current env name
-5) Back
-EOF
-
-  read -r -p "Select an option [1-5]: " choice
-  case "$choice" in
-    1)
       DO_CONDA=1
       MENU_CONFIRMED=1
       ;;
-    2)
-      INSTALL_MODE="install"
-      run_install_scope_submenu
-      ;;
-    3)
-      INSTALL_MODE="refresh"
-      run_install_scope_submenu
-      ;;
     4)
-      ensure_conda_available
-      configure_bashrc_auto_activate_env
-      log "Finished updating ~/.bashrc auto-activate settings."
-      exit 0
+      DO_INSTALL=1
+      INSTALL_MODE="install"
+      INSTALL_SCOPE="core"
+      MENU_CONFIRMED=1
       ;;
     5)
-      run_interactive_menu
+      DO_INSTALL=1
+      INSTALL_MODE="install"
+      INSTALL_SCOPE="full"
+      MENU_CONFIRMED=1
+      ;;
+    6)
+      DO_INSTALL=1
+      INSTALL_MODE="refresh"
+      INSTALL_SCOPE="core"
+      MENU_CONFIRMED=1
+      ;;
+    7)
+      DO_INSTALL=1
+      INSTALL_MODE="refresh"
+      INSTALL_SCOPE="full"
+      MENU_CONFIRMED=1
+      ;;
+    8)
+      ensure_conda_available
+      configure_bashrc_auto_activate_env
+      log "已完成 ~/.bashrc 自动激活设置更新。"
+      exit 0
+      ;;
+    9)
+      log "已退出。"
+      exit 0
       ;;
     *)
-      log "Invalid option: $choice"
+      log "无效选项: $choice"
       exit 2
       ;;
   esac
@@ -753,7 +798,7 @@ parse_args() {
         exit 0
         ;;
       *)
-        echo "Unknown argument: $1" >&2
+        echo "未知参数: $1" >&2
         print_help >&2
         exit 2
         ;;
@@ -762,12 +807,12 @@ parse_args() {
   done
 
   if [[ "$INSTALL_SCOPE" != "core" && "$INSTALL_SCOPE" != "full" ]]; then
-    echo "Invalid --install-scope: $INSTALL_SCOPE (expected: core or full)" >&2
+    echo "无效 --install-scope: $INSTALL_SCOPE (应为 core 或 full)" >&2
     exit 2
   fi
 
   if [[ "$INSTALL_MODE" != "install" && "$INSTALL_MODE" != "refresh" ]]; then
-    echo "Invalid --install-mode: $INSTALL_MODE (expected: install or refresh)" >&2
+    echo "无效 --install-mode: $INSTALL_MODE (应为 install 或 refresh)" >&2
     exit 2
   fi
 }
@@ -780,24 +825,24 @@ main() {
   fi
 
   if (( DO_CLONE == 1 )); then
-    if (( MENU_CONFIRMED == 1 )) || (( AUTO_YES == 1 )) || ask_yes_no "Run repository sync step now?"; then
+    if (( MENU_CONFIRMED == 1 )) || (( AUTO_YES == 1 )) || ask_yes_no "现在执行仓库同步步骤吗？"; then
       clone_repositories
     fi
   fi
 
   if (( DO_CONDA == 1 )); then
-    if (( MENU_CONFIRMED == 1 )) || (( AUTO_YES == 1 )) || ask_yes_no "Run conda environment setup now?"; then
+    if (( MENU_CONFIRMED == 1 )) || (( AUTO_YES == 1 )) || ask_yes_no "现在执行 conda 环境创建/修复吗？"; then
       create_or_update_conda_env
     fi
   fi
 
   if (( DO_INSTALL == 1 )) && (( DO_CONDA == 0 )); then
-    if (( MENU_CONFIRMED == 1 )) || (( AUTO_YES == 1 )) || ask_yes_no "Run '$INSTALL_MODE' install step for local repositories now?"; then
+    if (( MENU_CONFIRMED == 1 )) || (( AUTO_YES == 1 )) || ask_yes_no "现在执行本地仓库 '$INSTALL_MODE' 安装步骤吗？"; then
       install_workspace_repos_into_env "$INSTALL_MODE" "$INSTALL_SCOPE" "without-runtime-reconcile"
     fi
   fi
 
-  log "All selected steps finished."
+  log "已完成所选步骤。"
 }
 
 main "$@"
