@@ -669,6 +669,16 @@ if [[ -n "${CONDA_PREFIX:-}" && -d "${CONDA_PREFIX}/lib" ]]; then
     *) export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" ;;
   esac
 fi
+
+if [[ -z "${VLLM_HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND+x}" ]]; then
+  if [[ -n "${GIT_SSH_COMMAND:-}" ]]; then
+    export VLLM_HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND="$GIT_SSH_COMMAND"
+  else
+    export VLLM_HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND="__UNSET__"
+  fi
+fi
+
+export GIT_SSH_COMMAND='env -u LD_LIBRARY_PATH /usr/bin/ssh'
 EOF
 
   cat > "$deactivate_script" <<'EOF'
@@ -679,6 +689,15 @@ if [[ -n "${VLLM_HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH+x}" ]]; then
     export LD_LIBRARY_PATH="$VLLM_HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH"
   fi
   unset VLLM_HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH
+fi
+
+if [[ -n "${VLLM_HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND+x}" ]]; then
+  if [[ "$VLLM_HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND" == "__UNSET__" ]]; then
+    unset GIT_SSH_COMMAND
+  else
+    export GIT_SSH_COMMAND="$VLLM_HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND"
+  fi
+  unset VLLM_HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND
 fi
 EOF
 
