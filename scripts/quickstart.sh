@@ -219,6 +219,35 @@ get_first_nonempty_env() {
   return 1
 }
 
+default_ascend_compile_custom_kernels() {
+  if [[ -n "${HUST_DEV_HUB_ASCEND_COMPILE_CUSTOM_KERNELS:-}" ]]; then
+    printf '%s\n' "$HUST_DEV_HUB_ASCEND_COMPILE_CUSTOM_KERNELS"
+    return 0
+  fi
+
+  if [[ -n "${COMPILE_CUSTOM_KERNELS:-}" ]]; then
+    printf '%s\n' "$COMPILE_CUSTOM_KERNELS"
+    return 0
+  fi
+
+  printf '0\n'
+}
+
+persist_conda_env_var() {
+  local env_name="$1"
+  local key="$2"
+  local value="$3"
+
+  run_conda_cmd env config vars set -n "$env_name" "$key=$value" >/dev/null
+}
+
+persist_ascend_lightweight_mode_in_conda_env() {
+  local compile_custom_kernels="$1"
+
+  persist_conda_env_var "$ENV_NAME" "COMPILE_CUSTOM_KERNELS" "$compile_custom_kernels"
+  log "Persisted COMPILE_CUSTOM_KERNELS=$compile_custom_kernels to conda env '$ENV_NAME' for Ascend lightweight startup. Reactivate the environment to apply it in new shells."
+}
+
 read_positive_int_env_with_fallback() {
   local default_value="$1"
   shift
@@ -684,7 +713,9 @@ install_editable_repo_into_env() {
   local repo_path="$1"
   local reconcile_mode="${2:-without-runtime-reconcile}"
   local pip_args=(-v -e "$repo_path")
-  local compile_custom_kernels="${COMPILE_CUSTOM_KERNELS:-0}"
+  local compile_custom_kernels
+
+  compile_custom_kernels="$(default_ascend_compile_custom_kernels)"
 
   if repo_requires_ascend_runtime "$repo_path"; then
     if ! should_reconcile_ascend_runtime; then
@@ -716,6 +747,7 @@ install_editable_repo_into_env() {
     run_with_heartbeat \
       "installing editable package from $repo_path" \
       run_pip_install_in_env "$ENV_NAME" "COMPILE_CUSTOM_KERNELS=$compile_custom_kernels" "TORCH_DEVICE_BACKEND_AUTOLOAD=0" -- "${pip_args[@]}"
+    persist_ascend_lightweight_mode_in_conda_env "$compile_custom_kernels"
     return 0
   fi
 
