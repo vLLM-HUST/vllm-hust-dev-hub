@@ -31,6 +31,7 @@ The default workspace includes these repositories when they exist under `/home/<
 - `scripts/quickstart.sh`: interactive one-command bootstrap for clone + conda environment setup, plus menu option 6 for the official Ascend container and container SSH setup.
 - `scripts/ascend-official-container.sh`: start, reuse, and enter the official Ascend vLLM container from the host.
 - `scripts/enable-existing-container-ssh.sh`: fallback helper for an already-running custom container when you need to turn on direct SSH access and surface mounted repos under the login home.
+- `scripts/offline-sync-instance.sh`: prepare offline wheels and model assets on the local machine, sync them through the bastion host into the docker instance, then install local repos inside the container without public network access.
 
 ## Usage
 
@@ -173,6 +174,37 @@ For direct host-to-container development on the official Huawei image, use `scri
 - When direct public access to host port `2222` is unavailable, use a client-side SSH alias with `HostName 127.0.0.1`, `Port 2222`, and `ProxyJump <host-alias>`.
 - If you need to recreate the container with different settings, run `bash scripts/ascend-official-container.sh rm` first.
 - For remote Windows SSH, see [docs/train8-container-quickstart.md](docs/train8-container-quickstart.md) for the generic team setup for direct SSH-to-container access.
+
+## Offline Container Sync
+
+If the Ascend docker instance cannot access the public network, use the local helper below from an internet-connected development machine.
+
+It performs four steps in one run:
+
+- downloads an `aarch64` / Python `3.10` wheelhouse for `vllm-hust` and `vllm-ascend-hust`
+- downloads a Hugging Face model snapshot locally, or reuses an existing model directory
+- syncs the local repositories, wheelhouse, and model into the docker instance through `cgcl-bastion`
+- installs the editable local repos inside the container's `vllm-hust-dev` conda environment without using the container network
+
+Example:
+
+```bash
+bash scripts/offline-sync-instance.sh \
+	--model-id Qwen/Qwen2.5-1.5B-Instruct
+```
+
+If the model already exists locally:
+
+```bash
+bash scripts/offline-sync-instance.sh \
+	--model-path /data/models/Qwen2.5-1.5B-Instruct
+```
+
+Notes:
+
+- The script expects the sibling repositories `ascend-runtime-manager`, `vllm-hust`, `vllm-ascend-hust`, `vllm-hust-benchmark`, and `vllm-hust-dev-hub` to exist under the workspace root.
+- It assumes the container already has the `vllm-hust-dev` conda environment with `torch` and `torch_npu` available.
+- The script syncs `ascend-runtime-manager` into `/workspace/ascend-runtime-manager`, which closes the gap left by the standard dev-hub sync scope.
 
 The script skips destinations that already exist. Set `CLONE_JOBS` to control the parallelism level, for example:
 
