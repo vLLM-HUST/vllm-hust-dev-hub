@@ -239,7 +239,251 @@ default_ascend_compile_custom_kernels() {
     return 0
   fi
 
+  if should_reconcile_ascend_runtime && ascend_custom_kernel_build_prereqs_present; then
+    printf '1\n'
+    return 0
+  fi
+
   printf '0\n'
+}
+
+ascend_custom_kernel_build_prereqs_present() {
+  local tool
+
+  for tool in git cmake make; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+      return 1
+    fi
+  done
+
+  if ! command -v g++ >/dev/null 2>&1 && ! command -v c++ >/dev/null 2>&1; then
+    return 1
+  fi
+
+  return 0
+}
+
+ascend_compile_custom_kernels_configured_explicitly() {
+  [[ -n "${HUST_DEV_HUB_ASCEND_COMPILE_CUSTOM_KERNELS:-}" || -n "${COMPILE_CUSTOM_KERNELS:-}" ]]
+}
+
+sanitize_ld_library_path_for_system_tools() {
+  local original_ld_library_path="$1"
+  local path_entries=()
+  local filtered_entries=()
+  local entry
+
+  if [[ -z "$original_ld_library_path" ]]; then
+    return 0
+  fi
+
+  IFS=':' read -r -a path_entries <<< "$original_ld_library_path"
+  for entry in "${path_entries[@]}"; do
+    if [[ -z "$entry" ]]; then
+      continue
+    fi
+
+    case "$entry" in
+      /opt/conda|/opt/conda/*)
+        continue
+        ;;
+    esac
+
+    if [[ -n "${CONDA_PREFIX:-}" ]]; then
+      case "$entry" in
+        "$CONDA_PREFIX"|"$CONDA_PREFIX"/*)
+          continue
+          ;;
+      esac
+    fi
+
+    if [[ -n "$CONDA_BASE" ]]; then
+      case "$entry" in
+        "$CONDA_BASE"|"$CONDA_BASE"/*)
+          continue
+          ;;
+      esac
+    fi
+
+    filtered_entries+=("$entry")
+  done
+
+  if (( ${#filtered_entries[@]} == 0 )); then
+    return 0
+  fi
+
+  local joined_entries
+  joined_entries="$(IFS=':'; printf '%s' "${filtered_entries[*]}")"
+  printf '%s\n' "$joined_entries"
+}
+
+run_system_command_with_sanitized_ld_library_path() {
+  local sanitized_ld_library_path
+
+  sanitized_ld_library_path="$(sanitize_ld_library_path_for_system_tools "${LD_LIBRARY_PATH:-}")"
+  if [[ -n "$sanitized_ld_library_path" ]]; then
+    env LD_LIBRARY_PATH="$sanitized_ld_library_path" "$@"
+    return 0
+  fi
+
+  env -u LD_LIBRARY_PATH "$@"
+}
+
+read_build_requirement_spec_from_pyproject() {
+  local repo_path="$1"
+  local package_name="$2"
+
+  awk -v package_name="$package_name" '
+    match($0, /"[^"]+"/) {
+      spec = substr($0, RSTART + 1, RLENGTH - 2)
+      if (spec ~ ("^" package_name "([<>=!~].*)?$")) {
+        print spec
+        exit
+      }
+    }
+  ' "$repo_path/pyproject.toml"
+}
+
+ensure_ascend_build_python_packages() {
+  local repo_path="$1"
+  local compile_custom_kernels="$2"
+  local pybind11_spec
+  local triton_ascend_spec
+
+  ensure_pip_package_in_env "$ENV_NAME" "setuptools-scm>=8"
+  ensure_pip_package_in_env "$ENV_NAME" "decorator"
+  ensure_pip_package_in_env "$ENV_NAME" "scipy"
+
+  if [[ "$compile_custom_kernels" == "0" ]]; then
+    return 0
+  fi
+
+  pybind11_spec="$(read_build_requirement_spec_from_pyproject "$repo_path" "pybind11" || true)"
+  ensure_pip_package_in_env "$ENV_NAME" "${pybind11_spec:-pybind11}"
+
+  triton_ascend_spec="$(read_build_requirement_spec_from_pyproject "$repo_path" "triton-ascend" || true)"
+  if [[ -n "$triton_ascend_spec" ]]; then
+    ensure_pip_package_in_env "$ENV_NAME" "$triton_ascend_spec"
+  fi
+}
+
+ensure_ascend_catlass_submodule_ready() {
+  local repo_path="$1"
+  local submodule_relative_path="csrc/third_party/catlass"
+  local submodule_path="$repo_path/$submodule_relative_path"
+
+  if [[ -e "$submodule_path/CMakeLists.txt" || -e "$submodule_path/README.md" ]]; then
+    return 0
+  fi
+
+  if [[ ! -d "$repo_path/.git" && ! -f "$repo_path/.git" ]]; then
+    log "Warning: skipping $submodule_relative_path initialization because '$repo_path' has no git metadata"
+    return 0
+  fi
+
+  log "Initializing Ascend submodule: $submodule_relative_path"
+  run_system_command_with_sanitized_ld_library_path \
+    git -C "$repo_path" submodule update --init --recursive "$submodule_relative_path"
+}
+
+validate_ascend_custom_op_in_env() {
+  local env_name="$1"
+
+  run_conda_env_cmd "$env_name" env TORCH_DEVICE_BACKEND_AUTOLOAD=0 python - <<'PY'
+import torch  # noqa: F401
+from vllm_ascend.utils import enable_custom_op
+
+raise SystemExit(0 if enable_custom_op() else 1)
+PY
+}
+
+find_ascend_custom_op_extension_in_env() {
+  local env_name="$1"
+
+  run_conda_env_cmd "$env_name" python - <<'PY'
+import glob
+import os
+
+import vllm_ascend
+
+package_dir = os.path.dirname(vllm_ascend.__file__)
+matches = sorted(glob.glob(os.path.join(package_dir, "vllm_ascend_C*.so")))
+if matches:
+    print(matches[0])
+PY
+}
+
+repair_ascend_custom_op_runpath_in_env() {
+  local env_name="$1"
+  local extension_path
+  local runpath='$ORIGIN:$ORIGIN/lib:$ORIGIN/_cann_ops_custom/vendors/vllm-ascend/op_api/lib'
+
+  if ! command -v patchelf >/dev/null 2>&1; then
+    log "Warning: patchelf is unavailable, skipping Ascend custom-op RUNPATH repair"
+    return 1
+  fi
+
+  extension_path="$(find_ascend_custom_op_extension_in_env "$env_name")"
+  if [[ -z "$extension_path" || ! -f "$extension_path" ]]; then
+    log "Warning: could not locate vllm_ascend_C extension for RUNPATH repair"
+    return 1
+  fi
+
+  log "Repairing RUNPATH for Ascend custom op: $extension_path"
+  patchelf --set-rpath "$runpath" "$extension_path"
+}
+
+install_ascend_repo_into_env() {
+  local repo_path="$1"
+  local compile_custom_kernels="$2"
+  local pip_args=(-v --no-build-isolation --no-deps -e "$repo_path")
+  local build_ld_library_path
+
+  ensure_ascend_build_python_packages "$repo_path" "$compile_custom_kernels"
+
+  if [[ "$compile_custom_kernels" != "0" ]]; then
+    ensure_ascend_catlass_submodule_ready "$repo_path"
+  fi
+
+  build_ld_library_path="$(sanitize_ld_library_path_for_system_tools "${LD_LIBRARY_PATH:-}")"
+
+  log "Installing editable package from: $repo_path"
+  if ! ascend_compile_custom_kernels_configured_explicitly; then
+    log "Auto-selected COMPILE_CUSTOM_KERNELS=$compile_custom_kernels for Ascend repo '$repo_path'"
+  fi
+  if [[ "$compile_custom_kernels" == "0" ]]; then
+    log "Using Ascend lightweight plugin mode: COMPILE_CUSTOM_KERNELS=0, --no-deps"
+  else
+    log "Using Ascend custom-kernel mode: COMPILE_CUSTOM_KERNELS=$compile_custom_kernels"
+  fi
+
+  run_with_heartbeat \
+    "installing editable package from $repo_path" \
+    run_pip_install_in_env "$ENV_NAME" \
+      "COMPILE_CUSTOM_KERNELS=$compile_custom_kernels" \
+      "TORCH_DEVICE_BACKEND_AUTOLOAD=0" \
+      "LD_LIBRARY_PATH=$build_ld_library_path" \
+      -- "${pip_args[@]}"
+
+  persist_ascend_lightweight_mode_in_conda_env "$compile_custom_kernels"
+
+  if [[ "$compile_custom_kernels" == "0" ]]; then
+    return 0
+  fi
+
+  if validate_ascend_custom_op_in_env "$ENV_NAME"; then
+    log "Verified Ascend custom op import in '$ENV_NAME'"
+    return 0
+  fi
+
+  log "Ascend custom op validation failed; attempting RUNPATH repair"
+  if repair_ascend_custom_op_runpath_in_env "$ENV_NAME" && validate_ascend_custom_op_in_env "$ENV_NAME"; then
+    log "Verified Ascend custom op import in '$ENV_NAME' after RUNPATH repair"
+    return 0
+  fi
+
+  log "Warning: Ascend custom op validation is still failing in '$ENV_NAME'"
+  return 12
 }
 
 persist_conda_env_var() {
@@ -254,7 +498,7 @@ persist_ascend_lightweight_mode_in_conda_env() {
   local compile_custom_kernels="$1"
 
   persist_conda_env_var "$ENV_NAME" "COMPILE_CUSTOM_KERNELS" "$compile_custom_kernels"
-  log "Persisted COMPILE_CUSTOM_KERNELS=$compile_custom_kernels to conda env '$ENV_NAME' for Ascend lightweight startup. Reactivate the environment to apply it in new shells."
+  log "Persisted COMPILE_CUSTOM_KERNELS=$compile_custom_kernels to conda env '$ENV_NAME' for Ascend plugin installs. Reactivate the environment to apply it in new shells."
 }
 
 read_positive_int_env_with_fallback() {
@@ -774,23 +1018,17 @@ install_editable_repo_into_env() {
       return 11
     fi
 
-    # vllm-ascend documents editable installs with --no-build-isolation to
-    # avoid torch/torch-npu resolver conflicts in the temporary build env.
-    # Align quickstart with scripts/install_local_ascend_plugin.sh so local
-    # plugin installation does not require the full custom-kernel toolchain.
-    ensure_pip_package_in_env "$ENV_NAME" "setuptools-scm>=8"
-    # Keep lightweight mode runnable without pulling the full optional dependency set.
-    ensure_pip_package_in_env "$ENV_NAME" "decorator"
-    ensure_pip_package_in_env "$ENV_NAME" "scipy"
-    pip_args=(-v --no-build-isolation --no-deps -e "$repo_path")
+    if install_ascend_repo_into_env "$repo_path" "$compile_custom_kernels"; then
+      return 0
+    fi
 
-    log "Installing editable package from: $repo_path"
-    log "Using lightweight Ascend plugin mode: COMPILE_CUSTOM_KERNELS=$compile_custom_kernels, --no-deps"
-    run_with_heartbeat \
-      "installing editable package from $repo_path" \
-      run_pip_install_in_env "$ENV_NAME" "COMPILE_CUSTOM_KERNELS=$compile_custom_kernels" "TORCH_DEVICE_BACKEND_AUTOLOAD=0" -- "${pip_args[@]}"
-    persist_ascend_lightweight_mode_in_conda_env "$compile_custom_kernels"
-    return 0
+    if [[ "$compile_custom_kernels" != "0" ]] && ! ascend_compile_custom_kernels_configured_explicitly; then
+      log "Ascend custom-kernel install failed in auto mode; falling back to lightweight plugin mode"
+      install_ascend_repo_into_env "$repo_path" "0"
+      return $?
+    fi
+
+    return 12
   fi
 
   if repo_prefers_no_build_isolation "$repo_path"; then

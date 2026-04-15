@@ -1,23 +1,10 @@
 /*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+ * Description: hccl_alltoallvc hccl test
  */
 
 #include "hccl_alltoallvc_rootinfo_test.h"
 #include "hccl_check_buf_init.h"
-#include <chrono>
-#include <thread>
 using namespace hccl;
 
 HcclTest* hccl::init_opbase_ptr(HcclTest* opbase)
@@ -133,11 +120,6 @@ int HcclOpBaseAlltoallvcTest::hccl_op_base_test()
     ACLCHECK(aclrtMallocHost((void**)&host_buf, malloc_kSize));
     hccl_host_buf_init(host_buf, data->count, dtype, rank_id + 1);
     ACLCHECK(aclrtMemcpy((void*)send_buff, malloc_kSize, (void*)host_buf, malloc_kSize, ACL_MEMCPY_HOST_TO_DEVICE));
-    bool isCcuSched = (accelerator_config == 0 || accelerator_config == 6);
-    if (only_device_exec_time && !(isCcuSched && data->data_size >= 128*1024*1024)) {
-        ACLCHECK(aclrtStreamWaitEvent(stream, sync_event));
-        ACLCHECK(aclrtResetEvent(sync_event, stream));
-    }
 
     for (int j = 0; j < warmup_iters; ++j) {
         HCCLCHECK(HcclAlltoAllVC((void*)send_buff, send_count_matrix, (HcclDataType)dtype,
@@ -150,11 +132,6 @@ int HcclOpBaseAlltoallvcTest::hccl_op_base_test()
                                  (void*)recv_buff, (HcclDataType)dtype, hccl_comm, stream));
     }
     ACLCHECK(aclrtRecordEvent(end_event, stream));
-    if (only_device_exec_time) {
-        int sleepTime = 50 +warmup_iters * 2 + iters * 2;
-        std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
-        ACLCHECK(aclrtRecordEvent(sync_event, sync_stream));
-    }
     ACLCHECK(aclrtSynchronizeStream(stream));
 
     float time;

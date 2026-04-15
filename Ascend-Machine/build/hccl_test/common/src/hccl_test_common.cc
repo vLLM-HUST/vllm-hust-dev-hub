@@ -1,17 +1,6 @@
 /*
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Description: test common
  */
 
 #include <string.h>
@@ -281,15 +270,13 @@ struct option HcclTest::longopts[] = {{"op", required_argument, 0, 'o'},
     {"npus", required_argument, 0, 'p'},
     {"help", no_argument, 0, 'h'},
     {"zero_copy", required_argument, 0, 'z'},
-    {"nslb", required_argument, 0, 's'},
-    {"onlydevicetime", required_argument, 0, 't'}
-};
+    {"nslb", required_argument, 0, 's'}};
 
 void HcclTest::print_help()
 {
     printf("USAGE: ./test \n\t");
     if (IsSupport910_95()) {
-        printf("[-a --accelerator <default/host_ts/aicpu_ts/aiv/aiv_only/ccu_ms/ccu_sched>] \n\t");
+        printf("[-a --accelerator <default/ccu/aiv/aicpu_ts/hostcpu_ts/aicpu>] \n\t");
     }
     printf("[-b,--minbytes <min size in bytes>] \n\t"
            "[-e,--maxbytes <max size in bytes>] \n\t"
@@ -304,7 +291,6 @@ void HcclTest::print_help()
            "[-p,--npus <npus used for one node>] \n\t"
            "[-z,--zero_copy  0:disabled 1:enabled.] \n\t"
            "[-s,--nslb  0:disabled 1:enabled.] \n\t"
-           "[-t, --onlydevicetime 0:disabled 1:enabled. When -t is 1,-n and -w must be less than or equal to 100, not support aicpu_ts.] \n\t"
            "[-h,--help]\n");
     return;
 }
@@ -373,32 +359,6 @@ int HcclTest::check_data_count()
     return 0;
 }
 
-int HcclTest::check_only_device_exec_time()
-{
-    if (only_device_exec_time != 1 && only_device_exec_time != 0) {
-        printf("Error: [-t,--onlydevicetime] is invalid, onlydevicetime should be 0 or 1\n");
-        return -1;
-    }
-
-    if (only_device_exec_time == 1 && warmup_iters > 100) {
-        printf("Error: [-w,--warmup_iters] is invalid, onlydevicetime is 1, but warmup_iters > 100, "
-            "warmup_iters must be less than or equal to 100, now warmup_iters is %d\n", warmup_iters);
-        return -1;
-    }
-
-    if (only_device_exec_time == 1 && iters > 100) {
-        printf("Error: [-n,--iters] is invalid, onlydevicetime is 1, but iters > 100, "
-            "iters must be less than or equal to 100, now iters is %d\n", iters);
-        return -1;
-    }
-
-    if (only_device_exec_time == 1 && accelerator_config == 2) {
-        printf("Error: [-a,--accelerator_config] is invalid, onlydevicetime is 1, but accelerator_config is aicpu_ts\n");
-        return -1;
-    }
-    return 0;
-}
-
 int HcclTest::check_cmd_line()
 {
     int ret = 0;
@@ -456,11 +416,7 @@ int HcclTest::check_cmd_line()
             dev_count);
         return -1;
     }
-
-    if (check_only_device_exec_time() == -1) {
-        return -1;
-    }
-
+    
     return 0;
 }
 
@@ -483,33 +439,6 @@ int HcclTest::get_env_resource()
             printf("Check whether HCCL_TEST_PROFILING is 0 or 1.\n");
             return -1;
         }
-    }
-
-    // 获取HCCL BUFFER SIZE
-    const char *cclBuffSize_env = getenv("HCCL_BUFFSIZE");
-    if (cclBuffSize_env != NULL) {
-        hccl_buffsize = atoi(cclBuffSize_env);
-        u32 nLength = sal_str_len(cclBuffSize_env);
-        // 校验：入参为字符
-        for (u32 index = 0; index < nLength; index++) {
-            if (!isdigit(cclBuffSize_env[index])) {
-                printf("Check whether HCCL_BUFFSIZE is all digit.\n");
-                return -1;
-            }
-        }
-
-        // 校验：入参非0
-        if (hccl_buffsize == 0) {
-            printf("Check whether HCCL_BUFFSIZE is 0 or too big.\n");
-            return -1;
-        }
-
-        if (only_device_exec_time == 1 && hccl_buffsize <= 100) {
-            printf("Warning: -t is 1 but HCCL_BUFFSIZE <= 100MB , -t auto reset to 0!\n");
-            only_device_exec_time = 0;
-        }
-    } else {
-        hccl_buffsize = 200;
     }
 
     // 开启profiling
@@ -606,9 +535,6 @@ int HcclTest::parse_opt(int opt)
         case 's':
             nslb_flag = 1;
             break;
-        case 't':
-            only_device_exec_time = strtol_alldigit(optarg);
-            break;
         case 'h':
             print_help();
             return 1;
@@ -626,7 +552,7 @@ int HcclTest::parse_cmd_line(int argc, char *argv[])
     int longindex = 0;
     int ret = 0;
     long parsed;
-    while (-1 != (opt = getopt_long(argc, argv, "o:d:b:e:i:f:r:n:w:c:p:z:a:s:t:h", longopts, &longindex))) {
+    while (-1 != (opt = getopt_long(argc, argv, "o:d:b:e:i:f:r:n:w:c:p:z:a:s:h", longopts, &longindex))) {
         ret = parse_opt(opt);
         if (ret != 0) {
             return ret;
@@ -832,26 +758,8 @@ int HcclTest::device_init()
     ACLCHECK(aclrtCreateEvent(&end_event));
     // 创建任务stream
     ACLCHECK(aclrtCreateStream(&stream));
-    if (only_device_exec_time) {
-        ACLCHECK(aclrtCreateStream(&sync_stream));
-        ACLCHECK(aclrtCreateEventWithFlag(&sync_event, ACL_EVENT_SYNC));
-    }
     // 设置遇错即停
     ACLCHECK(aclrtSetStreamFailureMode(stream, 1));
-    return 0;
-}
-
-int HcclTest::init_hcclComm_without_nslb()
-{
-    if (accelerator_config > 0) {
-        HcclCommConfig config = {0};
-        HcclCommConfigInit(&config);
-        config.hcclWorldRankID = rank_id;
-        config.hcclOpExpansionMode = accelerator_config;
-        HCCLCHECK(HcclCommInitRootInfoConfig(rank_size, &comm_id, rank_id, &config, &hccl_comm));
-    } else {
-        HCCLCHECK(HcclCommInitRootInfo(rank_size, &comm_id, rank_id, &hccl_comm));
-    }
     return 0;
 }
 
@@ -911,7 +819,7 @@ int HcclTest::init_hcclComm()
         config.hcclOpExpansionMode = accelerator_config;
         HCCLCHECK(HcclCommInitRootInfoConfig(rank_size, &comm_id, rank_id, &config, &hccl_comm));
     } else {
-        init_hcclComm_without_nslb();
+        HCCLCHECK(HcclCommInitRootInfo(rank_size, &comm_id, rank_id, &hccl_comm));
     }
 
     return 0;
@@ -948,10 +856,6 @@ int HcclTest::opbase_test_by_data_size()
 int HcclTest::destory_hcclComm()
 {
     // 销毁任务流
-    if (only_device_exec_time) {
-        ACLCHECK(aclrtDestroyStream(sync_stream));
-        ACLCHECK(aclrtDestroyEvent(sync_event));
-    }
     ACLCHECK(aclrtDestroyStream(stream));
     ACLCHECK(aclrtDestroyEvent(start_event));
     ACLCHECK(aclrtDestroyEvent(end_event));

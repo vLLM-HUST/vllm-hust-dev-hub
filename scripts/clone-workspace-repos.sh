@@ -58,6 +58,10 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 
+run_git() {
+  env -u LD_LIBRARY_PATH git "$@"
+}
+
 if [[ ! "$CLONE_JOBS" =~ ^[1-9][0-9]*$ ]]; then
   echo "CLONE_JOBS must be a positive integer" >&2
   exit 1
@@ -153,7 +157,7 @@ maybe_sync_origin_remote_to_ssh() {
   local current_repo_path
   local desired_repo_path
 
-  current_repo_url="$(git -C "$destination" remote get-url origin 2>/dev/null || true)"
+  current_repo_url="$(run_git -C "$destination" remote get-url origin 2>/dev/null || true)"
   if [[ -z "$current_repo_url" || "$current_repo_url" == "$desired_repo_url" ]]; then
     return 0
   fi
@@ -164,7 +168,7 @@ maybe_sync_origin_remote_to_ssh() {
     return 0
   fi
 
-  git -C "$destination" remote set-url origin "$desired_repo_url"
+  run_git -C "$destination" remote set-url origin "$desired_repo_url"
   echo "[remote] $(basename -- "$destination") origin -> $desired_repo_url"
 }
 
@@ -179,13 +183,13 @@ queue_clone() {
     mkdir -p "$(dirname -- "$destination")"
   fi
   echo "[clone] $relative_path <- $repo_url"
-  if git clone "$repo_url" "$destination"; then
+  if run_git clone "$repo_url" "$destination"; then
     return 0
   fi
 
   if https_url="$(https_url_from_ssh_url "$repo_url")"; then
     echo "[clone] $relative_path SSH clone failed; retrying via $https_url"
-    git clone "$https_url" "$destination"
+    run_git clone "$https_url" "$destination"
   fi
 }
 
@@ -208,20 +212,20 @@ maybe_pull_updates() {
 
   maybe_sync_origin_remote_to_ssh "$destination" "$repo_url"
 
-  branch_name="$(git -C "$destination" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+  branch_name="$(run_git -C "$destination" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
   if [[ -z "$branch_name" || "$branch_name" == "HEAD" ]]; then
     echo "[skip] $relative_path has no active local branch"
     return 0
   fi
 
-  upstream_ref="$(git -C "$destination" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+  upstream_ref="$(run_git -C "$destination" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
   if [[ -z "$upstream_ref" ]]; then
     echo "[skip] $relative_path has no upstream tracking branch"
     return 0
   fi
 
-  git -C "$destination" fetch --quiet --prune
-  counts="$(git -C "$destination" rev-list --left-right --count "$branch_name...$upstream_ref")"
+  run_git -C "$destination" fetch --quiet --prune
+  counts="$(run_git -C "$destination" rev-list --left-right --count "$branch_name...$upstream_ref")"
   ahead_count="${counts%%$'\t'*}"
   behind_count="${counts##*$'\t'}"
 
@@ -232,7 +236,7 @@ maybe_pull_updates() {
 
   if ask_yes_no "Remote updates found for $relative_path (behind=$behind_count, ahead=$ahead_count). Pull with --ff-only?"; then
     echo "[pull] $relative_path"
-    git -C "$destination" pull --ff-only
+    run_git -C "$destination" pull --ff-only
   else
     echo "[skip] $relative_path remote updates not pulled"
   fi
