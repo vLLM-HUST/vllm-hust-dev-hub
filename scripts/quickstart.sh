@@ -234,12 +234,8 @@ default_ascend_compile_custom_kernels() {
     return 0
   fi
 
-  if [[ -n "${COMPILE_CUSTOM_KERNELS:-}" ]]; then
-    printf '%s\n' "$COMPILE_CUSTOM_KERNELS"
-    return 0
-  fi
-
-  if should_reconcile_ascend_runtime && ascend_custom_kernel_build_prereqs_present; then
+  if ascend_custom_kernel_build_prereqs_present \
+    && (should_reconcile_ascend_runtime || [[ -n "${SOC_VERSION:-}" ]]); then
     printf '1\n'
     return 0
   fi
@@ -264,7 +260,7 @@ ascend_custom_kernel_build_prereqs_present() {
 }
 
 ascend_compile_custom_kernels_configured_explicitly() {
-  [[ -n "${HUST_DEV_HUB_ASCEND_COMPILE_CUSTOM_KERNELS:-}" || -n "${COMPILE_CUSTOM_KERNELS:-}" ]]
+  [[ -n "${HUST_DEV_HUB_ASCEND_COMPILE_CUSTOM_KERNELS:-}" ]]
 }
 
 sanitize_ld_library_path_for_system_tools() {
@@ -354,17 +350,15 @@ ensure_ascend_build_python_packages() {
   ensure_pip_package_in_env "$ENV_NAME" "decorator"
   ensure_pip_package_in_env "$ENV_NAME" "scipy"
 
+  triton_ascend_spec="$(read_build_requirement_spec_from_pyproject "$repo_path" "triton-ascend" || true)"
+  ensure_pip_package_in_env "$ENV_NAME" "${triton_ascend_spec:-triton-ascend}"
+
   if [[ "$compile_custom_kernels" == "0" ]]; then
     return 0
   fi
 
   pybind11_spec="$(read_build_requirement_spec_from_pyproject "$repo_path" "pybind11" || true)"
   ensure_pip_package_in_env "$ENV_NAME" "${pybind11_spec:-pybind11}"
-
-  triton_ascend_spec="$(read_build_requirement_spec_from_pyproject "$repo_path" "triton-ascend" || true)"
-  if [[ -n "$triton_ascend_spec" ]]; then
-    ensure_pip_package_in_env "$ENV_NAME" "$triton_ascend_spec"
-  fi
 }
 
 ensure_ascend_catlass_submodule_ready() {
@@ -465,8 +459,6 @@ install_ascend_repo_into_env() {
       "LD_LIBRARY_PATH=$build_ld_library_path" \
       -- "${pip_args[@]}"
 
-  persist_ascend_lightweight_mode_in_conda_env "$compile_custom_kernels"
-
   if [[ "$compile_custom_kernels" == "0" ]]; then
     return 0
   fi
@@ -484,21 +476,6 @@ install_ascend_repo_into_env() {
 
   log "Warning: Ascend custom op validation is still failing in '$ENV_NAME'"
   return 12
-}
-
-persist_conda_env_var() {
-  local env_name="$1"
-  local key="$2"
-  local value="$3"
-
-  run_conda_cmd env config vars set -n "$env_name" "$key=$value" >/dev/null
-}
-
-persist_ascend_lightweight_mode_in_conda_env() {
-  local compile_custom_kernels="$1"
-
-  persist_conda_env_var "$ENV_NAME" "COMPILE_CUSTOM_KERNELS" "$compile_custom_kernels"
-  log "Persisted COMPILE_CUSTOM_KERNELS=$compile_custom_kernels to conda env '$ENV_NAME' for Ascend plugin installs. Reactivate the environment to apply it in new shells."
 }
 
 read_positive_int_env_with_fallback() {
@@ -1266,19 +1243,12 @@ _hust_dev_hub_save_var() {
   export "$saved_name"
 }
 
-if [[ -n "${CONDA_PREFIX:-}" && -d "${CONDA_PREFIX}/lib" ]]; then
-  if [[ -z "${HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH+x}" ]]; then
-    if [[ -n "${LD_LIBRARY_PATH:-}" ]]; then
-      export HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
-    else
-      export HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH="__UNSET__"
-    fi
+if [[ -z "${HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH+x}" ]]; then
+  if [[ -n "${LD_LIBRARY_PATH:-}" ]]; then
+    export HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
+  else
+    export HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH="__UNSET__"
   fi
-
-  case ":${LD_LIBRARY_PATH:-}:" in
-    *":${CONDA_PREFIX}/lib:"*) ;;
-    *) export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" ;;
-  esac
 fi
 
 for _hust_dev_hub_var in \
@@ -1301,6 +1271,31 @@ if command -v hust-ascend-manager >/dev/null 2>&1; then
   unset _hust_dev_hub_manager_env
 fi
 
+if [[ -n "${CONDA_PREFIX:-}" && -n "${LD_LIBRARY_PATH:-}" ]]; then
+  _hust_dev_hub_ld_entries=()
+  _hust_dev_hub_ld_filtered=()
+  IFS=':' read -r -a _hust_dev_hub_ld_entries <<< "$LD_LIBRARY_PATH"
+  for _hust_dev_hub_ld_entry in "${_hust_dev_hub_ld_entries[@]}"; do
+    if [[ -z "$_hust_dev_hub_ld_entry" ]]; then
+      continue
+    fi
+    case "$_hust_dev_hub_ld_entry" in
+      "$CONDA_PREFIX"|"$CONDA_PREFIX"/*)
+        continue
+        ;;
+    esac
+    _hust_dev_hub_ld_filtered+=("$_hust_dev_hub_ld_entry")
+  done
+
+  if (( ${#_hust_dev_hub_ld_filtered[@]} == 0 )); then
+    unset LD_LIBRARY_PATH
+  else
+    export LD_LIBRARY_PATH="$(IFS=':'; printf '%s' "${_hust_dev_hub_ld_filtered[*]}")"
+  fi
+
+  unset _hust_dev_hub_ld_entries _hust_dev_hub_ld_filtered _hust_dev_hub_ld_entry
+fi
+
 if [[ -z "${HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND+x}" ]]; then
   if [[ -n "${GIT_SSH_COMMAND:-}" ]]; then
     export HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND="$GIT_SSH_COMMAND"
@@ -1309,7 +1304,7 @@ if [[ -z "${HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND+x}" ]]; then
   fi
 fi
 
-export GIT_SSH_COMMAND='env -u LD_LIBRARY_PATH /usr/bin/ssh'
+export GIT_SSH_COMMAND='env -u LD_LIBRARY_PATH -u PYTHONPATH ssh'
 
 if [[ -z "${HUST_DEV_HUB_SAVED_PYTHONPATH+x}" ]]; then
   if [[ -n "${PYTHONPATH:-}" ]]; then
