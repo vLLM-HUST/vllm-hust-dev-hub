@@ -19,6 +19,7 @@ DO_INSTALL=0
 INSTALL_MODE="install"
 INSTALL_SCOPE="core"
 MENU_CONFIRMED=0
+UPDATE_BASHRC=0
 BASHRC_BEGIN="# >>> vllm-hust-dev-hub auto-activate >>>"
 BASHRC_END="# <<< vllm-hust-dev-hub auto-activate <<<"
 CONDA_MAIN_CHANNEL="https://repo.anaconda.com/pkgs/main"
@@ -42,6 +43,10 @@ CONDA_BIN=""
 CONDA_BASE=""
 BROKEN_CONDA_PREFIX=""
 
+if [[ "${HUST_DEV_HUB_UPDATE_BASHRC:-0}" == "1" ]]; then
+  UPDATE_BASHRC=1
+fi
+
 print_help() {
   cat <<'EOF'
 用法: bash scripts/quickstart.sh [选项]
@@ -55,6 +60,7 @@ print_help() {
   --all                    执行 clone + conda + install(core)。
   --env-name NAME          conda 环境名 (默认: vllm-hust-dev)。
   --python VERSION         conda 环境 Python 版本 (默认: 3.11)。
+  --update-bashrc          更新 ~/.bashrc，在新交互 shell 自动激活 conda 环境。
   -y, --yes                非交互模式；容器公钥可通过 VLLM_HUST_CONTAINER_PUBKEY 传入。
   -h, --help               显示本帮助。
 
@@ -822,6 +828,8 @@ create_or_update_conda_env() {
   install_workspace_repos_into_env "refresh" "$INSTALL_SCOPE" "with-runtime-reconcile"
   report_vllm_cli_status "$ENV_NAME" || true
 
+  maybe_update_bashrc_auto_activate_env
+
   log "Conda env ready: $ENV_NAME"
   log "Activate with: conda activate $ENV_NAME"
 }
@@ -1101,7 +1109,7 @@ install_workspace_repos_into_env() {
     return 2
   fi
 
-  configure_bashrc_auto_activate_env
+  configure_conda_env_library_hooks
 
   if [[ "$install_mode" != "install" && "$install_mode" != "refresh" ]]; then
     echo "Invalid install mode: $install_mode" >&2
@@ -1251,6 +1259,14 @@ if [[ -z "${HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH+x}" ]]; then
   fi
 fi
 
+if [[ -z "${HUST_DEV_HUB_SAVED_PATH+x}" ]]; then
+  if [[ -n "${PATH:-}" ]]; then
+    export HUST_DEV_HUB_SAVED_PATH="$PATH"
+  else
+    export HUST_DEV_HUB_SAVED_PATH="__UNSET__"
+  fi
+fi
+
 for _hust_dev_hub_var in \
   ASCEND_HOME_PATH \
   ASCEND_OPP_PATH \
@@ -1263,12 +1279,17 @@ for _hust_dev_hub_var in \
   _hust_dev_hub_save_var "$_hust_dev_hub_var"
 done
 
-if command -v hust-ascend-manager >/dev/null 2>&1; then
+if [[ "${HUST_DEV_HUB_ENABLE_MANAGER_ENV_HOOK:-0}" == "1" ]] \
+  && command -v hust-ascend-manager >/dev/null 2>&1; then
   _hust_dev_hub_manager_env="$(hust-ascend-manager env --shell 2>/dev/null || true)"
   if [[ -n "$_hust_dev_hub_manager_env" ]]; then
-    eval "$_hust_dev_hub_manager_env"
+    _hust_dev_hub_manager_env_filtered="$(printf '%s\n' "$_hust_dev_hub_manager_env" | \
+      grep -E '^[[:space:]]*export[[:space:]]+(ASCEND_HOME_PATH|ASCEND_OPP_PATH|ASCEND_AICPU_PATH|TORCH_DEVICE_BACKEND_AUTOLOAD|HUST_ASCEND_RUNTIME_VERSION|HUST_ASCEND_HAS_STREAM_ATTR|HUST_ASCEND_OPP_OVERLAY_ROOT|HUST_ATB_SET_ENV|LD_LIBRARY_PATH|PYTHONPATH)=' || true)"
+    if [[ -n "$_hust_dev_hub_manager_env_filtered" ]]; then
+      eval "$_hust_dev_hub_manager_env_filtered"
+    fi
   fi
-  unset _hust_dev_hub_manager_env
+  unset _hust_dev_hub_manager_env _hust_dev_hub_manager_env_filtered
 fi
 
 if [[ -n "${CONDA_PREFIX:-}" && -n "${LD_LIBRARY_PATH:-}" ]]; then
@@ -1361,6 +1382,15 @@ if [[ -n "${HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH+x}" ]]; then
     export LD_LIBRARY_PATH="$HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH"
   fi
   unset HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH
+fi
+
+if [[ -n "${HUST_DEV_HUB_SAVED_PATH+x}" ]]; then
+  if [[ "$HUST_DEV_HUB_SAVED_PATH" == "__UNSET__" ]]; then
+    unset PATH
+  else
+    export PATH="$HUST_DEV_HUB_SAVED_PATH"
+  fi
+  unset HUST_DEV_HUB_SAVED_PATH
 fi
 
 if [[ -n "${HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND+x}" ]]; then
@@ -1465,6 +1495,15 @@ configure_bashrc_auto_activate_env() {
   rm -f "$tmp_file"
   log "Updated ~/.bashrc to auto-activate conda env '$ENV_NAME' in interactive shells"
   log "Current shell is unchanged. Open a new interactive shell or run: conda deactivate && conda activate $ENV_NAME"
+}
+
+maybe_update_bashrc_auto_activate_env() {
+  if (( UPDATE_BASHRC == 1 )); then
+    configure_bashrc_auto_activate_env
+    return 0
+  fi
+
+  log "Skip ~/.bashrc auto-activate update by default. Use --update-bashrc or menu option 7 when you need persistent auto-activation."
 }
 
 ask_yes_no() {
@@ -1602,6 +1641,9 @@ parse_args() {
         PYTHON_VERSION="$2"
         shift
         ;;
+      --update-bashrc)
+        UPDATE_BASHRC=1
+        ;;
       -y|--yes)
         AUTO_YES=1
         ;;
@@ -1651,6 +1693,7 @@ main() {
   if (( DO_INSTALL == 1 )) && (( DO_CONDA == 0 )); then
     if (( MENU_CONFIRMED == 1 )) || (( AUTO_YES == 1 )) || ask_yes_no "现在执行本地仓库 '$INSTALL_MODE' 安装步骤吗？"; then
       install_workspace_repos_into_env "$INSTALL_MODE" "$INSTALL_SCOPE" "without-runtime-reconcile"
+      maybe_update_bashrc_auto_activate_env
     fi
   fi
 

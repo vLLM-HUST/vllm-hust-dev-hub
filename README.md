@@ -88,7 +88,13 @@ If `conda` is not available yet, `quickstart.sh` can automatically call the Mini
 
 If a copied or relocated Miniconda prefix is present but unusable because its embedded interpreter path is stale, `quickstart.sh` now ignores that broken executable, backs up the bad prefix, and reinstalls Miniconda before continuing.
 
-After conda environment setup, `quickstart.sh` also updates `~/.bashrc` so new interactive shells auto-activate the selected environment.
+By default, `quickstart.sh` does not update `~/.bashrc`.
+
+If you want new interactive shells to auto-activate the selected conda environment, opt in explicitly with either:
+
+- `bash scripts/quickstart.sh --update-bashrc ...`
+- interactive menu option `7` (only update `~/.bashrc` auto-activation)
+- `export HUST_DEV_HUB_UPDATE_BASHRC=1` before running quickstart
 
 Quickstart now installs conda activate/deactivate hooks for the selected environment. On each `conda activate`, the hook probes `https://hf-mirror.com` and auto-sets `HF_ENDPOINT=https://hf-mirror.com` when reachable; otherwise it unsets `HF_ENDPOINT` so Hugging Face clients fall back to the default upstream endpoint.
 
@@ -99,6 +105,16 @@ export HUST_DEV_HUB_DISABLE_HF_MIRROR_AUTOSET=1
 ```
 
 The hook preserves your previous `HF_ENDPOINT` and restores it on `conda deactivate`.
+
+To keep activation deterministic and avoid unintended environment drift, the conda activate hook does not apply `hust-ascend-manager env --shell` by default.
+
+If you need manager-provided env exports during `conda activate`, opt in with:
+
+```bash
+export HUST_DEV_HUB_ENABLE_MANAGER_ENV_HOOK=1
+```
+
+When enabled, the hook only applies a conservative allowlist of Ascend runtime variables (`ASCEND_*`, `TORCH_DEVICE_BACKEND_AUTOLOAD`, `HUST_ASCEND_*`, plus `LD_LIBRARY_PATH` / `PYTHONPATH`) and still restores saved values on `conda deactivate`.
 
 When conda supports channel Terms of Service checks, `quickstart.sh` only asks for acceptance when it actually needs to create a new conda environment. Install-only flows on an existing environment do not prompt for Anaconda channel ToS. It also isolates conda operations from a pre-existing `PYTHONPATH` to reduce Miniconda runtime warnings.
 
