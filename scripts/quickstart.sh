@@ -19,8 +19,11 @@ DO_INSTALL=0
 INSTALL_MODE="install"
 INSTALL_SCOPE="core"
 MENU_CONFIRMED=0
+UPDATE_BASHRC=0
 BASHRC_BEGIN="# >>> vllm-hust-dev-hub auto-activate >>>"
 BASHRC_END="# <<< vllm-hust-dev-hub auto-activate <<<"
+BASHRC_CONDA_INIT_BEGIN="# >>> vllm-hust-dev-hub conda-init >>>"
+BASHRC_CONDA_INIT_END="# <<< vllm-hust-dev-hub conda-init <<<"
 CONDA_MAIN_CHANNEL="https://repo.anaconda.com/pkgs/main"
 CONDA_R_CHANNEL="https://repo.anaconda.com/pkgs/r"
 CONDA_ASCEND_CHANNEL="https://repo.huaweicloud.com/ascend/repos/conda/"
@@ -42,6 +45,10 @@ CONDA_BIN=""
 CONDA_BASE=""
 BROKEN_CONDA_PREFIX=""
 
+if [[ "${HUST_DEV_HUB_UPDATE_BASHRC:-0}" == "1" ]]; then
+  UPDATE_BASHRC=1
+fi
+
 print_help() {
   cat <<'EOF'
 用法: bash scripts/quickstart.sh [选项]
@@ -55,6 +62,7 @@ print_help() {
   --all                    执行 clone + conda + install(core)。
   --env-name NAME          conda 环境名 (默认: vllm-hust-dev)。
   --python VERSION         conda 环境 Python 版本 (默认: 3.11)。
+  --update-bashrc          更新 ~/.bashrc，在新交互 shell 自动激活 conda 环境。
   -y, --yes                非交互模式；容器公钥可通过 VLLM_HUST_CONTAINER_PUBKEY 传入。
   -h, --help               显示本帮助。
 
@@ -234,27 +242,248 @@ default_ascend_compile_custom_kernels() {
     return 0
   fi
 
-  if [[ -n "${COMPILE_CUSTOM_KERNELS:-}" ]]; then
-    printf '%s\n' "$COMPILE_CUSTOM_KERNELS"
+  if ascend_custom_kernel_build_prereqs_present \
+    && (should_reconcile_ascend_runtime || [[ -n "${SOC_VERSION:-}" ]]); then
+    printf '1\n'
     return 0
   fi
 
   printf '0\n'
 }
 
-persist_conda_env_var() {
-  local env_name="$1"
-  local key="$2"
-  local value="$3"
+ascend_custom_kernel_build_prereqs_present() {
+  local tool
 
-  run_conda_cmd env config vars set -n "$env_name" "$key=$value" >/dev/null
+  for tool in git cmake make; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+      return 1
+    fi
+  done
+
+  if ! command -v g++ >/dev/null 2>&1 && ! command -v c++ >/dev/null 2>&1; then
+    return 1
+  fi
+
+  return 0
 }
 
-persist_ascend_lightweight_mode_in_conda_env() {
-  local compile_custom_kernels="$1"
+ascend_compile_custom_kernels_configured_explicitly() {
+  [[ -n "${HUST_DEV_HUB_ASCEND_COMPILE_CUSTOM_KERNELS:-}" ]]
+}
 
-  persist_conda_env_var "$ENV_NAME" "COMPILE_CUSTOM_KERNELS" "$compile_custom_kernels"
-  log "Persisted COMPILE_CUSTOM_KERNELS=$compile_custom_kernels to conda env '$ENV_NAME' for Ascend lightweight startup. Reactivate the environment to apply it in new shells."
+sanitize_ld_library_path_for_system_tools() {
+  local original_ld_library_path="$1"
+  local path_entries=()
+  local filtered_entries=()
+  local entry
+
+  if [[ -z "$original_ld_library_path" ]]; then
+    return 0
+  fi
+
+  IFS=':' read -r -a path_entries <<< "$original_ld_library_path"
+  for entry in "${path_entries[@]}"; do
+    if [[ -z "$entry" ]]; then
+      continue
+    fi
+
+    case "$entry" in
+      /opt/conda|/opt/conda/*)
+        continue
+        ;;
+    esac
+
+    if [[ -n "${CONDA_PREFIX:-}" ]]; then
+      case "$entry" in
+        "$CONDA_PREFIX"|"$CONDA_PREFIX"/*)
+          continue
+          ;;
+      esac
+    fi
+
+    if [[ -n "$CONDA_BASE" ]]; then
+      case "$entry" in
+        "$CONDA_BASE"|"$CONDA_BASE"/*)
+          continue
+          ;;
+      esac
+    fi
+
+    filtered_entries+=("$entry")
+  done
+
+  if (( ${#filtered_entries[@]} == 0 )); then
+    return 0
+  fi
+
+  local joined_entries
+  joined_entries="$(IFS=':'; printf '%s' "${filtered_entries[*]}")"
+  printf '%s\n' "$joined_entries"
+}
+
+run_system_command_with_sanitized_ld_library_path() {
+  local sanitized_ld_library_path
+
+  sanitized_ld_library_path="$(sanitize_ld_library_path_for_system_tools "${LD_LIBRARY_PATH:-}")"
+  if [[ -n "$sanitized_ld_library_path" ]]; then
+    env LD_LIBRARY_PATH="$sanitized_ld_library_path" "$@"
+    return 0
+  fi
+
+  env -u LD_LIBRARY_PATH "$@"
+}
+
+read_build_requirement_spec_from_pyproject() {
+  local repo_path="$1"
+  local package_name="$2"
+
+  awk -v package_name="$package_name" '
+    match($0, /"[^"]+"/) {
+      spec = substr($0, RSTART + 1, RLENGTH - 2)
+      if (spec ~ ("^" package_name "([<>=!~].*)?$")) {
+        print spec
+        exit
+      }
+    }
+  ' "$repo_path/pyproject.toml"
+}
+
+ensure_ascend_build_python_packages() {
+  local repo_path="$1"
+  local compile_custom_kernels="$2"
+  local pybind11_spec
+  local triton_ascend_spec
+
+  ensure_pip_package_in_env "$ENV_NAME" "setuptools-scm>=8"
+  ensure_pip_package_in_env "$ENV_NAME" "decorator"
+  ensure_pip_package_in_env "$ENV_NAME" "scipy"
+
+  triton_ascend_spec="$(read_build_requirement_spec_from_pyproject "$repo_path" "triton-ascend" || true)"
+  ensure_pip_package_in_env "$ENV_NAME" "${triton_ascend_spec:-triton-ascend}"
+
+  if [[ "$compile_custom_kernels" == "0" ]]; then
+    return 0
+  fi
+
+  pybind11_spec="$(read_build_requirement_spec_from_pyproject "$repo_path" "pybind11" || true)"
+  ensure_pip_package_in_env "$ENV_NAME" "${pybind11_spec:-pybind11}"
+}
+
+ensure_ascend_catlass_submodule_ready() {
+  local repo_path="$1"
+  local submodule_relative_path="csrc/third_party/catlass"
+  local submodule_path="$repo_path/$submodule_relative_path"
+
+  if [[ -e "$submodule_path/CMakeLists.txt" || -e "$submodule_path/README.md" ]]; then
+    return 0
+  fi
+
+  if [[ ! -d "$repo_path/.git" && ! -f "$repo_path/.git" ]]; then
+    log "Warning: skipping $submodule_relative_path initialization because '$repo_path' has no git metadata"
+    return 0
+  fi
+
+  log "Initializing Ascend submodule: $submodule_relative_path"
+  run_system_command_with_sanitized_ld_library_path \
+    git -C "$repo_path" submodule update --init --recursive "$submodule_relative_path"
+}
+
+validate_ascend_custom_op_in_env() {
+  local env_name="$1"
+
+  run_conda_env_cmd "$env_name" env TORCH_DEVICE_BACKEND_AUTOLOAD=0 python - <<'PY'
+import torch  # noqa: F401
+from vllm_ascend.utils import enable_custom_op
+
+raise SystemExit(0 if enable_custom_op() else 1)
+PY
+}
+
+find_ascend_custom_op_extension_in_env() {
+  local env_name="$1"
+
+  run_conda_env_cmd "$env_name" python - <<'PY'
+import glob
+import os
+
+import vllm_ascend
+
+package_dir = os.path.dirname(vllm_ascend.__file__)
+matches = sorted(glob.glob(os.path.join(package_dir, "vllm_ascend_C*.so")))
+if matches:
+    print(matches[0])
+PY
+}
+
+repair_ascend_custom_op_runpath_in_env() {
+  local env_name="$1"
+  local extension_path
+  local runpath='$ORIGIN:$ORIGIN/lib:$ORIGIN/_cann_ops_custom/vendors/vllm-ascend/op_api/lib'
+
+  if ! command -v patchelf >/dev/null 2>&1; then
+    log "Warning: patchelf is unavailable, skipping Ascend custom-op RUNPATH repair"
+    return 1
+  fi
+
+  extension_path="$(find_ascend_custom_op_extension_in_env "$env_name")"
+  if [[ -z "$extension_path" || ! -f "$extension_path" ]]; then
+    log "Warning: could not locate vllm_ascend_C extension for RUNPATH repair"
+    return 1
+  fi
+
+  log "Repairing RUNPATH for Ascend custom op: $extension_path"
+  patchelf --set-rpath "$runpath" "$extension_path"
+}
+
+install_ascend_repo_into_env() {
+  local repo_path="$1"
+  local compile_custom_kernels="$2"
+  local pip_args=(-v --no-build-isolation --no-deps -e "$repo_path")
+  local build_ld_library_path
+
+  ensure_ascend_build_python_packages "$repo_path" "$compile_custom_kernels"
+
+  if [[ "$compile_custom_kernels" != "0" ]]; then
+    ensure_ascend_catlass_submodule_ready "$repo_path"
+  fi
+
+  build_ld_library_path="$(sanitize_ld_library_path_for_system_tools "${LD_LIBRARY_PATH:-}")"
+
+  log "Installing editable package from: $repo_path"
+  if ! ascend_compile_custom_kernels_configured_explicitly; then
+    log "Auto-selected COMPILE_CUSTOM_KERNELS=$compile_custom_kernels for Ascend repo '$repo_path'"
+  fi
+  if [[ "$compile_custom_kernels" == "0" ]]; then
+    log "Using Ascend lightweight plugin mode: COMPILE_CUSTOM_KERNELS=0, --no-deps"
+  else
+    log "Using Ascend custom-kernel mode: COMPILE_CUSTOM_KERNELS=$compile_custom_kernels"
+  fi
+
+  run_with_heartbeat \
+    "installing editable package from $repo_path" \
+    run_pip_install_in_env "$ENV_NAME" \
+      "COMPILE_CUSTOM_KERNELS=$compile_custom_kernels" \
+      "TORCH_DEVICE_BACKEND_AUTOLOAD=0" \
+      "LD_LIBRARY_PATH=$build_ld_library_path" \
+      -- "${pip_args[@]}"
+
+  if [[ "$compile_custom_kernels" == "0" ]]; then
+    return 0
+  fi
+
+  if validate_ascend_custom_op_in_env "$ENV_NAME"; then
+    log "Verified Ascend custom op import in '$ENV_NAME'"
+    return 0
+  fi
+
+  log "Ascend custom op validation failed; attempting RUNPATH repair"
+  if repair_ascend_custom_op_runpath_in_env "$ENV_NAME" && validate_ascend_custom_op_in_env "$ENV_NAME"; then
+    log "Verified Ascend custom op import in '$ENV_NAME' after RUNPATH repair"
+    return 0
+  fi
+
+  log "Warning: Ascend custom op validation is still failing in '$ENV_NAME'"
+  return 12
 }
 
 read_positive_int_env_with_fallback() {
@@ -452,6 +681,7 @@ get_conda_base() {
 }
 
 ensure_conda_available() {
+  local bootstrap_mode="${1:-allow-bootstrap}"
   local conda_bin
   local install_prefix=""
 
@@ -463,6 +693,11 @@ ensure_conda_available() {
       CONDA_BASE="$(resolve_conda_root_from_bin "$conda_bin")"
     fi
     return 0
+  fi
+
+  if [[ "$bootstrap_mode" == "no-bootstrap" ]]; then
+    log "conda is not available and auto-install is disabled for this flow."
+    return 1
   fi
 
   log "conda was not found or is unusable."
@@ -600,6 +835,9 @@ create_or_update_conda_env() {
 
   install_workspace_repos_into_env "refresh" "$INSTALL_SCOPE" "with-runtime-reconcile"
   report_vllm_cli_status "$ENV_NAME" || true
+
+  configure_bashrc_conda_init
+  maybe_update_bashrc_auto_activate_env
 
   log "Conda env ready: $ENV_NAME"
   log "Activate with: conda activate $ENV_NAME"
@@ -774,23 +1012,17 @@ install_editable_repo_into_env() {
       return 11
     fi
 
-    # vllm-ascend documents editable installs with --no-build-isolation to
-    # avoid torch/torch-npu resolver conflicts in the temporary build env.
-    # Align quickstart with scripts/install_local_ascend_plugin.sh so local
-    # plugin installation does not require the full custom-kernel toolchain.
-    ensure_pip_package_in_env "$ENV_NAME" "setuptools-scm>=8"
-    # Keep lightweight mode runnable without pulling the full optional dependency set.
-    ensure_pip_package_in_env "$ENV_NAME" "decorator"
-    ensure_pip_package_in_env "$ENV_NAME" "scipy"
-    pip_args=(-v --no-build-isolation --no-deps -e "$repo_path")
+    if install_ascend_repo_into_env "$repo_path" "$compile_custom_kernels"; then
+      return 0
+    fi
 
-    log "Installing editable package from: $repo_path"
-    log "Using lightweight Ascend plugin mode: COMPILE_CUSTOM_KERNELS=$compile_custom_kernels, --no-deps"
-    run_with_heartbeat \
-      "installing editable package from $repo_path" \
-      run_pip_install_in_env "$ENV_NAME" "COMPILE_CUSTOM_KERNELS=$compile_custom_kernels" "TORCH_DEVICE_BACKEND_AUTOLOAD=0" -- "${pip_args[@]}"
-    persist_ascend_lightweight_mode_in_conda_env "$compile_custom_kernels"
-    return 0
+    if [[ "$compile_custom_kernels" != "0" ]] && ! ascend_compile_custom_kernels_configured_explicitly; then
+      log "Ascend custom-kernel install failed in auto mode; falling back to lightweight plugin mode"
+      install_ascend_repo_into_env "$repo_path" "0"
+      return $?
+    fi
+
+    return 12
   fi
 
   if repo_prefers_no_build_isolation "$repo_path"; then
@@ -879,14 +1111,17 @@ install_workspace_repos_into_env() {
   local install_scope="${2:-$INSTALL_SCOPE}"
   local reconcile_mode="${3:-without-runtime-reconcile}"
 
-  ensure_conda_available
+  if ! ensure_conda_available "no-bootstrap"; then
+    log "Install-only flow requires an existing conda setup. Run quickstart with --conda (or --all) first."
+    return 2
+  fi
 
   if ! conda_env_exists; then
     log "Conda env '$ENV_NAME' does not exist yet. Create it first with --conda."
     return 2
   fi
 
-  configure_bashrc_auto_activate_env
+  configure_conda_env_library_hooks
 
   if [[ "$install_mode" != "install" && "$install_mode" != "refresh" ]]; then
     echo "Invalid install mode: $install_mode" >&2
@@ -1028,19 +1263,20 @@ _hust_dev_hub_save_var() {
   export "$saved_name"
 }
 
-if [[ -n "${CONDA_PREFIX:-}" && -d "${CONDA_PREFIX}/lib" ]]; then
-  if [[ -z "${HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH+x}" ]]; then
-    if [[ -n "${LD_LIBRARY_PATH:-}" ]]; then
-      export HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
-    else
-      export HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH="__UNSET__"
-    fi
+if [[ -z "${HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH+x}" ]]; then
+  if [[ -n "${LD_LIBRARY_PATH:-}" ]]; then
+    export HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
+  else
+    export HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH="__UNSET__"
   fi
+fi
 
-  case ":${LD_LIBRARY_PATH:-}:" in
-    *":${CONDA_PREFIX}/lib:"*) ;;
-    *) export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" ;;
-  esac
+if [[ -z "${HUST_DEV_HUB_SAVED_PATH+x}" ]]; then
+  if [[ -n "${PATH:-}" ]]; then
+    export HUST_DEV_HUB_SAVED_PATH="$PATH"
+  else
+    export HUST_DEV_HUB_SAVED_PATH="__UNSET__"
+  fi
 fi
 
 for _hust_dev_hub_var in \
@@ -1055,12 +1291,42 @@ for _hust_dev_hub_var in \
   _hust_dev_hub_save_var "$_hust_dev_hub_var"
 done
 
-if command -v hust-ascend-manager >/dev/null 2>&1; then
+if [[ "${HUST_DEV_HUB_ENABLE_MANAGER_ENV_HOOK:-0}" == "1" ]] \
+  && command -v hust-ascend-manager >/dev/null 2>&1; then
   _hust_dev_hub_manager_env="$(hust-ascend-manager env --shell 2>/dev/null || true)"
   if [[ -n "$_hust_dev_hub_manager_env" ]]; then
-    eval "$_hust_dev_hub_manager_env"
+    _hust_dev_hub_manager_env_filtered="$(printf '%s\n' "$_hust_dev_hub_manager_env" | \
+      grep -E '^[[:space:]]*export[[:space:]]+(ASCEND_HOME_PATH|ASCEND_OPP_PATH|ASCEND_AICPU_PATH|TORCH_DEVICE_BACKEND_AUTOLOAD|HUST_ASCEND_RUNTIME_VERSION|HUST_ASCEND_HAS_STREAM_ATTR|HUST_ASCEND_OPP_OVERLAY_ROOT|HUST_ATB_SET_ENV|LD_LIBRARY_PATH|PYTHONPATH)=' || true)"
+    if [[ -n "$_hust_dev_hub_manager_env_filtered" ]]; then
+      eval "$_hust_dev_hub_manager_env_filtered"
+    fi
   fi
-  unset _hust_dev_hub_manager_env
+  unset _hust_dev_hub_manager_env _hust_dev_hub_manager_env_filtered
+fi
+
+if [[ -n "${CONDA_PREFIX:-}" && -n "${LD_LIBRARY_PATH:-}" ]]; then
+  _hust_dev_hub_ld_entries=()
+  _hust_dev_hub_ld_filtered=()
+  IFS=':' read -r -a _hust_dev_hub_ld_entries <<< "$LD_LIBRARY_PATH"
+  for _hust_dev_hub_ld_entry in "${_hust_dev_hub_ld_entries[@]}"; do
+    if [[ -z "$_hust_dev_hub_ld_entry" ]]; then
+      continue
+    fi
+    case "$_hust_dev_hub_ld_entry" in
+      "$CONDA_PREFIX"|"$CONDA_PREFIX"/*)
+        continue
+        ;;
+    esac
+    _hust_dev_hub_ld_filtered+=("$_hust_dev_hub_ld_entry")
+  done
+
+  if (( ${#_hust_dev_hub_ld_filtered[@]} == 0 )); then
+    unset LD_LIBRARY_PATH
+  else
+    export LD_LIBRARY_PATH="$(IFS=':'; printf '%s' "${_hust_dev_hub_ld_filtered[*]}")"
+  fi
+
+  unset _hust_dev_hub_ld_entries _hust_dev_hub_ld_filtered _hust_dev_hub_ld_entry
 fi
 
 if [[ -z "${HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND+x}" ]]; then
@@ -1071,7 +1337,7 @@ if [[ -z "${HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND+x}" ]]; then
   fi
 fi
 
-export GIT_SSH_COMMAND='env -u LD_LIBRARY_PATH /usr/bin/ssh'
+export GIT_SSH_COMMAND='env -u LD_LIBRARY_PATH -u PYTHONPATH ssh'
 
 if [[ -z "${HUST_DEV_HUB_SAVED_PYTHONPATH+x}" ]]; then
   if [[ -n "${PYTHONPATH:-}" ]]; then
@@ -1130,6 +1396,15 @@ if [[ -n "${HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH+x}" ]]; then
   unset HUST_DEV_HUB_SAVED_LD_LIBRARY_PATH
 fi
 
+if [[ -n "${HUST_DEV_HUB_SAVED_PATH+x}" ]]; then
+  if [[ "$HUST_DEV_HUB_SAVED_PATH" == "__UNSET__" ]]; then
+    unset PATH
+  else
+    export PATH="$HUST_DEV_HUB_SAVED_PATH"
+  fi
+  unset HUST_DEV_HUB_SAVED_PATH
+fi
+
 if [[ -n "${HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND+x}" ]]; then
   if [[ "$HUST_DEV_HUB_SAVED_GIT_SSH_COMMAND" == "__UNSET__" ]]; then
     unset GIT_SSH_COMMAND
@@ -1184,13 +1459,9 @@ EOF
   log "Installed conda activate hooks for '$ENV_NAME' runtime libraries"
 }
 
-configure_bashrc_auto_activate_env() {
+resolve_conda_sh_path() {
   local conda_base
   local conda_sh
-  local bashrc_file
-  local tmp_file
-
-  configure_conda_env_library_hooks
 
   conda_base="${CONDA_BASE:-}"
   if [[ -z "$conda_base" ]]; then
@@ -1202,9 +1473,61 @@ configure_bashrc_auto_activate_env() {
   if [[ ! -d "$conda_base" ]]; then
     conda_base="$HOME/miniconda3"
   fi
-  conda_sh="$conda_base/etc/profile.d/conda.sh"
 
-  if [[ ! -f "$conda_sh" ]]; then
+  conda_sh="$conda_base/etc/profile.d/conda.sh"
+  if [[ -f "$conda_sh" ]]; then
+    printf '%s\n' "$conda_sh"
+    return 0
+  fi
+
+  return 1
+}
+
+configure_bashrc_conda_init() {
+  local conda_sh
+  local bashrc_file
+  local tmp_file
+
+  conda_sh="$(resolve_conda_sh_path || true)"
+  if [[ -z "$conda_sh" || ! -f "$conda_sh" ]]; then
+    log "Skip ~/.bashrc conda init setup because conda.sh was not found"
+    return 0
+  fi
+
+  bashrc_file="$HOME/.bashrc"
+  touch "$bashrc_file"
+  tmp_file="$(mktemp)"
+
+  awk -v begin="$BASHRC_CONDA_INIT_BEGIN" -v end="$BASHRC_CONDA_INIT_END" '
+    $0 == begin {skip=1; next}
+    $0 == end {skip=0; next}
+    !skip {print}
+  ' "$bashrc_file" > "$tmp_file"
+
+  {
+    cat "$tmp_file"
+    printf '\n%s\n' "$BASHRC_CONDA_INIT_BEGIN"
+    printf 'if [[ "$-" == *i* ]] && [[ -f "%s" ]]; then\n' "$conda_sh"
+    printf '  source "%s"\n' "$conda_sh"
+    printf 'fi\n'
+    printf '%s\n' "$BASHRC_CONDA_INIT_END"
+  } > "$bashrc_file"
+
+  rm -f "$tmp_file"
+  log "Updated ~/.bashrc to initialize conda command in new interactive shells"
+  log "Current shell is unchanged. Open a new interactive shell or run: source $conda_sh"
+}
+
+configure_bashrc_auto_activate_env() {
+  local conda_sh
+  local bashrc_file
+  local tmp_file
+
+  configure_conda_env_library_hooks
+
+  conda_sh="$(resolve_conda_sh_path || true)"
+
+  if [[ -z "$conda_sh" || ! -f "$conda_sh" ]]; then
     log "Skip bashrc auto-activate setup because conda.sh was not found: $conda_sh"
     return 0
   fi
@@ -1232,6 +1555,15 @@ configure_bashrc_auto_activate_env() {
   rm -f "$tmp_file"
   log "Updated ~/.bashrc to auto-activate conda env '$ENV_NAME' in interactive shells"
   log "Current shell is unchanged. Open a new interactive shell or run: conda deactivate && conda activate $ENV_NAME"
+}
+
+maybe_update_bashrc_auto_activate_env() {
+  if (( UPDATE_BASHRC == 1 )); then
+    configure_bashrc_auto_activate_env
+    return 0
+  fi
+
+  log "Skip ~/.bashrc auto-activate update by default. Use --update-bashrc or menu option 7 when you need persistent auto-activation."
 }
 
 ask_yes_no() {
@@ -1320,6 +1652,7 @@ EOF
       ;;
     7)
       ensure_conda_available
+      configure_bashrc_conda_init
       configure_bashrc_auto_activate_env
       log "已完成 ~/.bashrc 自动激活设置更新。"
       exit 0
@@ -1368,6 +1701,9 @@ parse_args() {
       --python)
         PYTHON_VERSION="$2"
         shift
+        ;;
+      --update-bashrc)
+        UPDATE_BASHRC=1
         ;;
       -y|--yes)
         AUTO_YES=1
@@ -1418,6 +1754,7 @@ main() {
   if (( DO_INSTALL == 1 )) && (( DO_CONDA == 0 )); then
     if (( MENU_CONFIRMED == 1 )) || (( AUTO_YES == 1 )) || ask_yes_no "现在执行本地仓库 '$INSTALL_MODE' 安装步骤吗？"; then
       install_workspace_repos_into_env "$INSTALL_MODE" "$INSTALL_SCOPE" "without-runtime-reconcile"
+      maybe_update_bashrc_auto_activate_env
     fi
   fi
 
