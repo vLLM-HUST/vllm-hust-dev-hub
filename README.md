@@ -8,6 +8,8 @@ It also ships with a bootstrap script that can clone the common workspace reposi
 
 Team onboarding reference: [docs/team-onboarding.md](docs/team-onboarding.md)
 
+GitHub Actions self-hosted runner reference: [docs/github-actions-self-hosted-runner.md](docs/github-actions-self-hosted-runner.md)
+
 ## Included Repositories
 
 The default workspace includes these repositories when they exist under `/home/<your name>`:
@@ -32,6 +34,7 @@ The default workspace includes these repositories when they exist under `/home/<
 - `scripts/ascend-official-container.sh`: start, reuse, and enter the official Ascend vLLM container from the host.
 - `scripts/enable-existing-container-ssh.sh`: fallback helper for an already-running custom container when you need to turn on direct SSH access and surface mounted repos under the login home.
 - `scripts/offline-sync-instance.sh`: prepare offline wheels and model assets on the local machine, sync them through the bastion host into the docker instance, then install local repos inside the container without public network access.
+- `scripts/setup-github-actions-runner.sh`: install and manage a rootless GitHub Actions self-hosted runner as a user-level systemd service.
 
 ## Usage
 
@@ -185,6 +188,11 @@ bash scripts/ascend-official-container.sh exec -- python -c 'import torch; impor
 
 # helper for SSH RemoteCommand: open the container directly after SSH login
 bash scripts/ssh-into-ascend-container.sh
+
+# configure a Linux self-hosted GitHub Actions runner for an org or repo
+export GITHUB_RUNNER_URL=https://github.com/intellistream
+export GITHUB_RUNNER_TOKEN=<temporary-registration-token>
+bash scripts/setup-github-actions-runner.sh install --labels train8,ascend
 ```
 
 For direct host-to-container development on the official Huawei image, use `scripts/ascend-official-container.sh`.
