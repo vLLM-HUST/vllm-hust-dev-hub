@@ -40,8 +40,25 @@ jobs:
           fetch-depth: 1
           path: vllm-hust-dev-hub
 
+      - name: Ensure conda is available
+        env:
+          HOME: ${{ github.workspace }}/.ci-home
+          XDG_CACHE_HOME: ${{ github.workspace }}/.ci-home/.cache
+          XDG_CONFIG_HOME: ${{ github.workspace }}/.ci-home/.config
+        run: |
+          mkdir -p "$HOME" "$XDG_CACHE_HOME" "$XDG_CONFIG_HOME"
+          if command -v conda >/dev/null 2>&1 || [[ -x "$HOME/miniconda3/bin/conda" ]]; then
+            exit 0
+          fi
+
+          bash scripts/install-miniconda.sh --yes --prefix "$HOME/miniconda3"
+          echo "$HOME/miniconda3/bin" >> "$GITHUB_PATH"
+
       - name: Run quickstart CI bootstrap and tests
         env:
+          HOME: ${{ github.workspace }}/.ci-home
+          XDG_CACHE_HOME: ${{ github.workspace }}/.ci-home/.cache
+          XDG_CONFIG_HOME: ${{ github.workspace }}/.ci-home/.config
           RUNNER_FLAVOR: ${{ matrix.runner_flavor }}
           PYTHON_VERSION: '3.11'
           INSTALL_SCOPE: full
