@@ -356,17 +356,18 @@ maybe_pull_updates() {
 # Prefer SSH URLs for fresh clones, with HTTPS fallback when SSH auth is unavailable.
 # Keep upstream comparison repos under reference-repos/ rather than as top-level siblings.
 REPOS=(
-  "ascend-runtime-manager|git@github.com:intellistream/ascend-runtime-manager.git"
-  "vllm-hust|git@github.com:intellistream/vllm-hust.git"
-  "vllm-hust-workstation|git@github.com:intellistream/vllm-hust-workstation.git"
-  "vllm-hust-website|git@github.com:intellistream/vllm-hust-website.git"
-  "vllm-hust-docs|git@github.com:intellistream/vllm-hust-docs.git"
-  "vllm-ascend-hust|git@github.com:intellistream/vllm-ascend-hust.git"
+  "ascend-runtime-manager|git@github.com:vLLM-HUST/ascend-runtime-manager.git"
+  "vllm-hust|git@github.com:vLLM-HUST/vllm-hust.git"
+  "vllm-hust-workstation|git@github.com:vLLM-HUST/vllm-hust-workstation.git"
+  "vllm-hust-website|git@github.com:vLLM-HUST/vllm-hust-website.git"
+  "vllm-hust-docs|git@github.com:vLLM-HUST/vllm-hust-docs.git"
+  "vllm-ascend-hust|git@github.com:vLLM-HUST/vllm-ascend-hust.git"
+  "vllm-hust-org-profile|git@github.com:vLLM-HUST/.github.git"
   "reference-repos/vllm|git@github.com:vllm-project/vllm.git"
   "reference-repos/sglang|git@github.com:sgl-project/sglang.git"
   "reference-repos/vllm-ascend|git@github.com:vllm-project/vllm-ascend.git"
-  "EvoScientist|git@github.com:intellistream/EvoScientist.git"
-  "vllm-hust-benchmark|git@github.com:intellistream/vllm-hust-benchmark.git"
+  "EvoScientist|git@github.com:vLLM-HUST/EvoScientist.git"
+  "vllm-hust-benchmark|git@github.com:vLLM-HUST/vllm-hust-benchmark.git"
 )
 
 parse_args "$@"

@@ -18,6 +18,7 @@ The default workspace includes these repositories when they exist under `/home/<
 - `vllm-hust-workstation`
 - `vllm-hust-website`
 - `vllm-hust-docs`
+- `vllm-hust-org-profile`
 - `vllm-ascend-hust`
 - `reference-repos/vllm`
 - `reference-repos/sglang`
@@ -28,6 +29,7 @@ The default workspace includes these repositories when they exist under `/home/<
 ## Files
 
 - `vllm-hust-dev-hub.code-workspace`: main multi-root workspace for VS Code.
+- `vllm-hust-org-profile`: local clone of the special `vLLM-HUST/.github` organization profile repository.
 - `scripts/clone-workspace-repos.sh`: clone the common workspace repositories in parallel.
 - `scripts/install-miniconda.sh`: download and install Miniconda into the current user's home directory.
 - `scripts/quickstart.sh`: interactive one-command bootstrap for clone + conda environment setup, plus menu option 6 for the official Ascend container and container SSH setup.
@@ -53,6 +55,8 @@ bash scripts/clone-workspace-repos.sh
 ```
 
 If a repository already exists locally, the clone script checks for remote updates and asks whether to run `git pull --ff-only`.
+
+Local workspace repositories now default to the `vLLM-HUST` GitHub organization, while upstream comparison repos remain under `reference-repos/*`.
 
 Upstream `reference-repos/*` clones are also confirmed interactively before cloning.
 
@@ -194,7 +198,7 @@ bash scripts/ascend-official-container.sh exec -- python -c 'import torch; impor
 bash scripts/ssh-into-ascend-container.sh
 
 # configure a Linux self-hosted GitHub Actions runner for an org or repo
-export GITHUB_RUNNER_URL=https://github.com/intellistream
+export GITHUB_RUNNER_URL=https://github.com/vLLM-HUST
 export GITHUB_RUNNER_TOKEN=<temporary-registration-token>
 bash scripts/setup-github-actions-runner.sh install --labels train8,ascend
 ```
