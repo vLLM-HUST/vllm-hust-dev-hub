@@ -41,6 +41,10 @@
       "path": "."
     },
     {
+      "name": "vLLM-HUST-org-profile",
+      "path": "../vllm-hust-org-profile"
+    },
+    {
       "name": "ascend-runtime-manager",
       "path": "../ascend-runtime-manager"
     },
