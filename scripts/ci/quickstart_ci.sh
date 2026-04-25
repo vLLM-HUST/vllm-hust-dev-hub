@@ -201,16 +201,12 @@ install_smoke_test_dependencies() {
 
 plugin_installed() {
   local conda_bin="$1"
+  # NOTE: conda run does not forward heredoc stdin to the child process.
+  # python - would receive empty input, run no code, and exit 0 unconditionally.
+  # Use python -c with an inline one-liner to avoid this.
   env HOME="$HOME" XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}" XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}" \
-    "$conda_bin" run -n "$ENV_NAME" python - <<'PY'
-from importlib.metadata import PackageNotFoundError, version
-
-try:
-    version("vllm-ascend-hust")
-except PackageNotFoundError:
-    raise SystemExit(1)
-raise SystemExit(0)
-PY
+    "$conda_bin" run -n "$ENV_NAME" \
+    python -c 'from importlib.metadata import version; version("vllm-ascend-hust")' 2>/dev/null
 }
 
 main() {
