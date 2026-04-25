@@ -1242,10 +1242,26 @@ repo_prefers_no_build_isolation() {
   [[ "$repo_path" == "$MANAGER_REPO" || "$repo_path" == "$WORKSPACE_ROOT/vllm-hust-benchmark" ]]
 }
 
+# Returns the optional extras suffix (e.g. "[ci-smoke]") to append to the
+# editable install path for a given repo.  Returns an empty string when no
+# extras are needed.
+repo_install_extras() {
+  local repo_path="$1"
+
+  # Always install ci-smoke extras for vllm-hust so that test dependencies
+  # (tblib, pytest-asyncio, pytest) are available in the dev environment
+  # without a separate manual step.
+  if [[ "$repo_path" == "$WORKSPACE_ROOT/vllm-hust" ]]; then
+    printf '[ci-smoke]'
+  fi
+}
+
 install_editable_repo_into_env() {
   local repo_path="$1"
   local reconcile_mode="${2:-without-runtime-reconcile}"
-  local pip_args=(-v -e "$repo_path")
+  local extras
+  extras="$(repo_install_extras "$repo_path")"
+  local pip_args=(-v -e "${repo_path}${extras}")
   local compile_custom_kernels
 
   compile_custom_kernels="$(default_ascend_compile_custom_kernels)"
