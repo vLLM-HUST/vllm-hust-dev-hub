@@ -1242,10 +1242,26 @@ repo_prefers_no_build_isolation() {
   [[ "$repo_path" == "$MANAGER_REPO" || "$repo_path" == "$WORKSPACE_ROOT/vllm-hust-benchmark" ]]
 }
 
+# Returns the optional extras suffix (e.g. "[ci-smoke]") to append to the
+# editable install path for a given repo.  Returns an empty string when no
+# extras are needed.
+repo_install_extras() {
+  local repo_path="$1"
+
+  # Always install ci-smoke extras for vllm-hust so that test dependencies
+  # (tblib, pytest-asyncio, pytest) are available in the dev environment
+  # without a separate manual step.
+  if [[ "$repo_path" == "$WORKSPACE_ROOT/vllm-hust" ]]; then
+    printf '[ci-smoke]'
+  fi
+}
+
 install_editable_repo_into_env() {
   local repo_path="$1"
   local reconcile_mode="${2:-without-runtime-reconcile}"
-  local pip_args=(-v -e "$repo_path")
+  local extras
+  extras="$(repo_install_extras "$repo_path")"
+  local pip_args=(-v -e "${repo_path}${extras}")
   local compile_custom_kernels
 
   compile_custom_kernels="$(default_ascend_compile_custom_kernels)"
@@ -1282,10 +1298,23 @@ install_editable_repo_into_env() {
     pip_args=(--no-build-isolation "${pip_args[@]}")
   fi
 
+  # When the CUDA toolkit (nvcc / CUDA_HOME) is absent but torch was built
+  # with CUDA support, vllm's setup.py would crash while resolving the nvcc
+  # version during metadata queries.  Setting VLLM_USE_PRECOMPILED=1 makes
+  # setup.py skip the nvcc lookup and append a "+precompiled" version suffix
+  # instead, which is safe for a source-editable development install.
+  local extra_build_env_args=()
+  if [[ -z "${CUDA_HOME:-}" ]] && ! command -v nvcc >/dev/null 2>&1; then
+    if [[ -z "${VLLM_USE_PRECOMPILED:-}" ]]; then
+      log "CUDA toolkit (nvcc/CUDA_HOME) not found; setting VLLM_USE_PRECOMPILED=1 for editable install of $repo_path"
+      extra_build_env_args+=("VLLM_USE_PRECOMPILED=1")
+    fi
+  fi
+
   log "Installing editable package from: $repo_path"
   run_with_heartbeat \
     "installing editable package from $repo_path" \
-    run_pip_install_in_env "$ENV_NAME" -- "${pip_args[@]}"
+    run_pip_install_in_env "$ENV_NAME" "${extra_build_env_args[@]}" -- "${pip_args[@]}"
 }
 
 should_reconcile_ascend_runtime() {

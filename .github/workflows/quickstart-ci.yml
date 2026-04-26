@@ -34,11 +34,34 @@ jobs:
         working-directory: vllm-hust-dev-hub
 
     steps:
-      - name: Checkout vllm-hust-dev-hub
+      - name: Prepare GitHub SSH key for self-hosted runner
+        if: matrix.runner_name == 'self-hosted'
+        env:
+          VLLM_HUST_CI_SSH_PRIVATE_KEY: ${{ secrets.VLLM_HUST_CI_SSH_PRIVATE_KEY }}
+        run: |
+          if [[ -z "${VLLM_HUST_CI_SSH_PRIVATE_KEY:-}" ]]; then
+            echo "Missing secrets.VLLM_HUST_CI_SSH_PRIVATE_KEY for self-hosted quickstart CI" >&2
+            exit 1
+          fi
+
+          install -d -m 700 "$GITHUB_WORKSPACE/.ssh"
+          printf '%s\n' "$VLLM_HUST_CI_SSH_PRIVATE_KEY" | tr -d '\r' > "$GITHUB_WORKSPACE/.ssh/id_ed25519"
+          chmod 600 "$GITHUB_WORKSPACE/.ssh/id_ed25519"
+
+      - name: Checkout vllm-hust-dev-hub (ubuntu)
+        if: matrix.runner_name != 'self-hosted'
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
           path: vllm-hust-dev-hub
+
+      - name: Checkout vllm-hust-dev-hub (self-hosted SSH)
+        if: matrix.runner_name == 'self-hosted'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          path: vllm-hust-dev-hub
+          ssh-key: ${{ secrets.VLLM_HUST_CI_SSH_PRIVATE_KEY }}
 
       - name: Ensure conda is available
         env:
@@ -65,8 +88,7 @@ jobs:
           PYTHON_VERSION: '3.11'
           INSTALL_SCOPE: full
           RESULTS_ROOT: ${{ github.workspace }}/ci-results
-          GITHUB_TOKEN: ${{ github.token }}
-          CI_GITHUB_TOKEN: ${{ secrets.VLLM_HUST_CLONE_TOKEN }}
+          CI_GITHUB_TOKEN: ${{ matrix.runner_name != 'self-hosted' && secrets.VLLM_HUST_CLONE_TOKEN || '' }}
         run: bash scripts/ci/quickstart_ci.sh
 
       - name: Upload quickstart CI artifacts

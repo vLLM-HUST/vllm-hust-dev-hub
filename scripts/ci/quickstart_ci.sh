@@ -192,25 +192,43 @@ run_pytest_step() {
 
 install_smoke_test_dependencies() {
   local conda_bin="$1"
+  local extra_env_args=()
+
+  # vllm-hust's build system invokes nvcc during metadata resolution.
+  # On runners without a CUDA toolkit (e.g., ubuntu-latest), this causes the
+  # editable re-install to fail and can unregister the existing editable
+  # install, making vllm unimportable for subsequent test steps.
+  # Mirror the same guard used in quickstart.sh install_editable_repo_into_env.
+  if [[ -z "${CUDA_HOME:-}" ]] && ! command -v nvcc >/dev/null 2>&1; then
+    extra_env_args+=("VLLM_USE_PRECOMPILED=1")
+  fi
+
+  # Install build-system deps that --no-build-isolation does not auto-install.
+  # setuptools-scm and wheel are listed in vllm-hust's [build-system] requires
+  # but are only auto-installed when build isolation is active. Ensure they are
+  # present in the env before the editable reinstall.
+  env HOME="$HOME" XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}" XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}" TORCH_DEVICE_BACKEND_AUTOLOAD=0 \
+    "${extra_env_args[@]}" \
+    "$conda_bin" run -n "$ENV_NAME" \
+    python -m pip install -q setuptools-scm wheel packaging ninja jinja2 || true
 
   run_step \
     "install smoke test deps" \
     env HOME="$HOME" XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}" XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}" TORCH_DEVICE_BACKEND_AUTOLOAD=0 \
+    "${extra_env_args[@]}" \
     "$conda_bin" run -n "$ENV_NAME" python -m pip install -e "$WORKSPACE_ROOT/vllm-hust[ci-smoke]" --no-build-isolation
 }
 
 plugin_installed() {
   local conda_bin="$1"
-  env HOME="$HOME" XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}" XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}" \
-    "$conda_bin" run -n "$ENV_NAME" python - <<'PY'
-from importlib.metadata import PackageNotFoundError, version
-
-try:
-    version("vllm-ascend-hust")
-except PackageNotFoundError:
-    raise SystemExit(1)
-raise SystemExit(0)
-PY
+  # NOTE: conda run may not reliably propagate non-zero exit codes on some conda versions.
+  # To avoid false positives, resolve the env's Python binary directly and call it without conda run.
+  local env_prefix
+  env_prefix="$("$conda_bin" run -n "$ENV_NAME" python -c 'import sys; print(sys.prefix)' 2>/dev/null)" || return 1
+  [[ -n "$env_prefix" ]] || return 1
+  local env_python="$env_prefix/bin/python"
+  [[ -x "$env_python" ]] || return 1
+  "$env_python" -c 'from importlib.metadata import version; version("vllm-ascend-hust")' 2>/dev/null
 }
 
 main() {
@@ -229,7 +247,7 @@ main() {
 
   if (( bootstrap_ok == 0 )); then
     skip_step "python smoke" "quickstart bootstrap failed"
-    skip_step "vllm help" "quickstart bootstrap failed"
+    skip_step "vllm cli smoke" "quickstart bootstrap failed"
     skip_step "runtime check" "quickstart bootstrap failed"
     skip_step "ascend-runtime-manager tests" "quickstart bootstrap failed"
     skip_step "vllm-hust-benchmark tests" "quickstart bootstrap failed"
@@ -248,9 +266,9 @@ main() {
   fi
 
   if ! run_step \
-    "vllm help" \
+    "vllm cli smoke" \
     env HOME="$HOME" XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}" XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}" \
-    "$conda_bin" run -n "$ENV_NAME" bash -lc 'if command -v vllm-hust >/dev/null 2>&1; then TORCH_DEVICE_BACKEND_AUTOLOAD=0 vllm-hust --help; else TORCH_DEVICE_BACKEND_AUTOLOAD=0 vllm --help; fi'; then
+    "$conda_bin" run -n "$ENV_NAME" python -c 'from vllm.entrypoints.cli.main import _resolve_cli_version; print(_resolve_cli_version())'; then
     SCRIPT_EXIT_CODE=1
   fi
 
