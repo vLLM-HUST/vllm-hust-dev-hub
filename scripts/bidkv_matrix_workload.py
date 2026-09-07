@@ -20,6 +20,30 @@ PARAGRAPH = (
     "Cache scheduling evidence preserves request identity, progress, fairness, "
     "and deterministic recomputation under pressure. "
 )
+SPECIAL_TOKEN_MARKERS = ("<|im_start|>", "<|im_end|>", "<|endoftext|>")
+SEMANTIC_TERMS = ("request", "cache", "schedul", "preempt", "progress", "fair")
+
+
+def output_validity(output: str, exact_expected: str | None) -> dict[str, object]:
+    normalized = output.strip()
+    special_token_leaks = [
+        marker for marker in SPECIAL_TOKEN_MARKERS if marker in output
+    ]
+    semantic_hits = [term for term in SEMANTIC_TERMS if term in normalized.lower()]
+    return {
+        "exact_expected": exact_expected,
+        "exact_match": exact_expected is None or normalized == exact_expected,
+        "special_token_leaks": special_token_leaks,
+        "semantic_terms_observed": semantic_hits,
+        "semantic_valid": (
+            bool(normalized)
+            and not special_token_leaks
+            and (
+                exact_expected is not None
+                or (len(normalized) >= 32 and len(semantic_hits) >= 2)
+            )
+        ),
+    }
 
 
 def percentile(values: list[float], fraction: float) -> float | None:
@@ -101,6 +125,8 @@ async def request(
     index: int,
     delay: float,
     max_tokens: int,
+    *,
+    exact_expected: str | None = None,
 ) -> dict[str, object]:
     await asyncio.sleep(delay)
     started = time.perf_counter()
@@ -117,7 +143,7 @@ async def request(
             "temperature": 0,
             "seed": 7,
             "max_tokens": max_tokens,
-            "ignore_eos": True,
+            "ignore_eos": exact_expected is None,
             "stream": True,
             "stream_options": {"include_usage": True},
         }
@@ -144,6 +170,7 @@ async def request(
         error = f"{type(exc).__name__}: {exc}"
     ended = time.perf_counter()
     output = "".join(content)
+    validity = output_validity(output, exact_expected)
     completion = int(usage.get("completion_tokens", 0))
     ttft = None if first is None else first - started
     tpot = (
@@ -163,6 +190,8 @@ async def request(
         "latency_s": ended - started,
         "output_sha256": hashlib.sha256(output.encode()).hexdigest(),
         "output_prefix": output[:120],
+        "output_text": output,
+        **validity,
     }
 
 
@@ -182,6 +211,11 @@ async def main_async(args: argparse.Namespace) -> dict[str, object]:
                     index,
                     delays[index],
                     args.max_tokens,
+                    exact_expected=(
+                        f"BIDKV_MATRIX_WARMUP_{index}"
+                        if args.workload == "correctness"
+                        else None
+                    ),
                 )
             )
             for index, prompt in enumerate(prompts)
@@ -201,6 +235,7 @@ async def main_async(args: argparse.Namespace) -> dict[str, object]:
                 -1,
                 0,
                 16,
+                exact_expected="BIDKV_MATRIX_CANCEL_RECOVERY_OK",
             )
     wall = time.perf_counter() - started
     completed = [

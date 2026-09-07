@@ -9,6 +9,7 @@ the original production service. NPU4-7 are checked, never selected.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shlex
 import subprocess
@@ -24,6 +25,7 @@ SAGE = Path("/home/shuhao/sage-mate")
 MANAGE = SAGE / "manage.sh"
 WORKLOAD = ROOT / "scripts/bidkv_matrix_workload.py"
 ANALYZER = ROOT / "scripts/analyze_bidkv_matrix.py"
+INDEXER = ROOT / "scripts/index_bidkv_evidence.py"
 MATRIX = ROOT / "config/bidkv-tp4-graph-matrix.json"
 UNIT = "sage-mate-vllm-engine.service"
 CONTAINER_LOG = Path(
@@ -111,6 +113,37 @@ def health_ready(timeout_s: int = 900) -> None:
 def snapshot(command: list[str], path: Path) -> None:
     result = run(command, check=False)
     path.write_text(result.stdout + result.stderr)
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def source_snapshot() -> dict[str, object]:
+    files = (
+        "scripts/bidkv_matrix_workload.py",
+        "scripts/run_bidkv_matrix.py",
+        "config/bidkv-tp4-graph-matrix.json",
+    )
+    commit = subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip()
+    dirty = subprocess.run(
+        ["git", "-C", str(ROOT), "status", "--porcelain", "--", *files],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.splitlines()
+    return {
+        "status": "captured-at-suite-start",
+        "commit": commit,
+        "dirty_state": "dirty" if dirty else "clean",
+        "dirty_paths": dirty,
+        "files": {relative: file_sha256(ROOT / relative) for relative in files},
+    }
 
 
 def metrics(path: Path) -> None:
@@ -308,6 +341,9 @@ def main() -> None:
     (args.output / "started-at.txt").write_text(
         datetime.now(timezone.utc).isoformat() + "\n"
     )
+    (args.output / "source-snapshot.json").write_text(
+        json.dumps(source_snapshot(), indent=2) + "\n"
+    )
     snapshot(["npu-smi", "info"], args.output / "npu-preflight.txt")
     snapshot(
         [str(MANAGE), "status", "--with-vllm-engine", "--json"],
@@ -348,6 +384,11 @@ def main() -> None:
             snapshot(["npu-smi", "info"], args.output / "npu-after-restore.txt")
             (args.output / "finished-at.txt").write_text(
                 datetime.now(timezone.utc).isoformat() + "\n"
+            )
+            run(
+                [sys.executable, str(INDEXER), str(args.output)],
+                check=False,
+                output=args.output / "evidence-index.log",
             )
 
 

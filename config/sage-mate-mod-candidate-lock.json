@@ -18,6 +18,8 @@
       "qualified_models": ["Qwen3.8-27B"],
       "tested_models": ["Qwen3.8-27B"],
       "functional_compatibility": {"status": "passed", "scope": "Qwen3.8-27B / Ascend TP4 / FULL_DECODE_ONLY graph"},
+      "matrix_coverage": {"declared_stage_1_cells": 13, "completed_stage_1_cells": 5, "pending_stage_1_cells": 8, "status": "incomplete"},
+      "correctness_requalification": {"status": "pending-fresh-run", "legacy_short_gate": "invalid-workload-special-token-leak-in-both-arms", "legacy_long_gate": "incomplete-prefix-only", "cross_arm_long_exact_required": false},
       "effectiveness_qualifications": [
         {"status": "not-beneficial-in-tested-cell", "scope": "homogeneous-long / concurrency=4 / 1-GiB KV pressure / n=1", "evidence": "/data/codex-build-artifacts/sage-mate-bidkv-main-requal-20260904T195737Z"},
         {"status": "inconclusive", "scope": "homogeneous-long / concurrency=4 / 1-GiB KV pressure / n=3", "reason": "matched 95% confidence intervals overlap", "evidence": "/data/codex-build-artifacts/sage-mate-bidkv-main-requal-20260904T195737Z/requal-r2"},

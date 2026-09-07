@@ -14,6 +14,9 @@ from pathlib import Path
 SAMPLE = re.compile(
     r"^(?P<name>[^#\s{]+)(?P<labels>\{[^}]*\})?\s+(?P<value>[-+0-9.eE]+)$"
 )
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_MATRIX = ROOT / "config/bidkv-tp4-graph-matrix.json"
+SPECIAL_TOKEN_MARKERS = ("<|im_start|>", "<|im_end|>", "<|endoftext|>")
 
 
 def metric(path: Path, name: str, label: str | None = None) -> float:
@@ -47,6 +50,37 @@ def arm(directory: Path, candidate: bool) -> dict[str, object]:
         str(item["index"]): item["output_sha256"]
         for item in payload["requests"]
         if item["status_code"] == 200 and not item["error"] and not item["cancelled"]
+    }
+    completed = [
+        item
+        for item in payload["requests"]
+        if item["status_code"] == 200 and not item["error"] and not item["cancelled"]
+    ]
+    full_outputs_retained = all("output_text" in item for item in completed)
+    semantic_results = []
+    for item in completed:
+        inspected = item.get("output_text", item.get("output_prefix", ""))
+        leaks = [marker for marker in SPECIAL_TOKEN_MARKERS if marker in inspected]
+        semantic_results.append(
+            {
+                "index": item["index"],
+                "scope": "full-output" if "output_text" in item else "prefix-only",
+                "special_token_leaks": leaks,
+                "semantic_valid": item.get("semantic_valid"),
+            }
+        )
+    result["long_output_validity"] = {
+        "status": (
+            "passed"
+            if full_outputs_retained
+            and semantic_results
+            and all(item["semantic_valid"] is True for item in semantic_results)
+            else "failed"
+            if full_outputs_retained
+            else "incomplete-retained-prefix-only"
+        ),
+        "full_outputs_retained": full_outputs_retained,
+        "requests": semantic_results,
     }
     recovery = payload.get("recovery")
     result["recovery_ok"] = recovery is None or (
@@ -136,7 +170,71 @@ def run_directories(root: Path) -> list[tuple[int, Path]]:
     ]
 
 
-def analyze(root: Path) -> dict[str, object]:
+def short_gate(cell_dir: Path) -> dict[str, object]:
+    arms = {}
+    for arm_name in ("baseline", "candidate"):
+        request = json.loads((cell_dir / arm_name / "warmup.json").read_text())[
+            "requests"
+        ][0]
+        inspected = request.get("output_text", request.get("output_prefix", ""))
+        leaks = [marker for marker in SPECIAL_TOKEN_MARKERS if marker in inspected]
+        expected = request.get("exact_expected")
+        arms[arm_name] = {
+            "hash": request["output_sha256"],
+            "scope": "full-output" if "output_text" in request else "prefix-only",
+            "exact_expected": expected,
+            "exact_match": request.get("exact_match"),
+            "special_token_leaks": leaks,
+        }
+    cross_arm_equal = arms["baseline"]["hash"] == arms["candidate"]["hash"]
+    legacy_leak = bool(
+        arms["baseline"]["special_token_leaks"]
+        or arms["candidate"]["special_token_leaks"]
+    )
+    if legacy_leak:
+        status = "invalid-workload-special-token-leak"
+    elif all(arms[name]["exact_match"] is True for name in arms):
+        status = "passed"
+    elif all(arms[name]["exact_match"] is None for name in arms):
+        status = "incomplete-legacy-hash-only"
+    else:
+        status = "failed"
+    return {"status": status, "cross_arm_hash_equal": cross_arm_equal, "arms": arms}
+
+
+def determinism(repeats: list[dict[str, object]], arm_name: str) -> dict[str, object]:
+    by_index: dict[str, list[str]] = {}
+    for run in repeats:
+        arm_data = run[arm_name]
+        assert isinstance(arm_data, dict)
+        hashes = arm_data["output_hashes_by_index"]
+        assert isinstance(hashes, dict)
+        for index, value in hashes.items():
+            by_index.setdefault(index, []).append(str(value))
+    per_index = {
+        index: {
+            "samples": len(values),
+            "unique_hashes": len(set(values)),
+            "deterministic": len(values) > 1 and len(set(values)) == 1,
+        }
+        for index, values in sorted(by_index.items(), key=lambda item: int(item[0]))
+    }
+    eligible = [item for item in per_index.values() if item["samples"] > 1]
+    return {
+        "status": (
+            "passed"
+            if eligible and all(item["deterministic"] for item in eligible)
+            else "failed"
+            if eligible
+            else "insufficient-repetitions"
+        ),
+        "deterministic_indices": sum(bool(item["deterministic"]) for item in eligible),
+        "eligible_indices": len(eligible),
+        "per_index": per_index,
+    }
+
+
+def analyze(root: Path, matrix_path: Path = DEFAULT_MATRIX) -> dict[str, object]:
     samples: dict[str, list[dict[str, object]]] = {}
     for repetition, cell_dir in run_directories(root):
         if (
@@ -177,14 +275,7 @@ def analyze(root: Path) -> dict[str, object]:
                 "baseline": baseline,
                 "candidate": candidate,
                 "candidate_relative_percent": changes,
-                "short_output_hash_equal": (
-                    json.loads((cell_dir / "baseline/warmup.json").read_text())[
-                        "requests"
-                    ][0]["output_sha256"]
-                    == json.loads((cell_dir / "candidate/warmup.json").read_text())[
-                        "requests"
-                    ][0]["output_sha256"]
-                ),
+                "short_exact_match_gate": short_gate(cell_dir),
                 "long_output_hash_pairs": len(paired_hashes),
                 "long_output_hash_matches": sum(
                     baseline["output_hashes_by_index"][index]
@@ -193,8 +284,27 @@ def analyze(root: Path) -> dict[str, object]:
                 ),
             }
         )
+    matrix = json.loads(matrix_path.read_text())
+    declared_cells = {cell["id"]: cell for cell in matrix["cells"]}
     cells = []
-    for cell, repeats in sorted(samples.items()):
+    for cell in declared_cells:
+        repeats = samples.get(cell, [])
+        if not repeats:
+            cells.append(
+                {
+                    "cell": cell,
+                    "execution_status": "blocked-protected-resource",
+                    "execution_reason": (
+                        "not present in retained suite; re-execution is blocked while "
+                        "NPU0-3 serve unchanged Sage Mate production and NPU4-7 are reserved"
+                    ),
+                    "declared_configuration": declared_cells[cell],
+                    "repetitions": [],
+                    "effectiveness_qualification": "pending",
+                    "qualification_reason": "no real-online paired run exists",
+                }
+            )
+            continue
         throughput = [
             float(run["candidate_relative_percent"]["output_throughput_tokens_s"])
             for run in repeats
@@ -207,9 +317,8 @@ def analyze(root: Path) -> dict[str, object]:
         policy_exercised = all(
             float(run["candidate"]["policy_calls"]) > 0 for run in repeats
         )
-        functional_clean = all(
-            run["short_output_hash_equal"]
-            and int(run["baseline"]["failed_or_starved"]) == 0
+        runtime_safety_clean = all(
+            int(run["baseline"]["failed_or_starved"]) == 0
             and int(run["candidate"]["failed_or_starved"]) == 0
             and bool(run["baseline"]["recovery_ok"])
             and bool(run["candidate"]["recovery_ok"])
@@ -230,8 +339,10 @@ def analyze(root: Path) -> dict[str, object]:
         reason = (
             "fewer than three paired repetitions; interval qualification is not allowed"
         )
-        if len(repeats) >= 3 and not functional_clean:
-            reason = "functional/correctness/policy-safety gates failed; effectiveness is not classifiable"
+        if len(repeats) >= 3 and not runtime_safety_clean:
+            reason = (
+                "runtime/policy-safety gates failed; effectiveness is not classifiable"
+            )
         elif len(repeats) >= 3 and not policy_exercised:
             reason = "the workload did not invoke the policy in every repeat; no BidKV effectiveness claim is allowed"
         elif len(repeats) >= 3:
@@ -257,26 +368,86 @@ def analyze(root: Path) -> dict[str, object]:
         cells.append(
             {
                 "cell": cell,
+                "execution_status": "completed",
                 "repetitions": repeats,
                 "paired_intervals_percent": {
                     "output_throughput": throughput_interval,
                     "latency_p95": p95_latency_interval,
                 },
-                "functional_clean": functional_clean,
+                "runtime_safety_clean": runtime_safety_clean,
+                "short_exact_match_gate": {
+                    "status": (
+                        "passed"
+                        if all(
+                            run["short_exact_match_gate"]["status"] == "passed"
+                            for run in repeats
+                        )
+                        else "invalid-workload-special-token-leak"
+                        if any(
+                            run["short_exact_match_gate"]["status"]
+                            == "invalid-workload-special-token-leak"
+                            for run in repeats
+                        )
+                        else "incomplete"
+                    ),
+                    "per_repetition": [
+                        run["short_exact_match_gate"] for run in repeats
+                    ],
+                },
+                "long_semantic_validity_gate": {
+                    arm_name: {
+                        "status": (
+                            "passed"
+                            if all(
+                                run[arm_name]["long_output_validity"]["status"]
+                                == "passed"
+                                for run in repeats
+                            )
+                            else "incomplete-retained-prefix-only"
+                            if any(
+                                run[arm_name]["long_output_validity"]["status"]
+                                == "incomplete-retained-prefix-only"
+                                for run in repeats
+                            )
+                            else "failed"
+                        )
+                    }
+                    for arm_name in ("baseline", "candidate")
+                },
+                "long_output_determinism": {
+                    arm_name: determinism(repeats, arm_name)
+                    for arm_name in ("baseline", "candidate")
+                },
                 "policy_exercised_in_every_repeat": policy_exercised,
                 "effectiveness_qualification": qualification,
                 "qualification_reason": reason,
             }
         )
-    return {"schema": "sage-mate.bidkv-matrix-analysis/v2", "cells": cells}
+    completed = sum(cell["execution_status"] == "completed" for cell in cells)
+    return {
+        "schema": "sage-mate.bidkv-matrix-analysis/v3",
+        "matrix_completion": {
+            "declared_cells": len(cells),
+            "completed_cells": completed,
+            "blocked_or_pending_cells": len(cells) - completed,
+            "complete": completed == len(cells),
+        },
+        "correctness_contract": {
+            "short_output": "exact expected text with no special-token leakage",
+            "long_output": "per-arm semantic validity and special-token scan; cross-arm hash equality is diagnostic only",
+            "cross_arm_long_exact_match_is_required": False,
+        },
+        "cells": cells,
+    }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("root", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--matrix", type=Path, default=DEFAULT_MATRIX)
     args = parser.parse_args()
-    result = analyze(args.root)
+    result = analyze(args.root, args.matrix)
     serialized = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
     (args.output or args.root / "analysis.json").write_text(serialized)
     print(serialized, end="")

@@ -12,10 +12,22 @@ binds the workload, concurrency, KV pressure, configuration, order and repeats.
 Its only allowed conclusions are `not-beneficial-in-tested-cell`, `inconclusive`,
 or `beneficial`. The declared Stage 1 matrix contains thirteen representative
 cells. Five matched pairs were executed after resource and trigger admission;
+the other eight remain explicitly pending because no retained real-online run
+exists and current production/reserved-device protection prevents re-execution.
 the ascending-mixed trigger cell and interactive c=8 cell then advanced to three
 alternating matched repetitions and interval analysis. Empty summaries,
 unpaired candidate-only runs and baseline-varying long hashes cannot support an
 effectiveness claim.
+
+Future runs use an exact short-text gate (EOS respected), retain full long
+outputs for semantic and special-token checks, and measure determinism within
+baseline and candidate separately. The retained legacy warm-up forced 16 tokens
+with `ignore_eos=true` and leaked `<|im_start|>` in both arms, so that warm-up is
+an invalid correctness workload rather than evidence of a candidate failure.
+The legacy long runs retained only 120-character prefixes, so their semantic
+gate is incomplete. Cross-arm long exact hashes are diagnostic only: in the
+three-repeat interactive cell, baseline itself was deterministic for only 1/8
+request indices and candidate for 0/8.
 
 The runner must capture immutable image/source/model identity, the complete
 non-secret configuration, all four rank graph markers, policy INIT and counters,
@@ -23,8 +35,10 @@ Prometheus before/after snapshots, request-level timings, cancellation drain and
 recovery, and production restoration. NPU0-3 are the only authorized devices;
 NPU4-7 are an immutable exclusion witness.
 
-The bounded-selector implementation passed every functional gate with zero
-policy failures or invalid selections. The ascending-mixed cell is
+The bounded-selector implementation passed startup, graph/rank, policy-safety,
+cancellation/recovery and rollback gates with zero policy failures or invalid
+selections. The corrected exact/semantic output gates still require a fresh run.
+The ascending-mixed cell is
 `inconclusive`: one repeat never invoked the policy, while the two exercised
 repeats were effectively neutral and no longer reproduced the pre-fix collapse.
 The interactive c=8 cell is `not-beneficial-in-tested-cell`: mean throughput

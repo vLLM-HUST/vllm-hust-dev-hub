@@ -8,7 +8,7 @@ mode are not accepted as final qualification paths.
 
 | Mod | Source state | Runtime state | Compatibility verdict |
 | --- | --- | --- | --- |
-| BidKV | migrated to versioned preemption-policy API v1; bounded safe abstention replaces requester self-preemption; no runtime monkey patch | Current-main a4d6/2c8c TP4 graph: five functional cells plus two alternating 3× A/B cells; graph/rank/output/cancel/recovery gates passed, zero policy failures/invalid selections | functional-compatible for Qwen3.8-27B; ascending mixed is `inconclusive`; interactive c=8 is `not-beneficial-in-tested-cell`; no whole-Mod effectiveness claim |
+| BidKV | migrated to versioned preemption-policy API v1; bounded safe abstention replaces requester self-preemption; no runtime monkey patch | Current-main a4d6/2c8c TP4 graph: 5/13 Stage-1 cells and two alternating 3× A/B cells retained; graph/rank/policy/cancel/recovery gates passed, but corrected output gates need a fresh run | artifact functional-compatible for Qwen3.8-27B; ascending mixed is `inconclusive`; interactive c=8 is `not-beneficial-in-tested-cell`; eight cells remain pending and no whole-Mod effectiveness claim is allowed |
 | DiffSpec | current Eagle3, Ascend attention, model runner, sampler and speculative metadata surfaces adapted | Qwen3.8-27B plus `VirVen/Qwen3.5-27B-EAGLE3-v2` passed TP4 FULL_DECODE_ONLY graph, four-rank draft loading, output, cancellation/recovery, concurrency and long-context gates | functional-compatible, but performance degraded (acceptance 19.29%; ~14.00 vs ~47.72 tok/s target-only P50) |
 | LatchMoE | current MoE routing quantization and MLP-builder ABI adapted through seam v2 | Qwen3.8-27B is dense and Not Applicable; Qwen3-30B-A3B passed TP4 PIECEWISE graph, four-rank mapping, swap, 48/48 address checks, concurrency, cancellation and exception recovery | functional-compatible for Qwen3-30B-A3B, but performance degraded (~2.91 vs ~23.57 tok/s baseline) |
 | Pipeline Microbatch | migrated from scheduler monkey patches to batch-admission policy API v1.1; current Scheduler/Request/queue/KV snapshots and Ascend Mamba KV group ABI adapted | Qwen3.8-27B passed PP2 × TP2 FULL_DECODE_ONLY graph, exact-output, cancellation/recovery and runtime-effective receipt gates on NPU0-3 | **not compatible** on the tested four-card configuration: uniform c=8 throughput -4.37%; fixed-work mixed c=8 throughput -26.33% and P95 latency +80.16% |
@@ -47,8 +47,8 @@ restored after each Mod, returned HTTP 200 and finally produced `DIFFSPEC_ROLLBA
 
 ## Measured results
 
-- BidKV bounded-preemption matrix: all five stage-one pairs were functionally
-  clean. The cancellation cell completed four streams, cancelled four, then
+- BidKV bounded-preemption matrix: all five executed stage-one pairs were
+  runtime/policy-safety clean. The cancellation cell completed four streams, cancelled four, then
   returned the exact recovery marker; the candidate made 218 policy calls with
   zero failures/invalid selections. In two ascending-mixed repeats that invoked
   the selector, both arms made 63 preemptions and candidate throughput deltas
@@ -57,7 +57,12 @@ restored after each Mod, returned HTTP 200 and finally produced `DIFFSPEC_ROLLBA
   interactive c=8 cell invoked the policy 24 times in every repeat and is
   `not-beneficial-in-tested-cell`: throughput delta mean -25.31% (95% CI
   -26.66% to -23.96%) and P95 latency delta mean +34.57% (95% CI +31.96% to
-  +37.17%). These are cell-scoped results, not a compatibility verdict.
+  +37.17%). The legacy warm-up forced generation past EOS and leaked special
+  tokens identically in both arms; legacy long outputs retained only prefixes.
+  Thus the corrected short exact and long semantic gates are pending, and long
+  hash differences are not a candidate correctness failure because baseline is
+  itself nondeterministic. Eight of thirteen Stage-1 cells have no real run and
+  remain pending. These are cell-scoped results, not a compatibility verdict.
 - LatchMoE Qwen3-30B-A3B: 10-request TTFT p50/p95 3.678/7.730 s,
   latency p50/p95 25.941/31.808 s, output throughput p50/p95 2.907/3.010 tok/s.
   The no-plugin baseline output throughput was about 23.57 tok/s.
