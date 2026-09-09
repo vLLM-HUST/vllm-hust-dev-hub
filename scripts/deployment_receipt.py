@@ -19,7 +19,8 @@ from pathlib import Path
 from typing import Any
 
 
-SCHEMA_VERSION = "vllm-hust.deployment-receipt/v1"
+SCHEMA_VERSION = "vllm-hust.deployment-receipt/v2"
+SUPPORTED_SCHEMA_VERSIONS = {"vllm-hust.deployment-receipt/v1", SCHEMA_VERSION}
 VALID_STATES = {"active", "superseded", "failed"}
 SENSITIVE_KEY_PARTS = (
     "api_key",
@@ -54,7 +55,14 @@ SECTION_FIELDS = {
         "logical_device_ids",
     },
     "parallelism": {"tensor_parallel_size", "data_parallel_size", "expert_parallel_enabled"},
-    "execution": {"quantization", "graph_mode"},
+    "execution": {
+        "quantization",
+        "graph_mode",
+        "prefix_caching_enabled",
+        "prefix_caching_required",
+        "prefix_cache_mode",
+        "chunked_prefill_enabled",
+    },
     "speculative": {"requested_method", "resolved_method", "active", "reason"},
     "provenance": {"source_uri", "import_origins"},
     "integrity": {"algorithm", "content_sha256"},
@@ -113,7 +121,7 @@ def _require_text(section: dict[str, Any], key: str, *, allow_empty: bool = Fals
 def validate_receipt(receipt: object, *, verify_hash: bool = True) -> dict[str, Any]:
     payload = _require_exact_fields("receipt", receipt, TOP_LEVEL_FIELDS)
     _reject_sensitive_keys(payload)
-    if payload["schema_version"] != SCHEMA_VERSION:
+    if payload["schema_version"] not in SUPPORTED_SCHEMA_VERSIONS:
         raise ReceiptValidationError(f"unsupported schema_version: {payload['schema_version']!r}")
     if payload["status"] not in VALID_STATES:
         raise ReceiptValidationError(f"invalid status: {payload['status']!r}")
@@ -124,9 +132,12 @@ def validate_receipt(receipt: object, *, verify_hash: bool = True) -> dict[str, 
     except ValueError as exc:
         raise ReceiptValidationError("generated_at must be ISO-8601") from exc
 
+    section_fields = dict(SECTION_FIELDS)
+    if payload["schema_version"] == "vllm-hust.deployment-receipt/v1":
+        section_fields["execution"] = {"quantization", "graph_mode"}
     sections = {
         name: _require_exact_fields(name, payload[name], fields)
-        for name, fields in SECTION_FIELDS.items()
+        for name, fields in section_fields.items()
     }
     for key in SECTION_FIELDS["model"]:
         _require_text(sections["model"], key)
@@ -146,6 +157,22 @@ def validate_receipt(receipt: object, *, verify_hash: bool = True) -> dict[str, 
         raise ReceiptValidationError("parallelism.expert_parallel_enabled must be boolean")
     for key in ("quantization", "graph_mode"):
         _require_text(sections["execution"], key)
+    if payload["schema_version"] == SCHEMA_VERSION:
+        for key in (
+            "prefix_caching_enabled",
+            "prefix_caching_required",
+            "chunked_prefill_enabled",
+        ):
+            if not isinstance(sections["execution"][key], bool):
+                raise ReceiptValidationError(f"execution.{key} must be boolean")
+        _require_text(sections["execution"], "prefix_cache_mode")
+        if (
+            sections["execution"]["prefix_caching_required"]
+            and not sections["execution"]["prefix_caching_enabled"]
+        ):
+            raise ReceiptValidationError(
+                "required prefix caching cannot be recorded as disabled"
+            )
     for key in ("requested_method", "resolved_method"):
         _require_text(sections["speculative"], key)
     if not isinstance(sections["speculative"]["active"], bool):

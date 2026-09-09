@@ -164,11 +164,13 @@ VLLM_ASCEND_BUILD_CONTEXT_ROOT=/data/build-tmp scripts/build_locked_vllm_ascend_
 
 ## Deployment receipt
 
-After `/health`, `/v1/models`, a real completion, physical NPU mapping and graph
-mode pass, create a `vllm-hust.deployment-receipt/v1` receipt with
+After `/health`, `/v1/models`, a real completion, physical NPU mapping, prefix
+cache and graph-mode gates pass, create a `vllm-hust.deployment-receipt/v2` receipt with
 `scripts/deployment_receipt.py`. The public-safe receipt records the served
 model, core/plugin commits, image tag, physical devices, parallelism, graph
-mode, speculative state and sanitized import origins. The image ID/digest,
+mode, prefix-cache requirement/mode, chunked-prefill state, speculative state
+and sanitized import origins. V1 receipts remain verifiable as historical
+evidence but cannot prove the production prefix-cache contract. The image ID/digest,
 build time and package source versions are artifact provenance and must be
 published alongside (for example by Workstation receipt schema v2 or the Sage
 Mate stack endpoint); they are not inferred from the v1 receipt.

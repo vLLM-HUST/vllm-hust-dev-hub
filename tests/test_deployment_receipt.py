@@ -42,7 +42,14 @@ def payload() -> dict[str, object]:
             "data_parallel_size": 1,
             "expert_parallel_enabled": True,
         },
-        "execution": {"quantization": "w8a8", "graph_mode": "graph"},
+        "execution": {
+            "quantization": "w8a8",
+            "graph_mode": "graph",
+            "prefix_caching_enabled": True,
+            "prefix_caching_required": True,
+            "prefix_cache_mode": "mamba-align",
+            "chunked_prefill_enabled": True,
+        },
         "speculative": {
             "requested_method": "dspark",
             "resolved_method": "none",
@@ -66,6 +73,29 @@ def test_create_and_verify_receipt() -> None:
     assert receipt["receipt_id"].startswith("deploy-")
     assert receipt["integrity"]["algorithm"] == "sha256"
     assert receipt_module.validate_receipt(receipt) == receipt
+
+
+def test_v1_receipts_remain_valid_rollback_evidence() -> None:
+    receipt = receipt_module.create_receipt(payload())
+    receipt["schema_version"] = "vllm-hust.deployment-receipt/v1"
+    receipt["execution"] = {
+        "quantization": receipt["execution"]["quantization"],
+        "graph_mode": receipt["execution"]["graph_mode"],
+    }
+    receipt["integrity"]["content_sha256"] = receipt_module._content_hash(receipt)
+
+    assert receipt_module.validate_receipt(receipt) == receipt
+
+
+def test_required_prefix_cache_cannot_be_recorded_disabled() -> None:
+    value = payload()
+    value["execution"]["prefix_caching_enabled"] = False
+
+    with pytest.raises(
+        receipt_module.ReceiptValidationError,
+        match="required prefix caching cannot be recorded as disabled",
+    ):
+        receipt_module.create_receipt(value)
 
 
 @pytest.mark.parametrize("status", ["active", "superseded", "failed"])
