@@ -86,6 +86,7 @@ engine_python="${VLLM_ENGINE_PYTHON:-}"
 api_key="${VLLM_HUST_API_KEY:-${VLLM_ENGINE_API_KEY:-}}"
 replace_existing="${VLLM_ENGINE_REPLACE_EXISTING:-true}"
 enable_prefix_caching="${VLLM_ENGINE_ENABLE_PREFIX_CACHING:-1}"
+require_prefix_caching="${VLLM_ENGINE_REQUIRE_PREFIX_CACHING:-0}"
 enable_chunked_prefill="${VLLM_ENGINE_ENABLE_CHUNKED_PREFILL:-1}"
 enforce_eager="${VLLM_ENGINE_ENFORCE_EAGER:-0}"
 expert_parallel="${VLLM_ENGINE_ENABLE_EXPERT_PARALLEL:-0}"
@@ -94,6 +95,17 @@ flashcomm1="${VLLM_ASCEND_ENABLE_FLASHCOMM1:-}"
 fused_mc2="${VLLM_ASCEND_ENABLE_FUSED_MC2:-}"
 if [[ "$legacy_ascend_env" != "0" && "$legacy_ascend_env" != "1" ]]; then
   echo "ERROR: VLLM_ENGINE_ENABLE_LEGACY_ASCEND_ENV must be 0 or 1." >&2
+  exit 1
+fi
+for setting in enable_prefix_caching require_prefix_caching enable_chunked_prefill enforce_eager; do
+  value="${!setting}"
+  if [[ "$value" != "0" && "$value" != "1" ]]; then
+    echo "ERROR: ${setting} must resolve to 0 or 1 (got: $value)." >&2
+    exit 1
+  fi
+done
+if [[ "$require_prefix_caching" == "1" && "$enable_prefix_caching" != "1" ]]; then
+  echo "ERROR: prefix caching is required by VLLM_ENGINE_REQUIRE_PREFIX_CACHING=1; refusing to launch with VLLM_ENGINE_ENABLE_PREFIX_CACHING=$enable_prefix_caching." >&2
   exit 1
 fi
 optimization_repo_container="${VLLM_OPTIMIZATION_REPO_CONTAINER:-}"
@@ -325,6 +337,7 @@ echo "[vllm-hust] runtime_devices   = $runtime_visible_devices"
 echo "[vllm-hust] max_model_len     = $max_model_len"
 echo "[vllm-hust] max_num_seqs      = $max_num_seqs"
 echo "[vllm-hust] prefix_cache      = $enable_prefix_caching"
+echo "[vllm-hust] prefix_required   = $require_prefix_caching"
 echo "[vllm-hust] chunked_prefill   = $enable_chunked_prefill"
 echo "[vllm-hust] graph_mode        = $([[ "$enforce_eager" == "1" ]] && echo "OFF (--enforce-eager)" || echo "ON")"
 if [[ -n "$compilation_config" ]]; then

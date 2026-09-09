@@ -35,6 +35,9 @@ def test_production_runtime_lock_is_complete_and_immutable() -> None:
         assert component["filename"].endswith(".whl")
     assert lock["runtime"]["cann"] == "9.1.0"
     assert lock["runtime"]["graph_mode"] is True
+    assert lock["runtime"]["prefix_caching"] is True
+    assert lock["runtime"]["prefix_cache_mode"] == "mamba-align"
+    assert lock["runtime"]["chunked_prefill"] is True
     assert lock["runtime"]["install_mode"] == "immutable-wheels"
 
 
