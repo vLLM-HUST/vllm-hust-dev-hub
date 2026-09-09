@@ -114,6 +114,34 @@ operator catalog is provided at
 `config/model-catalogs/qwen3.8-27b.json`; the live server clamps its context and
 auto-compaction fields to the served model configuration.
 
+## Hybrid prefix-cache production contract
+
+The Qwen3.8 hybrid-attention production profile requires native vLLM prefix
+caching in Mamba `align` mode together with chunked prefill and Graph Mode.
+Production launch environments set both
+`VLLM_ENGINE_ENABLE_PREFIX_CACHING=1` and
+`VLLM_ENGINE_REQUIRE_PREFIX_CACHING=1`. The second setting is a fail-closed
+contract: a stale machine-local `ENABLE=0` value must stop before container or
+NPU mutation rather than silently disabling reuse. Generic development
+profiles may leave the require flag unset.
+
+The 2026-09-09 NPU0-3 qualification used the locked Qwen3.8-27B TP4 image and
+an identical 3,543-token prompt. The first request populated the cache; each of
+the next two requests reused 3,072 prompt tokens (86.7%) and reduced warmed
+TTFT from the disabled baseline of about 0.50 seconds to 0.33-0.34 seconds.
+Answer hashes were identical across disabled and enabled runs. API usage still
+correctly reported all 3,543 prompt tokens: prefix caching reduces prefill
+computation, not logical context length or HTTP payload. A cold Graph
+compilation request is not a cache-performance sample.
+
+Operational verification checks three independent facts: the managed command
+contains `--enable-prefix-caching`, the prefix-query metric increases after a
+real completion, and repeated-prefix qualification produces non-zero hits.
+The relevant metrics are `vllm:prefix_cache_queries_total`,
+`vllm:prefix_cache_hits_total`, and `vllm:prompt_tokens_cached_total`. A unique smoke
+prompt is allowed to have zero hits, so the standard deployment verifier does
+not impose a misleading universal hit-rate threshold.
+
 Build only from clean, exact checkouts:
 
 ```bash
@@ -136,11 +164,13 @@ VLLM_ASCEND_BUILD_CONTEXT_ROOT=/data/build-tmp scripts/build_locked_vllm_ascend_
 
 ## Deployment receipt
 
-After `/health`, `/v1/models`, a real completion, physical NPU mapping and graph
-mode pass, create a `vllm-hust.deployment-receipt/v1` receipt with
+After `/health`, `/v1/models`, a real completion, physical NPU mapping, prefix
+cache and graph-mode gates pass, create a `vllm-hust.deployment-receipt/v2` receipt with
 `scripts/deployment_receipt.py`. The public-safe receipt records the served
 model, core/plugin commits, image tag, physical devices, parallelism, graph
-mode, speculative state and sanitized import origins. The image ID/digest,
+mode, prefix-cache requirement/mode, chunked-prefill state, speculative state
+and sanitized import origins. V1 receipts remain verifiable as historical
+evidence but cannot prove the production prefix-cache contract. The image ID/digest,
 build time and package source versions are artifact provenance and must be
 published alongside (for example by Workstation receipt schema v2 or the Sage
 Mate stack endpoint); they are not inferred from the v1 receipt.
@@ -158,8 +188,11 @@ Mate stack endpoint); they are not inferred from the v1 receipt.
    completion, concurrent requests, cancellation and a second cold restart.
 6. Switch only through the managed systemd/lock entrypoint. Do not create an
    unmanaged duplicate process.
-7. If a production gate fails, restore the recorded previous image ID, lock
-   values and gitlinks, then restart through the same managed entrypoint.
+7. If a production gate fails, restore a recorded, fully verified deployment
+   receipt (image ID, lock values, gitlinks and production cache contract), then
+   restart through the same managed entrypoint. A known-bad
+   `VLLM_ENGINE_ENABLE_PREFIX_CACHING=0` override is not a rollback point and
+   must not be restored as normal production state.
 
 The preceding `d07d4c45`/`a8d2294a` candidate passed Qwen3.8-27B TP4 graph-mode
 cold start on physical NPU0-3, health, chat, stateful Responses and

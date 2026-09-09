@@ -185,6 +185,30 @@ class ManageEngineGuardTests(unittest.TestCase):
         self.assertIn("real API key", result.stderr)
         self.assertNotIn("Docker container", result.stderr)
 
+    def test_required_prefix_cache_rejects_disabled_configuration_before_docker(self) -> None:
+        env = os.environ.copy()
+        env.update(
+            {
+                "VLLM_ENGINE_CONTAINER": "dummy-container",
+                "VLLM_HUST_API_KEY": "test-only-key",
+                "VLLM_ENGINE_MODEL_PATH": "/tmp/test-model",
+                "VLLM_ENGINE_ENABLE_PREFIX_CACHING": "0",
+                "VLLM_ENGINE_REQUIRE_PREFIX_CACHING": "1",
+            }
+        )
+        result = subprocess.run(
+            [str(ENGINE_SCRIPT)],
+            cwd=REPO_ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("prefix caching is required", result.stderr)
+        self.assertNotIn("Docker container", result.stderr)
+
     def test_engine_credentials_never_enter_process_arguments(self) -> None:
         launcher = ENGINE_SCRIPT.read_text()
         manager = (REPO_ROOT / "scripts" / "manage-container.sh").read_text()
@@ -233,6 +257,8 @@ class ManageEngineGuardTests(unittest.TestCase):
         self.assertIn("VLLM_ENGINE_CONTAINER_HOME", template)
         self.assertIn("VLLM_ENGINE_KV_CACHE_DTYPE", template)
         self.assertIn("VLLM_ENGINE_KV_CACHE_MEMORY_BYTES", template)
+        self.assertIn("VLLM_ENGINE_ENABLE_PREFIX_CACHING=1", template)
+        self.assertIn("VLLM_ENGINE_REQUIRE_PREFIX_CACHING=1", template)
 
     def test_readme_documents_one_command_management(self) -> None:
         readme = README.read_text()

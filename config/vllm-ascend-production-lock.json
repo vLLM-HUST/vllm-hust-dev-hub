@@ -114,6 +114,9 @@
     "cann": "9.1.0",
     "soc": "ascend910b1",
     "graph_mode": true,
+    "prefix_caching": true,
+    "prefix_cache_mode": "mamba-align",
+    "chunked_prefill": true,
     "install_mode": "immutable-wheels",
     "artifact_directory": "/data/codex-build-artifacts/responses-grammar-final-20260908"
   },
