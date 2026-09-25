@@ -52,3 +52,10 @@ manifest and per-arm metadata. Core metadata identifies the new full commit and
 output-budget patch instead of inheriting the old PP2 core patch description.
 A fixture preparation test verifies matched TP2/PP1, APC, async and MTP flags,
 DLA-only admission flags, and those source records; it is not a hardware test.
+
+After preparation and after all prior device owners release, run
+`python verify_software.py` in the assigned container. It uses the generated
+Native launcher's environment to execute the real runtime integration suite,
+records its log/exit code, verifies source hashes before and after, and only then
+sets `software_tests_passed=true`. This runner is prepared and syntax checked;
+it has not been executed against the container yet.
