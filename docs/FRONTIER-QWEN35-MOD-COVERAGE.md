@@ -19,13 +19,13 @@
 | vSpec | 发现针对 Qwen3.5-35B-A3B 的 EAGLE3 草稿模型；权重下载尚未成功，动态 ABI/硬件资格未通过。 | [d4c4f659](https://github.com/vLLM-HUST/vllm-hust-vSpec/tree/d4c4f659495826e64802eedb195de52019282b47) |
 | LatchMoE | 当前启动器拒绝 APC；已执行对应拒绝路径测试。 | [9b2d4acd](https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE/tree/9b2d4acdbfbe6463a22dd0bb8e6ca5bfda47e2c1) |
 | Adaptive Quantized KV | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [ddd306fc](https://github.com/vLLM-HUST/vllm-ascend-adaptive-quantized-kv-hust/tree/ddd306fce8d885b9b9cfeb8c947ed576c5269e66) |
-| Ascend Quant Toolkit | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [f161daab](https://github.com/vLLM-HUST/vllm-ascend-quant-hust/tree/f161daab91b2b558bc8ee65d2b1bc76cd78e00b6) |
-| Ascend Quant Runtime Descriptor | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [f161daab](https://github.com/vLLM-HUST/vllm-ascend-quant-hust/tree/f161daab91b2b558bc8ee65d2b1bc76cd78e00b6) |
+| Ascend Quant Toolkit | 工具是离线检查点量化；运行时描述器仅校验元数据，不加载模型或设备。缺少量化产物加载和算子选择的宿主接入，不能作为本轮 BF16 在线优化开关。 | [f161daab](https://github.com/vLLM-HUST/vllm-ascend-quant-hust/tree/f161daab91b2b558bc8ee65d2b1bc76cd78e00b6) |
+| Ascend Quant Runtime Descriptor | 工具是离线检查点量化；运行时描述器仅校验元数据，不加载模型或设备。缺少量化产物加载和算子选择的宿主接入，不能作为本轮 BF16 在线优化开关。 | [f161daab](https://github.com/vLLM-HUST/vllm-ascend-quant-hust/tree/f161daab91b2b558bc8ee65d2b1bc76cd78e00b6) |
 | Ascend KV Compression | 当前 provider 拒绝混合模型、MTP、APC、async 和多卡并行组合。 | [7c0d2114](https://github.com/vLLM-HUST/vllm-ascend-kvcompress-hust/tree/7c0d21144d99096736138812f727d6f59a93028a) |
 | Prefix Router | 固定版本没有可运行发布；不能以安装或导入代替实测。 | [4e007c4f](https://github.com/vLLM-HUST/vllm-hust-prefix-router/tree/4e007c4fc1bd376a6dccfefbc1fd851019c8ceb6) |
 | KV Tiering | 固定版本完整 Git 树仅含四个文档/维护文件，没有运行实现。 | [3a73c7e1](https://github.com/vLLM-HUST/vllm-hust-kv-tiering/tree/3a73c7e1628801ea5d4f585bcc9d06260161a78c) |
 | KNorm | 固定版本完整 Git 树仅含四个文档/维护文件，没有运行实现。 | [e0e872ab](https://github.com/vLLM-HUST/vllm-hust-knorm/tree/e0e872abfc9fa88659b3e83c1c8b8b2b3de88fc0) |
-| PyramidKV Ascend | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [77b0862c](https://github.com/vLLM-HUST/vllm-ascend-pyramidkv-hust/tree/77b0862c1e5be8c883fda934cdb383c57cf7ad0d) |
+| PyramidKV Ascend | 除 import_only 和缺少宿主接入外，固定实现只接受 Llama/Qwen2 全注意力单缓存组，拒绝 MTP、TP2 和 FULL_AND_PIECEWISE；本轮配置被多项独立检查拒绝（源码核查）。 | [77b0862c](https://github.com/vLLM-HUST/vllm-ascend-pyramidkv-hust/tree/77b0862c1e5be8c883fda934cdb383c57cf7ad0d) |
 | SliceGPT | 固定版本完整 Git 树仅含四个文档/维护文件，没有运行实现。 | [6acf19d9](https://github.com/vLLM-HUST/vllm-hust-slicegpt/tree/6acf19d9cbb3ed6caa3f5e6341b1da41941f9f2e) |
 | Quantized KV Cache | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [8dd24cdc](https://github.com/vLLM-HUST/vllm-ascend-quantized-kv-cache-hust/tree/8dd24cdce248519c173710993f6c633a96107c0d) |
 | SimLLM | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [dcdc6edf](https://github.com/vLLM-HUST/vllm-ascend-simllm-hust/tree/dcdc6edf7bdcc68bdf35058888ebfd9752ae3566) |

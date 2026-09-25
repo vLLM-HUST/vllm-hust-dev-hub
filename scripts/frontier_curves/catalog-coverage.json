@@ -386,7 +386,17 @@
             "additional_config": {}
           }
         }
-      ]
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source inspection",
+        "source_path": "runtime-extension/src/vllm_ascend_quant_ext/artifact.py",
+        "class": "ArtifactContractValidator",
+        "responsibility": "Validate metadata only; does not load models or devices. Toolkit scripts are offline checkpoint quantization, not a BF16 online optimization switch.",
+        "required_host_integration": [
+          "quantized-artifact loading",
+          "quantized operator selection"
+        ]
+      }
     },
     {
       "id": "ascend-quant-runtime-descriptor",
@@ -415,7 +425,17 @@
             "additional_config": {}
           }
         }
-      ]
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source inspection",
+        "source_path": "runtime-extension/src/vllm_ascend_quant_ext/artifact.py",
+        "class": "ArtifactContractValidator",
+        "responsibility": "Validate metadata only; does not load models or devices. Toolkit scripts are offline checkpoint quantization, not a BF16 online optimization switch.",
+        "required_host_integration": [
+          "quantized-artifact loading",
+          "quantized operator selection"
+        ]
+      }
     },
     {
       "id": "kvcompress-ascend",
@@ -522,7 +542,35 @@
             "additional_config": {}
           }
         }
-      ]
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source inspection, not an NPU runtime qualification",
+        "source_path": "src/vllm_ascend_pyramidkv/provider.py",
+        "source_sha256": "949e6a2f612618e19b35372402ce140bb0f3fced8a3401e3a4854df6ba210c16",
+        "supported_architectures": [
+          "LlamaForCausalLM",
+          "Qwen2ForCausalLM"
+        ],
+        "requires_full_attention_only": true,
+        "requires_single_kv_group": true,
+        "speculative_decoding_supported": false,
+        "tensor_parallel_size": 1,
+        "pipeline_parallel_size": 1,
+        "supported_graph_modes": [
+          "PIECEWISE",
+          "FULL_DECODE_ONLY"
+        ],
+        "eager_supported": true,
+        "source_lines": {
+          "execution_modes": 1507,
+          "model_profile": 1536,
+          "kv_groups": 1577,
+          "full_attention": 1581,
+          "speculative_decoding": 1605,
+          "tensor_parallel": 1613
+        },
+        "interpretation": "Current Qwen3.5 hybrid/MTP2/TP2/FULL_AND_PIECEWISE protocol is rejected by independent compatibility checks, beyond missing host activation."
+      }
     },
     {
       "id": "slicegpt-migration",
