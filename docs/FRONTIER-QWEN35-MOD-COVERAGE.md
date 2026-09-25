@@ -14,7 +14,7 @@
 | Mooncake vLLM Connectors | 找到 AscendStore HMA 路径；共同 NPU 运行时已有 Event 兼容处理。保持 APC/async/MTP/图模式的完整资格测试待执行。 | [d0f22d2b](https://github.com/vLLM-HUST/vllm-hust/tree/d0f22d2bda562156e4dbf433ce645e1769b4f804) |
 | PegaFlow | 普通连接器未声明 HMA 且只使用第 0 缓存组；NIXL 路径虽支持 HMA，但固定版本设备表无 NPU，共同 Ascend 平台未扩展该表，会被设备检查拒绝。需实际 NPU 传输适配，不能仅绕过检查。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
 | PegaFlow vLLM Connectors | 普通连接器未声明 HMA 且只使用第 0 缓存组；NIXL 路径虽支持 HMA，但固定版本设备表无 NPU，共同 Ascend 平台未扩展该表，会被设备检查拒绝。需实际 NPU 传输适配，不能仅绕过检查。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
-| BidKV | 已有 C4/C16；准备在新共同运行时补齐五档并发。已有窗口未触发抢占，不能宣称抢占收益。 | [a0cba97d](https://github.com/vLLM-HUST/vllm-hust-bidkv/tree/a0cba97d9abdc99908e46616db622f0e0099127f) |
+| BidKV | 已有 C4/C16；正在新共同运行时测五档并发，其 Native 配对基线已完成。已有窗口未触发抢占，不能宣称抢占收益。 | [a0cba97d](https://github.com/vLLM-HUST/vllm-hust-bidkv/tree/a0cba97d9abdc99908e46616db622f0e0099127f) |
 | DiffSpec | 当前载体要求 EAGLE3/TP4 且关闭 APC、async，不能直接替代本轮 MTP2/APC/async 配置。 | [42e5909f](https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec/tree/42e5909fc6fe276ba0defe1901257a523653aefb) |
 | vSpec | 发现针对 Qwen3.5-35B-A3B 的 EAGLE3 草稿模型；权重下载尚未成功，动态 ABI/硬件资格未通过。 | [d4c4f659](https://github.com/vLLM-HUST/vllm-hust-vSpec/tree/d4c4f659495826e64802eedb195de52019282b47) |
 | LatchMoE | 当前启动器拒绝 APC；已执行对应拒绝路径测试。 | [9b2d4acd](https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE/tree/9b2d4acdbfbe6463a22dd0bb8e6ca5bfda47e2c1) |
@@ -34,14 +34,14 @@
 | KV Transfer Observability | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [ec3446d9](https://github.com/vLLM-HUST/vllm-hust-kv-transfer-observability/tree/ec3446d936b6ac148e0be33b1dba831f9ecfc0c4) |
 | Layered Prefill | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [a45e4170](https://github.com/vLLM-HUST/vllm-ascend-layered-prefill-hust/tree/a45e41709ccacc3d7c736910b93c1b5985d9ee94) |
 | Activation Sparsity | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [0e4d0628](https://github.com/vLLM-HUST/vllm-hust-activation-sparsity/tree/0e4d0628c1972d5086a217b0007576c1fd8998a3) |
-| Pipeline Microbatch | 已有 C4/C16；正在补 C1/C2/C8 的 Native 配对观测。 | [a15a2296](https://github.com/vLLM-HUST/vllm-hust-pipeline-microbatch/tree/a15a22961a0e4858da74a0ab806575c82cb254e6) |
+| Pipeline Microbatch | C1/C2/C4/C8/C16 的 Native 配对观测已发布；每点仍为单次观测，不能据此宣称稳定加速。 | [a15a2296](https://github.com/vLLM-HUST/vllm-hust-pipeline-microbatch/tree/a15a22961a0e4858da74a0ab806575c82cb254e6) |
 | QoS Scheduler | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [13d376a7](https://github.com/vLLM-HUST/vllm-hust-qos-scheduler/tree/13d376a7d8990c4dcf5c0903cb6fbf2398ef0fb0) |
 | StateHarbor | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | 内部来源，详见覆盖账本 |
 | Scheduler Policy Lab | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | 内部来源，详见覆盖账本 |
 | Request Lifecycle Causal Profiler | 插件依赖当前共同核心缺少的 kv_recovery_profile 观察接口；诊断功能不等于优化收益。 | [e32a0e91](https://github.com/vLLM-HUST/vllm-hust-request-lifecycle-profiler/tree/e32a0e91027ae7a2b96bf48d2dcb7db1b3c42c87) |
 | KV Materialization Arrival Control | 需要特定请求元数据和分段复用宿主接口；无元数据的软件探针只选择重新计算，不能据此生成优化成绩。 | [10428b81](https://github.com/vLLM-HUST/vllm-hust-kv-materialization-arrival-control/tree/10428b81e2b383cdcb183d4548f38a98929fd0e4) |
 | BetterScale | 网站已有实测；本轮不冒充新增结果。 | [仓库](https://github.com/vLLM-HUST/BetterScale)；完整来源待补 |
-| DLA | 已准备已知输出预算准入与原始抢占选择器；容器内运行时验证和实测尚未完成。不是学习型长度预测结果。 | [dc20d0f8](https://github.com/vLLM-HUST/vllm-hust-dla/tree/dc20d0f8ea8d09106f77571e1947b9a2f8702545) |
+| DLA | 已准备已知输出预算准入与原始抢占选择器；容器内 6 项实际运行时集成测试通过，硬件曲线排在 BidKV 之后。不是学习型长度预测结果。 | [dc20d0f8](https://github.com/vLLM-HUST/vllm-hust-dla/tree/dc20d0f8ea8d09106f77571e1947b9a2f8702545) |
 | TraceLoom | 当前版本是离线 C++ 分析器，没有在线推理优化入口；不生成虚构的服务性能曲线。 | [37323af5](https://github.com/vLLM-HUST/vllm-hust-perf-analyzer/tree/37323af55aeb5851b9a70b97155f5eacf104eafc) |
 
-已发布的新增对照点见网站 PR [#279](https://github.com/vLLM-HUST/vllm-hust-website/pull/279) 与 [#280](https://github.com/vLLM-HUST/vllm-hust-website/pull/280)。环境归组修正见 [#281](https://github.com/vLLM-HUST/vllm-hust-website/pull/281)。单次观测不能证明稳定加速；未触发的优化机制须明确标注。
+已发布的新增对照点见网站 PR [#279](https://github.com/vLLM-HUST/vllm-hust-website/pull/279) 、[#280](https://github.com/vLLM-HUST/vllm-hust-website/pull/280) 与补齐 Pipeline 五档并发的 [#282](https://github.com/vLLM-HUST/vllm-hust-website/pull/282)。环境归组修正见 [#281](https://github.com/vLLM-HUST/vllm-hust-website/pull/281)。单次观测不能证明稳定加速；未触发的优化机制须明确标注。
