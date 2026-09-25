@@ -1,8 +1,9 @@
 # Qwen3.5 Mooncake qualification prerequisites
 
 Status: preparation only; no Mooncake service or NPU transfer has been run.
-The serial Native/BidKV/DLA campaign owns the measurement interval. Do not
-initialize TransferEngine, start a master, or run device probes during it.
+The Native/BidKV/DLA campaign has completed and released its devices.
+Read-only network queries below ran after release; no transfer engine or
+Mooncake server has been started.
 
 Use the assigned SSH31769 container after the previous campaign releases devices.
 Keep the compiled SWE workload, BF16, 262144 context, APC, Mamba align, actual MTP2,
@@ -50,3 +51,14 @@ Source witnesses:
   hybrid failure policy, A2 RoCE and configuration requirements.
 - Qualified Ascend mooncake_backend.py uses the actual shared TransferEngine
   and raises on failed setup; it does not validate end-to-end serving correctness.
+
+
+Post-release read-only device queries (`hccn_tool -i N -ip/-link/-net_health/-mtu -g`)
+returned actual device 0 address `10.52.65.11` and device 1 address `10.52.65.10`,
+both netmask `255.255.255.0`, link `UP`, MTU `8192`. Both health queries returned
+`Receive timeout`; this does not by itself establish a failed transfer or identify
+its cause. All query exit codes were zero. `/etc/hccn.conf` remains absent.
+The archived `mooncake-readonly-network.json` records these exact outputs. No
+network settings were written and no device transport was initialized. Known
+addresses and link status alone do not substitute for the required configuration
+or an actual end-to-end transfer qualification.
