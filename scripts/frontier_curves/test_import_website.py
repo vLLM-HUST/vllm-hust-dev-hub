@@ -126,3 +126,48 @@ def test_curve_rejects_different_runtime_even_if_mod_name_matches():
     b["configuration"]["parameters"]["kv_cache_memory_bytes"] = "changed"
     with pytest.raises(ValueError, match="runtime changed"):
         module.compatible_curve(a, b)
+
+
+def test_drain_tokens_cannot_be_counted_as_window_throughput(tmp_path):
+    path = tmp_path / "requests.jsonl"
+    row = dict(
+        success=True,
+        error=None,
+        token_ids=[1, 2, 3],
+        expected_output_tokens=3,
+        usage=dict(completion_tokens=3),
+        start=899,
+        end=901,
+        chunks=[[899.5, 1], [901, 2]],
+    )
+    path.write_text(json.dumps(row) + "\n")
+    summary = dict(
+        measurement_seconds=900,
+        requests_started=1,
+        requests_completed_in_window=0,
+        requests_drained=1,
+        observed_output_tokens_in_window=1,
+        output_tokens_per_second=1 / 900,
+        output_tokens_per_second_per_chip=1 / 3600,
+    )
+    module.validate_requests(path, summary)
+    summary.update(
+        observed_output_tokens_in_window=3,
+        output_tokens_per_second=3 / 900,
+        output_tokens_per_second_per_chip=3 / 3600,
+    )
+    with pytest.raises(ValueError, match="raw streams"):
+        module.validate_requests(path, summary)
+
+
+@pytest.mark.parametrize("token", [-1, True, 1.5])
+def test_output_budget_length_does_not_validate_invalid_token_ids(tmp_path, token):
+    path = tmp_path / "requests.jsonl"
+    path.write_text(
+        json.dumps(
+            dict(success=True, error=None, token_ids=[token], expected_output_tokens=1)
+        )
+        + "\n"
+    )
+    with pytest.raises(ValueError, match="output budgets"):
+        module.validate_requests(path)

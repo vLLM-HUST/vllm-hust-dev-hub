@@ -4,6 +4,7 @@ import argparse
 import copy
 import hashlib
 import json
+import math
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -57,15 +58,57 @@ def prefix_hits(path):
     )
 
 
-def validate_requests(path):
+def validate_requests(path, summary=None):
     rows = [json.loads(line) for line in path.read_text().splitlines()]
     if not rows or any(
         not row["success"]
         or row["error"]
         or len(row["token_ids"]) != row["expected_output_tokens"]
+        or any(type(token) is not int or token < 0 for token in row["token_ids"])
         for row in rows
     ):
         raise ValueError("Raw requests failed or violated exact output budgets")
+    if summary is None:
+        return
+    duration = summary["measurement_seconds"]
+    observed = 0
+    completed = 0
+    for row in rows:
+        if row["usage"]["completion_tokens"] != len(row["token_ids"]):
+            raise ValueError("Raw usage and output token IDs disagree")
+        previous = row["start"]
+        if not 0 <= previous < duration or row["end"] < previous:
+            raise ValueError("Invalid request window timestamps")
+        emitted = 0
+        for timestamp, count in row["chunks"]:
+            if (
+                not previous <= timestamp <= row["end"]
+                or type(count) is not int
+                or count < 0
+            ):
+                raise ValueError("Invalid streaming chunk record")
+            previous = timestamp
+            emitted += count
+            if timestamp <= duration:
+                observed += count
+        if emitted != len(row["token_ids"]):
+            raise ValueError("Streaming chunks and output token IDs disagree")
+        completed += row["end"] <= duration
+    if (
+        len(rows) != summary["requests_started"]
+        or completed != summary["requests_completed_in_window"]
+        or len(rows) - completed != summary["requests_drained"]
+        or observed != summary["observed_output_tokens_in_window"]
+        or not math.isclose(
+            observed / duration, summary["output_tokens_per_second"], rel_tol=1e-12
+        )
+        or not math.isclose(
+            observed / duration / 4,
+            summary["output_tokens_per_second_per_chip"],
+            rel_tol=1e-12,
+        )
+    ):
+        raise ValueError("Summary throughput/window counts disagree with raw streams")
 
 
 def build(template, root, arm, cell, evidence_url):
@@ -84,7 +127,7 @@ def build(template, root, arm, cell, evidence_url):
         read(run / cell / "summary.json"),
     )
     validate_window(config, summary)
-    validate_requests(run / cell / "requests.jsonl")
+    validate_requests(run / cell / "requests.jsonl", summary)
     meta = config["server_metadata"]
     hits = prefix_hits(run / f"{cell}-after.prom") - prefix_hits(
         run / f"{cell}-before.prom"
