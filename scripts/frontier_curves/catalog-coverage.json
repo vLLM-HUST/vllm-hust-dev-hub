@@ -161,7 +161,19 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-adaptive-quantized-kv-hust",
       "local_path": "/home/shuhao/vllm-ascend-adaptive-quantized-kv-hust",
       "source_revision": "ddd306fce8d885b9b9cfeb8c947ed576c5269e66",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 90,
+          "text": "- While the manifest remains `import_only`, `vllm-hust-ext extension enable`"
+        },
+        {
+          "path": "README.md",
+          "line": 91,
+          "text": "refuses it. Runtime activation requires both an accepted host contract and a"
+        }
+      ]
     },
     {
       "id": "ascend-quant-toolkit",
@@ -171,7 +183,14 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-quant-hust",
       "local_path": "/home/shuhao/vllm-ascend-quant-hust",
       "source_revision": "f161daab91b2b558bc8ee65d2b1bc76cd78e00b6",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 15,
+          "text": "extension remains `import_only` until vLLM Ascend exposes the versioned loader"
+        }
+      ]
     },
     {
       "id": "ascend-quant-runtime-descriptor",
@@ -211,7 +230,14 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-tiering",
       "local_path": "/home/shuhao/vllm-hust-kv-tiering",
       "source_revision": "3a73c7e1628801ea5d4f585bcc9d06260161a78c",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "**Status: migration scaffold. This repository does not yet contain an"
+        }
+      ]
     },
     {
       "id": "knorm-migration",
@@ -221,7 +247,14 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-knorm",
       "local_path": "/home/shuhao/vllm-hust-knorm",
       "source_revision": "e0e872abfc9fa88659b3e83c1c8b8b2b3de88fc0",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "**Status: migration scaffold. This repository does not yet contain an"
+        }
+      ]
     },
     {
       "id": "pyramidkv-ascend-migration",
@@ -231,7 +264,19 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-pyramidkv-hust",
       "local_path": "/home/shuhao/vllm-ascend-pyramidkv-hust",
       "source_revision": "77b0862c1e5be8c883fda934cdb383c57cf7ad0d",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "**Status: installable migration baseline, not a runnable alpha.**"
+        },
+        {
+          "path": "README.md",
+          "line": 9,
+          "text": "Manifest 0.2 carrier is deliberately marked `import_only`. Extension Manager"
+        }
+      ]
     },
     {
       "id": "slicegpt-migration",
@@ -241,7 +286,14 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-slicegpt",
       "local_path": "/home/shuhao/vllm-hust-slicegpt",
       "source_revision": "6acf19d9cbb3ed6caa3f5e6341b1da41941f9f2e",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "**Status: migration scaffold. This repository does not yet contain an"
+        }
+      ]
     },
     {
       "id": "ride-control-plane",
@@ -281,7 +333,19 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-quantized-kv-cache-hust",
       "local_path": "/home/shuhao/vllm-ascend-quantized-kv-cache-hust",
       "source_revision": "8dd24cdce248519c173710993f6c633a96107c0d",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: quantized KV dtype, packed-layout, and fail-closed resolution contracts are installable and tested; device kernels and vLLM Ascend attachment remain blocked until `HOST_CONTRACT.md` is implemented.**"
+        },
+        {
+          "path": "README.md",
+          "line": 16,
+          "text": "is deliberately `import_only`: it can be built, installed, discovered, and"
+        }
+      ]
     },
     {
       "id": "simllm-migration",
@@ -291,7 +355,34 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-simllm-hust",
       "local_path": "/home/shuhao/vllm-ascend-simllm-hust",
       "source_revision": "dcdc6edf7bdcc68bdf35058888ebfd9752ae3566",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 3,
+          "text": "Owner-led migration carrier for task-similarity KV reuse. Release is blocked until the owner confirms whether the legacy code is independent or derives from the public SimLLM repository, which has no declared license."
+        },
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: host-contract and source-license-gate package. There is no runtime"
+        },
+        {
+          "path": "README.md",
+          "line": 17,
+          "text": "is deliberately `import_only`: it can be built, installed, discovered, and"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 49,
+          "text": "Activation requires all four protocols, a pinned vLLM/vLLM Ascend range, a"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 67,
+          "text": "Until then, the package remains `import_only` and Extension Manager must refuse"
+        }
+      ]
     },
     {
       "id": "unified-communication-migration",
@@ -311,7 +402,24 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-split-batch-hust",
       "local_path": "/home/shuhao/vllm-ascend-split-batch-hust",
       "source_revision": "b46de46e90204a0a7636a1dbc952f73178859ada",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: default-off dual-pad planning and compatibility prechecks are installable and tested; Ascend graph/worker execution remains blocked until `HOST_CONTRACT.md` is implemented.**"
+        },
+        {
+          "path": "README.md",
+          "line": 16,
+          "text": "is deliberately `import_only`: it can be built, installed, discovered, and"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 3,
+          "text": "The extracted planner is pure and default-off. Runtime activation requires:"
+        }
+      ]
     },
     {
       "id": "kv-transfer-observability-migration",
@@ -321,7 +429,24 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-transfer-observability",
       "local_path": "/home/shuhao/vllm-hust-kv-transfer-observability",
       "source_revision": "ec3446d936b6ac148e0be33b1dba831f9ecfc0c4",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: the typed, bounded, address-free observation core and sinks are"
+        },
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "installable and tested; automatic vLLM attachment remains blocked until a real"
+        },
+        {
+          "path": "README.md",
+          "line": 18,
+          "text": "is deliberately `import_only`: the observability primitives can be imported and"
+        }
+      ]
     },
     {
       "id": "layered-prefill-migration",
@@ -331,7 +456,24 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-layered-prefill-hust",
       "local_path": "/home/shuhao/vllm-ascend-layered-prefill-hust",
       "source_revision": "a45e41709ccacc3d7c736910b93c1b5985d9ee94",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: stage partitioning, request metadata, model-adapter declarations, and MoE cursor logic are installable and tested; vLLM Ascend attachment remains blocked until `HOST_CONTRACT.md` is implemented.**"
+        },
+        {
+          "path": "README.md",
+          "line": 16,
+          "text": "is deliberately `import_only`: it can be built, installed, discovered, and"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 4,
+          "text": "host-independent. Runtime activation is a vLLM Ascend extension and requires:"
+        }
+      ]
     },
     {
       "id": "activation-sparsity-migration",
@@ -341,7 +483,24 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-activation-sparsity",
       "local_path": "/home/shuhao/vllm-hust-activation-sparsity",
       "source_revision": "0e4d0628c1972d5086a217b0007576c1fd8998a3",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: fail-closed TEAL/La RoSA configuration and compatibility validation are installable and tested; model/kernel attachment remains blocked until `HOST_CONTRACT.md` is implemented.**"
+        },
+        {
+          "path": "README.md",
+          "line": 16,
+          "text": "is deliberately `import_only`: it can be built, installed, discovered, and"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 4,
+          "text": "cache identity without importing vLLM or torch. Runtime activation requires:"
+        }
+      ]
     },
     {
       "id": "pipeline-microbatch-migration",
@@ -361,7 +520,24 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-qos-scheduler",
       "local_path": "/home/shuhao/vllm-hust-qos-scheduler",
       "source_revision": "13d376a7d8990c4dcf5c0903cb6fbf2398ef0fb0",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: request-level SLO validation, monotonic deadline tracking, and ordering keys are installable and tested; vLLM API/scheduler attachment remains blocked until `HOST_CONTRACT.md` is implemented.**"
+        },
+        {
+          "path": "README.md",
+          "line": 16,
+          "text": "is deliberately `import_only`: it can be built, installed, discovered, and"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 4,
+          "text": "scheduler classes. Runtime activation requires:"
+        }
+      ]
     },
     {
       "id": "stateharbor",
@@ -371,7 +547,14 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-stateharbor",
       "local_path": "/home/shuhao/vllm-hust-stateharbor",
       "source_revision": "e1366f3c33f384437201e70ad482b84fdb1dcf60",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "**Status: installable contract/reference package (`import_only`). It contains"
+        }
+      ]
     },
     {
       "id": "scheduler-policy-lab",
@@ -381,7 +564,24 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-scheduler-policy-lab",
       "local_path": "/home/shuhao/vllm-hust-scheduler-policy-lab",
       "source_revision": "215bdab44fb572f125e1426f78103e4d4ac7b833",
-      "status": "source-audit-pending"
+      "status": "source-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: host-independent policy code is installable and tested; vLLM runtime activation remains blocked until the host contracts in `HOST_CONTRACT.md` exist.**"
+        },
+        {
+          "path": "README.md",
+          "line": 16,
+          "text": "is deliberately `import_only`: Past-Future, Sarathi, and recapture-observer"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 3,
+          "text": "The extracted policies do not import vLLM internals. Activation requires a host"
+        }
+      ]
     },
     {
       "id": "request-lifecycle-profiler",
