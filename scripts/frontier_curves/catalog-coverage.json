@@ -922,9 +922,21 @@
       "artifact_type": "runtime_component",
       "public": true,
       "repository": "https://github.com/vLLM-HUST/vllm-hust-request-lifecycle-profiler",
-      "local_path": "/home/shuhao/vllm-hust-request-lifecycle-profiler",
-      "source_revision": null,
-      "status": "source-audit-pending"
+      "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/request-lifecycle-profiler-ssh",
+      "source_revision": "e32a0e91027ae7a2b96bf48d2dcb7db1b3c42c87",
+      "status": "profiler-runtime-ABI-audit-pending",
+      "source_witnesses": [
+        {
+          "path": "src/vllm_request_lifecycle_profiler/plugin.py",
+          "line": 49,
+          "text": "Enabled recovery observation requires vllm.v1.kv_recovery_profile observer factory; general-plugin discovery alone does not prove instrumentation."
+        },
+        {
+          "path": "AGENTS.md",
+          "line": 52,
+          "text": "Profiler observations are diagnosis evidence and do not by themselves establish runtime speedup."
+        }
+      ]
     },
     {
       "id": "kv-materialization-arrival-control",
@@ -932,9 +944,29 @@
       "artifact_type": "runtime_component",
       "public": true,
       "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-materialization-arrival-control",
-      "local_path": "/home/shuhao/vllm-hust-kv-materialization-arrival-control",
-      "source_revision": null,
-      "status": "source-audit-pending"
+      "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/kv-arrival-ssh",
+      "source_revision": "10428b81e2b383cdcb183d4548f38a98929fd0e4",
+      "status": "request-header-and-runtime-seam-integration-pending",
+      "source_witnesses": [
+        {
+          "path": "src/vllm_kv_materialization/live_control.py",
+          "line": 198,
+          "text": "Absent primary-anchor metadata yields zero reusable prefix; software probe with no headers selects request-scoped recompute."
+        },
+        {
+          "path": "src/vllm_kv_materialization/live_control.py",
+          "line": 66,
+          "text": "Segmented reuse relies on kv_materialization_runtime_control; this key is absent from the current common core capsule."
+        }
+      ],
+      "software_probe": {
+        "kind": "software-only-not-performance",
+        "prompt_tokens": 4096,
+        "output_tokens": 128,
+        "headers": {},
+        "effective_decision": "recompute",
+        "target_reuse_tokens": 0
+      }
     },
     {
       "id": "vllm-hust-benchmark",
