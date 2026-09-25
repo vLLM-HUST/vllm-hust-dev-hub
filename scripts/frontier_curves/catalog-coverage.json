@@ -1026,7 +1026,15 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-perf-analyzer",
       "local_path": "/home/shuhao/vllm-hust-perf-analyzer",
       "source_revision": "37323af55aeb5851b9a70b97155f5eacf104eafc",
-      "status": "source-audit-pending"
+      "status": "offline-analysis-tool-no-serving-treatment",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 9,
+          "text": "Native C++17 offline analyzer for accelerator profiler traces; current production implementation is the native CLI."
+        }
+      ],
+      "curve_applicability": "No serving-time optimization entrypoint in this revision. Analyze profiling evidence separately; do not fabricate a vLLM speedup curve for an offline CLI."
     }
   ]
 }
