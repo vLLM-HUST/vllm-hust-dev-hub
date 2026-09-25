@@ -41,3 +41,20 @@ def test_matching_lifecycle_is_exercised(tmp_path):
     metrics(b, calls=7, admissions=4, completions=4)
     report = module.receipt(a, b)
     assert report["admissions"] == 3 and report["status"] == "exercised"
+
+
+def test_curve_keeps_clean_abstentions_explicitly_unexercised(tmp_path):
+    a, b = tmp_path / "a", tmp_path / "b"
+    metrics(a)
+    metrics(b, calls=10, abstentions=10)
+    report = module.receipt(a, b, require_exercised=False)
+    assert report["status"] == "not-exercised"
+    assert report["calls"] == 10 and report["admissions"] == 0
+
+
+def test_unexercised_curve_still_rejects_policy_faults(tmp_path):
+    a, b = tmp_path / "a", tmp_path / "b"
+    metrics(a)
+    metrics(b, calls=10, abstentions=9, failures=1)
+    with pytest.raises(ValueError, match="failed"):
+        module.receipt(a, b, require_exercised=False)
