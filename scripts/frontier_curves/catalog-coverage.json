@@ -228,7 +228,25 @@
           "failure": "test_as_cache_tuple_list: mock torch missing ones; reproduced unchanged base"
         },
         "format_ci": "passed with architecture-correct existing lint tools",
-        "hardware_retest": "not started",
+        "hardware_retest": {
+          "attempt": "phase5c/mooncake-retrieval-r1",
+          "passed": false,
+          "native_passed_requests": 26,
+          "candidate_completed_requests": 10,
+          "candidate_expected_requests": 26,
+          "failed_label": "warm-262080",
+          "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+          "external_need_to_load": 0,
+          "logged_put_failures": 0,
+          "logged_get_failures": 0,
+          "heap_corruption_on_exit": true,
+          "sigkill_logged": false,
+          "owners_after": [],
+          "source_hash_mismatches": [],
+          "archive": "serving-tracker-fix-evidence.tar.gz",
+          "archive_sha256": "557cbf246b158b037f27896e276657dd4c32a7f0ff6dd11cb722fd021c7647f4",
+          "scope": "Real model qualification failed again; tracker fix is insufficient. No performance run."
+        },
         "scope": "Concrete tracker bug fixed; not proven cause or fix of previous model output/heap corruption."
       }
     },
@@ -400,7 +418,25 @@
           "failure": "test_as_cache_tuple_list: mock torch missing ones; reproduced unchanged base"
         },
         "format_ci": "passed with architecture-correct existing lint tools",
-        "hardware_retest": "not started",
+        "hardware_retest": {
+          "attempt": "phase5c/mooncake-retrieval-r1",
+          "passed": false,
+          "native_passed_requests": 26,
+          "candidate_completed_requests": 10,
+          "candidate_expected_requests": 26,
+          "failed_label": "warm-262080",
+          "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+          "external_need_to_load": 0,
+          "logged_put_failures": 0,
+          "logged_get_failures": 0,
+          "heap_corruption_on_exit": true,
+          "sigkill_logged": false,
+          "owners_after": [],
+          "source_hash_mismatches": [],
+          "archive": "serving-tracker-fix-evidence.tar.gz",
+          "archive_sha256": "557cbf246b158b037f27896e276657dd4c32a7f0ff6dd11cb722fd021c7647f4",
+          "scope": "Real model qualification failed again; tracker fix is insufficient. No performance run."
+        },
         "scope": "Concrete tracker bug fixed; not proven cause or fix of previous model output/heap corruption."
       }
     },
