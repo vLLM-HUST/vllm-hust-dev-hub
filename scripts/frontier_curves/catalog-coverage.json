@@ -211,7 +211,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-adaptive-quantized-kv-hust",
       "local_path": "/home/shuhao/vllm-ascend-adaptive-quantized-kv-hust",
       "source_revision": "ddd306fce8d885b9b9cfeb8c947ed576c5269e66",
-      "status": "source-audit-pending",
+      "status": "import-only-no-runtime-entrypoint",
       "source_witnesses": [
         {
           "path": "README.md",
@@ -223,6 +223,25 @@
           "line": 91,
           "text": "refuses it. Runtime activation requires both an accepted host contract and a"
         }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_ascend_adaptive_quantized_kv/vllm-hust-extension-v0.2.json",
+          "sha256": "c70dec2db8fc1bdf50582acc39c5b474c1edd8d3a4c9a16e5f4e09d932befd5f",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_adaptive_quantized_kv.observer",
+              "object": "ContinuingPrefillObserver",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
       ]
     },
     {
@@ -233,12 +252,31 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-quant-hust",
       "local_path": "/home/shuhao/vllm-ascend-quant-hust",
       "source_revision": "f161daab91b2b558bc8ee65d2b1bc76cd78e00b6",
-      "status": "source-audit-pending",
+      "status": "import-only-no-runtime-entrypoint",
       "source_witnesses": [
         {
           "path": "README.md",
           "line": 15,
           "text": "extension remains `import_only` until vLLM Ascend exposes the versioned loader"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "runtime-extension/src/vllm_ascend_quant_ext/vllm-hust-extension-v0.2.json",
+          "sha256": "7eb745436d4f7a59ce91a15fb01b4ccb8ecf26e622097fbb0f48f5bf85bb4ec6",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_quant_ext.artifact",
+              "object": "ArtifactContractValidator",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
         }
       ]
     },
@@ -248,9 +286,28 @@
       "artifact_type": "runtime_component",
       "public": true,
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-quant-hust/tree/main/runtime-extension",
-      "local_path": "/home/shuhao/runtime-extension",
-      "source_revision": null,
-      "status": "source-audit-pending"
+      "local_path": "/home/shuhao/vllm-ascend-quant-hust",
+      "source_revision": "f161daab91b2b558bc8ee65d2b1bc76cd78e00b6",
+      "status": "import-only-no-runtime-entrypoint",
+      "manifest_evidence": [
+        {
+          "path": "runtime-extension/src/vllm_ascend_quant_ext/vllm-hust-extension-v0.2.json",
+          "sha256": "7eb745436d4f7a59ce91a15fb01b4ccb8ecf26e622097fbb0f48f5bf85bb4ec6",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_quant_ext.artifact",
+              "object": "ArtifactContractValidator",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ]
     },
     {
       "id": "kvcompress-ascend",
@@ -280,13 +337,19 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-tiering",
       "local_path": "/home/shuhao/vllm-hust-kv-tiering",
       "source_revision": "3a73c7e1628801ea5d4f585bcc9d06260161a78c",
-      "status": "source-audit-pending",
+      "status": "documentation-only-no-runtime",
       "source_witnesses": [
         {
           "path": "README.md",
           "line": 6,
           "text": "**Status: migration scaffold. This repository does not yet contain an"
         }
+      ],
+      "tracked_tree": [
+        ".github/CODEOWNERS",
+        "MAINTAINERS.md",
+        "PROVENANCE.md",
+        "README.md"
       ]
     },
     {
@@ -297,13 +360,19 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-knorm",
       "local_path": "/home/shuhao/vllm-hust-knorm",
       "source_revision": "e0e872abfc9fa88659b3e83c1c8b8b2b3de88fc0",
-      "status": "source-audit-pending",
+      "status": "documentation-only-no-runtime",
       "source_witnesses": [
         {
           "path": "README.md",
           "line": 6,
           "text": "**Status: migration scaffold. This repository does not yet contain an"
         }
+      ],
+      "tracked_tree": [
+        ".github/CODEOWNERS",
+        "MAINTAINERS.md",
+        "PROVENANCE.md",
+        "README.md"
       ]
     },
     {
@@ -314,7 +383,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-pyramidkv-hust",
       "local_path": "/home/shuhao/vllm-ascend-pyramidkv-hust",
       "source_revision": "77b0862c1e5be8c883fda934cdb383c57cf7ad0d",
-      "status": "source-audit-pending",
+      "status": "import-only-no-runtime-entrypoint",
       "source_witnesses": [
         {
           "path": "README.md",
@@ -326,6 +395,25 @@
           "line": 9,
           "text": "Manifest 0.2 carrier is deliberately marked `import_only`. Extension Manager"
         }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_ascend_pyramidkv/vllm-hust-extension-v0.2.json",
+          "sha256": "83f058a61a01e315428c9aacc85446c24283fb56ebc48fbbaa11c1bf8c4ad4d7",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_pyramidkv",
+              "object": "PyramidKVContractProposal",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
       ]
     },
     {
@@ -336,13 +424,19 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-slicegpt",
       "local_path": "/home/shuhao/vllm-hust-slicegpt",
       "source_revision": "6acf19d9cbb3ed6caa3f5e6341b1da41941f9f2e",
-      "status": "source-audit-pending",
+      "status": "documentation-only-no-runtime",
       "source_witnesses": [
         {
           "path": "README.md",
           "line": 6,
           "text": "**Status: migration scaffold. This repository does not yet contain an"
         }
+      ],
+      "tracked_tree": [
+        ".github/CODEOWNERS",
+        "MAINTAINERS.md",
+        "PROVENANCE.md",
+        "README.md"
       ]
     },
     {
@@ -383,7 +477,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-quantized-kv-cache-hust",
       "local_path": "/home/shuhao/vllm-ascend-quantized-kv-cache-hust",
       "source_revision": "8dd24cdce248519c173710993f6c633a96107c0d",
-      "status": "source-audit-pending",
+      "status": "import-only-no-runtime-entrypoint",
       "source_witnesses": [
         {
           "path": "README.md",
@@ -395,6 +489,25 @@
           "line": 16,
           "text": "is deliberately `import_only`: it can be built, installed, discovered, and"
         }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_ascend_quantized_kv_cache/vllm-hust-extension-v0.2.json",
+          "sha256": "453ea881a1f1102c16143d6a46341c6d66e50cc9d918a8ba67e169272953e4f5",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_quantized_kv_cache.dtypes",
+              "object": "resolve_layout",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
       ]
     },
     {
@@ -405,7 +518,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-simllm-hust",
       "local_path": "/home/shuhao/vllm-ascend-simllm-hust",
       "source_revision": "dcdc6edf7bdcc68bdf35058888ebfd9752ae3566",
-      "status": "source-audit-pending",
+      "status": "import-only-no-runtime-entrypoint",
       "source_witnesses": [
         {
           "path": "README.md",
@@ -432,6 +545,25 @@
           "line": 67,
           "text": "Until then, the package remains `import_only` and Extension Manager must refuse"
         }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_ascend_simllm/vllm-hust-extension-v0.2.json",
+          "sha256": "efbb3b3df5094d9d564841e4d87ae8dd1061ebb0bd7bf0927bee9643a4268e8d",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_simllm.license_gate",
+              "object": "SimLLMHostContractDescriptor",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
       ]
     },
     {
@@ -452,7 +584,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-split-batch-hust",
       "local_path": "/home/shuhao/vllm-ascend-split-batch-hust",
       "source_revision": "b46de46e90204a0a7636a1dbc952f73178859ada",
-      "status": "source-audit-pending",
+      "status": "import-only-no-runtime-entrypoint",
       "source_witnesses": [
         {
           "path": "README.md",
@@ -469,6 +601,25 @@
           "line": 3,
           "text": "The extracted planner is pure and default-off. Runtime activation requires:"
         }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_ascend_split_batch/vllm-hust-extension-v0.2.json",
+          "sha256": "f58e7425bea31719a3a771fcab4a3f0a614049488341b6479dcb76a710eae614",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_split_batch.planner",
+              "object": "plan_dual_pad",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
       ]
     },
     {
@@ -479,7 +630,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-transfer-observability",
       "local_path": "/home/shuhao/vllm-hust-kv-transfer-observability",
       "source_revision": "ec3446d936b6ac148e0be33b1dba831f9ecfc0c4",
-      "status": "source-audit-pending",
+      "status": "import-only-no-runtime-entrypoint",
       "source_witnesses": [
         {
           "path": "README.md",
@@ -496,6 +647,31 @@
           "line": 18,
           "text": "is deliberately `import_only`: the observability primitives can be imported and"
         }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_hust_kv_transfer_observability/vllm-hust-extension-v0.2.json",
+          "sha256": "637b980343f41ad73dc1e4dbbbd2b89af1807b68eae41be2cd8819e0d856da8e",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_hust_kv_transfer_observability.events",
+              "object": "JsonlKVTransferEventSink",
+              "status": "import_only"
+            },
+            {
+              "type": "python_module",
+              "module": "vllm_hust_kv_transfer_observability.descriptors",
+              "object": "DescriptorLayoutCapture",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
       ]
     },
     {
@@ -506,7 +682,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-layered-prefill-hust",
       "local_path": "/home/shuhao/vllm-ascend-layered-prefill-hust",
       "source_revision": "a45e41709ccacc3d7c736910b93c1b5985d9ee94",
-      "status": "source-audit-pending",
+      "status": "import-only-no-runtime-entrypoint",
       "source_witnesses": [
         {
           "path": "README.md",
@@ -523,6 +699,25 @@
           "line": 4,
           "text": "host-independent. Runtime activation is a vLLM Ascend extension and requires:"
         }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_ascend_layered_prefill/vllm-hust-extension-v0.2.json",
+          "sha256": "d3121e71ec177d80b62f1bec491f6a6926a58f20526641df43460b556fea1554",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_layered_prefill.control",
+              "object": "LayeredPrefillMetadata",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
       ]
     },
     {
@@ -533,7 +728,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-activation-sparsity",
       "local_path": "/home/shuhao/vllm-hust-activation-sparsity",
       "source_revision": "0e4d0628c1972d5086a217b0007576c1fd8998a3",
-      "status": "source-audit-pending",
+      "status": "import-only-no-runtime-entrypoint",
       "source_witnesses": [
         {
           "path": "README.md",
@@ -549,6 +744,25 @@
           "path": "HOST_CONTRACT.md",
           "line": 4,
           "text": "cache identity without importing vLLM or torch. Runtime activation requires:"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_hust_activation_sparsity/vllm-hust-extension-v0.2.json",
+          "sha256": "31ef587b7d0282b395754b0992e88ec793d32bb0445dffe5fae49902b1fab5b4",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_hust_activation_sparsity.config",
+              "object": "ActivationSparsityConfig",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
         }
       ]
     },
@@ -570,7 +784,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-qos-scheduler",
       "local_path": "/home/shuhao/vllm-hust-qos-scheduler",
       "source_revision": "13d376a7d8990c4dcf5c0903cb6fbf2398ef0fb0",
-      "status": "source-audit-pending",
+      "status": "import-only-no-runtime-entrypoint",
       "source_witnesses": [
         {
           "path": "README.md",
@@ -587,6 +801,25 @@
           "line": 4,
           "text": "scheduler classes. Runtime activation requires:"
         }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_hust_qos_scheduler/vllm-hust-extension-v0.2.json",
+          "sha256": "1bf6b9f5f792f05a7ab268874f2cae6130ae3df6eec77570852ce55a0ecd27db",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_hust_qos_scheduler.policy",
+              "object": "QoSOrderingPolicy",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
       ]
     },
     {
@@ -597,12 +830,31 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-stateharbor",
       "local_path": "/home/shuhao/vllm-hust-stateharbor",
       "source_revision": "e1366f3c33f384437201e70ad482b84fdb1dcf60",
-      "status": "source-audit-pending",
+      "status": "import-only-no-runtime-entrypoint",
       "source_witnesses": [
         {
           "path": "README.md",
           "line": 6,
           "text": "**Status: installable contract/reference package (`import_only`). It contains"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_hust_stateharbor/vllm-hust-extension-v0.2.json",
+          "sha256": "ff8a56b2339d46fffb88a6715b099b251185b351db4c42dc004b88ecdf4ccf58",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_hust_stateharbor",
+              "object": "StateHarborDescriptor",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
         }
       ]
     },
@@ -614,7 +866,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-scheduler-policy-lab",
       "local_path": "/home/shuhao/vllm-hust-scheduler-policy-lab",
       "source_revision": "215bdab44fb572f125e1426f78103e4d4ac7b833",
-      "status": "source-audit-pending",
+      "status": "import-only-no-runtime-entrypoint",
       "source_witnesses": [
         {
           "path": "README.md",
@@ -630,6 +882,37 @@
           "path": "HOST_CONTRACT.md",
           "line": 3,
           "text": "The extracted policies do not import vLLM internals. Activation requires a host"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_hust_scheduler_policy_lab/vllm-hust-extension-v0.2.json",
+          "sha256": "116333ce5b3ad88622a9f08f46ddab11c355f7e090666c643d15fece9ab25153",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_hust_scheduler_policy_lab.past_future",
+              "object": "PastFuturePolicy",
+              "status": "import_only"
+            },
+            {
+              "type": "python_module",
+              "module": "vllm_hust_scheduler_policy_lab.sarathi",
+              "object": "SarathiPolicy",
+              "status": "import_only"
+            },
+            {
+              "type": "python_module",
+              "module": "vllm_hust_scheduler_policy_lab.observer",
+              "object": "NativeRecaptureScopeObserver",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
         }
       ]
     },
