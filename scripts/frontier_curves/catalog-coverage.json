@@ -494,7 +494,90 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-vSpec",
       "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/vspec",
       "source_revision": "d4c4f659495826e64802eedb195de52019282b47",
-      "status": "draft-download-pending"
+      "status": "eagle3-attribute-ABI-pass-draft-download-blocked",
+      "runtime_abi_probe": {
+        "scope": "Actual imports and attribute checks only; no patch activation, draft loading, graph or model correctness qualification",
+        "exit": 0,
+        "probe_sha256": "4841a98906d7a94f39f00c2a9c66825fd247e726234d2ed367cdbd47a919dfe0",
+        "checks": [
+          {
+            "detail": "available",
+            "name": "vllm.v1.outputs.SamplerOutput",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.compilation.acl_graph.ACLGraphWrapper",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.sample.rejection_sampler.AscendRejectionSampler.forward",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.eagle_proposer.AscendEagleProposer.propose",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.llm_base_proposer.AscendSpecDecodeBaseProposer._get_model",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.llm_base_proposer.AscendSpecDecodeBaseProposer._maybe_share_lm_head",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.llm_base_proposer.AscendSpecDecodeBaseProposer.dummy_run",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.llm_base_proposer.AscendSpecDecodeBaseProposer.load_model",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.llm_base_proposer.AscendSpecDecodeBaseProposer._propose",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.llm_base_proposer.AscendSpecDecodeBaseProposer._update_full_graph_params",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.worker.model_runner_v1.NPUModelRunner.load_model",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.worker.model_runner_v1.NPUModelRunner._sample",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.worker.model_runner_v1.NPUModelRunner._update_full_graph_params_if_needed",
+            "ok": true
+          }
+        ],
+        "stdout_sha256": "ec29c2cf081c4ec49fc092ecc3349d7747f19c7dbe9e6924ea942b3efbe13d38",
+        "environment": "Same phase4 launcher environment in assigned SSH31769 container",
+        "source_revision_proven_by_probe": false,
+        "provenance_note": "ABI checker reports null Git revisions for staged runtime; phase4 manifest provides source provenance separately."
+      },
+      "draft_access": {
+        "repository": "jiapingW/Qwen3.5-35B-A3B-Eagle3-Specforge",
+        "full_revision": null,
+        "weights_downloaded": false,
+        "last_resolve_attempt": "curl HEAD-follow-redirect config.json: TLS unexpected EOF, exit35",
+        "scope": "Network access failure; not proof model unavailable or incompatible"
+      }
     },
     {
       "id": "latchmoe",

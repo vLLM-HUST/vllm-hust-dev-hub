@@ -16,7 +16,7 @@
 | PegaFlow vLLM Connectors | 普通连接器未声明 HMA 且只使用第 0 缓存组；NIXL 路径虽支持 HMA，但固定版本设备表无 NPU，共同 Ascend 平台未扩展该表，会被设备检查拒绝。需实际 NPU 传输适配，不能仅绕过检查。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
 | BidKV | 新共同运行时下 C1/C2/C4/C8/C16 与 Native 配对测试全部完成，原始记录校验与设备释放通过，已由 PR #283 发布。未触发抢占，不能宣称抢占收益。 | [a0cba97d](https://github.com/vLLM-HUST/vllm-hust-bidkv/tree/a0cba97d9abdc99908e46616db622f0e0099127f) |
 | DiffSpec | 当前载体要求 EAGLE3/TP4 且关闭 APC、async，不能直接替代本轮 MTP2/APC/async 配置。 | [42e5909f](https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec/tree/42e5909fc6fe276ba0defe1901257a523653aefb) |
-| vSpec | 发现针对 Qwen3.5-35B-A3B 的 EAGLE3 草稿模型；权重下载尚未成功，动态 ABI/硬件资格未通过。 | [d4c4f659](https://github.com/vLLM-HUST/vllm-hust-vSpec/tree/d4c4f659495826e64802eedb195de52019282b47) |
+| vSpec | 发现针对 Qwen3.5-35B-A3B 的 EAGLE3 草稿模型；实际 EAGLE3 导入/属性 ABI 检查 13/13 通过；草稿权重下载仍遇 TLS 失败，补丁激活与硬件正确性尚未验证。 | [d4c4f659](https://github.com/vLLM-HUST/vllm-hust-vSpec/tree/d4c4f659495826e64802eedb195de52019282b47) |
 | LatchMoE | 当前启动器拒绝 APC；已执行对应拒绝路径测试。 | [9b2d4acd](https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE/tree/9b2d4acdbfbe6463a22dd0bb8e6ca5bfda47e2c1) |
 | Adaptive Quantized KV | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [ddd306fc](https://github.com/vLLM-HUST/vllm-ascend-adaptive-quantized-kv-hust/tree/ddd306fce8d885b9b9cfeb8c947ed576c5269e66) |
 | Ascend Quant Toolkit | 工具是离线检查点量化；运行时描述器仅校验元数据，不加载模型或设备。缺少量化产物加载和算子选择的宿主接入，不能作为本轮 BF16 在线优化开关。 | [f161daab](https://github.com/vLLM-HUST/vllm-ascend-quant-hust/tree/f161daab91b2b558bc8ee65d2b1bc76cd78e00b6) |
