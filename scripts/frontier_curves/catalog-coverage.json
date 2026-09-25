@@ -100,7 +100,7 @@
           "HUST_FORK.md"
         ]
       },
-      "next_action": "After scheduled measurements release devices, validate assigned-device network configuration and local owned Mooncake service; keep APC, async, MTP2 and graph modes; use kv_load_failure_policy=fail for hybrid correctness. Qualify actual cache save/load before publishing. Installed 0.3.11.post1 is not proven to match catalog 0.3.12.post1 source; establish actual binary/source provenance or build pinned source before attributing a result to that revision.",
+      "next_action": "Diagnose actual Qwen3.5 retrieval failure without changing MTP2/APC/async/graph configuration. Independent phase5b qualification compares Native control and 16 GiB per-rank Store; no performance authorization until correctness passes.",
       "ascend_source_witnesses": [
         {
           "path": "vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/ascend_store_connector.py",
@@ -151,7 +151,7 @@
         ],
         "owners_after": [],
         "hccn_conf_present": false,
-        "scope": "Actual bounded transport correctness only; Store hybrid save/load and serving qualification pending. No performance measurements.",
+        "scope": "Pinned build, imports, real four-path transfers and raw multi-buffer Store passed. Actual Qwen3.5 serving retrieval failed; no qualified performance measurement.",
         "store_probe": {
           "passed": true,
           "buffer_sizes": [
@@ -167,6 +167,28 @@
           "owners_after": [],
           "scope": "Raw NPU multi-buffer Store operations; Qwen3.5 hybrid serving not yet qualified"
         }
+      },
+      "serving_qualification": {
+        "attempt": "phase5/mooncake-retrieval-r1",
+        "passed": false,
+        "completed_requests": 8,
+        "expected_requests": 26,
+        "failed_label": "warm-131072",
+        "cold_131072_passed": true,
+        "warm_text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+        "warm_finish_reason": "length",
+        "warm_cached_tokens": 126976,
+        "store_segment_bytes_per_rank": 1073741824,
+        "observed_errors": [
+          "Store BatchPut insufficient space (-200)",
+          "malloc(): unsorted double linked list corrupted during shutdown"
+        ],
+        "supervised_api_exit": 0,
+        "controller_exit": 1,
+        "owners_after": [],
+        "archive": "serving-r1-failed-evidence.tar.gz",
+        "archive_sha256": "2a71073a8a55b29008291f8804c246daa3bce3f0f37e13e0f583b494c5175476",
+        "scope": "Correctness qualification failed; observed errors are not a proven root cause. Supervisor API exit 0 does not establish clean worker teardown."
       }
     },
     {
@@ -191,7 +213,7 @@
           "text": "Save path instantiates torch.cuda.Event; must validate Ascend event adaptation before qualification."
         }
       ],
-      "next_action": "After scheduled measurements release devices, validate assigned-device network configuration and local owned Mooncake service; keep APC, async, MTP2 and graph modes; use kv_load_failure_policy=fail for hybrid correctness. Qualify actual cache save/load before publishing. Installed 0.3.11.post1 is not proven to match catalog 0.3.12.post1 source; establish actual binary/source provenance or build pinned source before attributing a result to that revision.",
+      "next_action": "Diagnose actual Qwen3.5 retrieval failure without changing MTP2/APC/async/graph configuration. Independent phase5b qualification compares Native control and 16 GiB per-rank Store; no performance authorization until correctness passes.",
       "readiness_evidence": {
         "installed_distribution": "mooncake-transfer-engine-npu==0.3.11.post1",
         "master_executable_present": true,
@@ -260,7 +282,7 @@
         ],
         "owners_after": [],
         "hccn_conf_present": false,
-        "scope": "Actual bounded transport correctness only; Store hybrid save/load and serving qualification pending. No performance measurements.",
+        "scope": "Pinned build, imports, real four-path transfers and raw multi-buffer Store passed. Actual Qwen3.5 serving retrieval failed; no qualified performance measurement.",
         "store_probe": {
           "passed": true,
           "buffer_sizes": [
@@ -276,6 +298,28 @@
           "owners_after": [],
           "scope": "Raw NPU multi-buffer Store operations; Qwen3.5 hybrid serving not yet qualified"
         }
+      },
+      "serving_qualification": {
+        "attempt": "phase5/mooncake-retrieval-r1",
+        "passed": false,
+        "completed_requests": 8,
+        "expected_requests": 26,
+        "failed_label": "warm-131072",
+        "cold_131072_passed": true,
+        "warm_text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+        "warm_finish_reason": "length",
+        "warm_cached_tokens": 126976,
+        "store_segment_bytes_per_rank": 1073741824,
+        "observed_errors": [
+          "Store BatchPut insufficient space (-200)",
+          "malloc(): unsorted double linked list corrupted during shutdown"
+        ],
+        "supervised_api_exit": 0,
+        "controller_exit": 1,
+        "owners_after": [],
+        "archive": "serving-r1-failed-evidence.tar.gz",
+        "archive_sha256": "2a71073a8a55b29008291f8804c246daa3bce3f0f37e13e0f583b494c5175476",
+        "scope": "Correctness qualification failed; observed errors are not a proven root cause. Supervisor API exit 0 does not establish clean worker teardown."
       }
     },
     {
