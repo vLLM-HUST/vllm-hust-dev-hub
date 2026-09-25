@@ -3,7 +3,6 @@
 import copy
 import importlib.util
 import json
-import shlex
 import sys
 from pathlib import Path
 
@@ -61,7 +60,7 @@ def point(arm):
     return dict(
         configuration=dict(
             mods=[] if arm == "native" else [arm],
-            parameters=dict(server_command=shlex.join(args), runtime_receipt=meta),
+            parameters=dict(server_command=" ".join(args), runtime_receipt=meta),
         )
     )
 
@@ -89,6 +88,29 @@ def test_admission_flag_cannot_leak_into_bidkv(importer):
         " --scheduler-reserve-output-budget"
     )
     with pytest.raises(ValueError, match="policy launch"):
+        importer.common_command(candidate)
+
+
+def test_proc_receipt_json_keeps_quotes_and_embedded_spaces(importer):
+    args = [
+        "/venv/bin/python", "/venv/bin/vllm", "serve", "/model",
+        "--compilation-config",
+        '{"cudagraph_mode": "FULL_AND_PIECEWISE", "sizes": [3, 6, 12]}',
+        "--additional-config", '{"enable_cpu_binding":false}',
+    ]
+    assert importer.recorded_arguments(" ".join(args)) == args
+    with pytest.raises(ValueError):
+        importer.recorded_arguments('vllm --additional-config {broken}')
+    with pytest.raises(ValueError, match="boundary"):
+        importer.recorded_arguments('vllm --additional-config {}garbage')
+
+
+def test_duplicate_policy_options_are_not_normalized_away(importer):
+    candidate = point("bidkv")
+    candidate["configuration"]["parameters"]["server_command"] += (
+        " --preemption-policy bidkv.adapters.vllm_hust.selector.BidkvPreemptionPolicy"
+    )
+    with pytest.raises(ValueError, match="Duplicate policy"):
         importer.common_command(candidate)
 
 

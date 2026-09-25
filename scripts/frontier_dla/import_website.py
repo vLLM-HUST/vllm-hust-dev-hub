@@ -6,7 +6,6 @@ import hashlib
 import json
 import math
 import re
-import shlex
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -184,6 +183,7 @@ def build(template, root, arm, cell, evidence_url):
         "calibration",
         "preemption_policy",
         "mod_runtime_effectiveness",
+        "runtime_base_commits",
     ):
         params.pop(key, None)
     params["scheduler_reserve_output_budget"] = arm == "dla"
@@ -253,10 +253,36 @@ def build(template, root, arm, cell, evidence_url):
     return point, row
 
 
+def recorded_arguments(command):
+    """Parse this campaign's space-joined /proc argv, not shell source.
+
+    Paths and scalar arguments in the fixed launcher contain no whitespace.
+    JSON objects/arrays retain their internal quotes and spaces in the receipt.
+    Reject ambiguous scalar quoting rather than silently reinterpret it.
+    """
+    decoder = json.JSONDecoder()
+    result = []
+    remaining = command.strip()
+    while remaining:
+        if remaining[0] in "{[":
+            _, end = decoder.raw_decode(remaining)
+            if remaining[end:] and not remaining[end].isspace():
+                raise ValueError("Malformed recorded JSON argument boundary")
+            result.append(remaining[:end])
+            remaining = remaining[end:].lstrip()
+        else:
+            token, _, remaining = remaining.partition(" ")
+            if any(c in token for c in "\"'\t\n\r"):
+                raise ValueError("Ambiguous recorded scalar argument")
+            result.append(token)
+            remaining = remaining.lstrip()
+    return result
+
+
 def common_command(point):
     cfg = point["configuration"]
     arm = cfg["mods"][0] if cfg["mods"] else "native"
-    args = shlex.split(cfg["parameters"]["server_command"])
+    args = recorded_arguments(cfg["parameters"]["server_command"])
     normalized = []
     policy = None
     budget = False
@@ -264,10 +290,16 @@ def common_command(point):
     iterator = iter(args)
     for token in iterator:
         if token == "--preemption-policy":
+            if policy is not None:
+                raise ValueError("Duplicate policy launch option")
             policy = next(iterator)
         elif token == "--scheduler-reserve-output-budget":
+            if budget:
+                raise ValueError("Duplicate admission launch option")
             budget = True
         elif token == "--additional-config":
+            if extra is not None:
+                raise ValueError("Duplicate additional-config launch option")
             extra = json.loads(next(iterator))
             declared = extra.pop("dla_exact_output_budgets", False)
             if declared is not (arm == "dla"):
