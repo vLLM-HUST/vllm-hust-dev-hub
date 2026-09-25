@@ -171,6 +171,8 @@ def build(template, root, arm, cell, evidence_url):
         comparison_scope="Fresh Native/BidKV/DLA TP2 common-core comparison; one serial 900s observation per cell; no pooling with historical controls or repeatability claim",
         source_capsule="frontier-container-20260925-output-budget",
         worker_class="pipeline_worker.Worker (profiling disabled)",
+        request_history_mode="Closed-loop actual output IDs feed the next input; compiled prompt lengths and output budgets remain fixed",
+        window_cache_lifecycle="Fresh service per arm, qualification then serial windows; cache is not reset between windows",
         runtime_receipt=meta,
         server_command=read(run / "custody.json")["command"],
         observed_max_prompt_tokens=summary["max_prompt_tokens_observed"],

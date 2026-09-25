@@ -168,6 +168,8 @@ def build(template, root, arm, cell, evidence_url):
         comparison_scope="Fresh PP2×TP2 native/Pipeline matched pair; one serial 900s observation per cell; not a comparison with historical TP2-only baseline or a repeatability certificate",
         source_capsule="frontier-container-20260925-pp-hybrid-mtp",
         worker_class="pipeline_worker.Worker (profiling disabled)",
+        request_history_mode="Closed-loop actual output IDs feed the next input; compiled prompt lengths and output budgets remain fixed",
+        window_cache_lifecycle="Fresh service per arm, qualification then serial windows; cache is not reset between windows",
         runtime_receipt=meta,
         server_command=read(run / "custody.json")["command"],
         observed_max_prompt_tokens=summary["max_prompt_tokens_observed"],
