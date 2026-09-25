@@ -117,7 +117,17 @@
           "line": 4892,
           "text": "Common frozen worker keeps CUDA compatibility event backed by real NPU event."
         }
-      ]
+      ],
+      "installed_binary_precheck": {
+        "version": "0.3.11.post1",
+        "engine_only_exit": -6,
+        "torch_npu_first_exit": -6,
+        "stderr": "corrupted size vs. prev_size",
+        "owners_before": [],
+        "owners_after": [],
+        "scope": "Import-only subprocess abort on exit; no engine initialized, not performance",
+        "artifact": "mooncake-import-diagnostics.json"
+      }
     },
     {
       "id": "mooncake-vllm-connectors",
@@ -176,7 +186,17 @@
           "line": 4892,
           "text": "Common frozen worker keeps CUDA compatibility event backed by real NPU event."
         }
-      ]
+      ],
+      "installed_binary_precheck": {
+        "version": "0.3.11.post1",
+        "engine_only_exit": -6,
+        "torch_npu_first_exit": -6,
+        "stderr": "corrupted size vs. prev_size",
+        "owners_before": [],
+        "owners_after": [],
+        "scope": "Import-only subprocess abort on exit; no engine initialized, not performance",
+        "artifact": "mooncake-import-diagnostics.json"
+      }
     },
     {
       "id": "pegaflow",

@@ -62,3 +62,14 @@ The archived `mooncake-readonly-network.json` records these exact outputs. No
 network settings were written and no device transport was initialized. Known
 addresses and link status alone do not substitute for the required configuration
 or an actual end-to-end transfer qualification.
+
+
+A bounded import-only check of the installed binary also fails independently of
+transport setup. Both `import mooncake.engine` alone and importing `torch` /
+`torch_npu` first print successful import, then abort at interpreter exit with
+`corrupted size vs. prev_size` (SIGABRT, subprocess return code -6). No engine was
+instantiated, no device selected and no transfer initialized. Device owners were
+empty before and after. `mooncake-import-diagnostics.json` retains both exact
+commands, outputs and hashes of 10 distribution binary/metadata files. This
+establishes a software failure in the installed environment, not its cause;
+initialization success must not be assumed or published as qualification.
