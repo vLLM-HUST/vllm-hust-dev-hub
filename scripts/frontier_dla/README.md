@@ -77,3 +77,11 @@ The overall effectiveness label remains `not-exercised` when neither admission
 deferrals nor preemption selections occurred. Receipts expose these separately;
 even observed deferrals/selections do not by themselves prove a speedup or that
 a matched Native request would have made a different decision.
+
+2026-09-25 target update: preparation verified all model/workload/source files.
+The first actual runtime suite exposed fixture API mismatches (removed Request
+`eos_token_id`; required SchedulerConfig `is_encoder_decoder`). Its failure receipt
+is preserved as `software-integration-r1-failed`; the corrected fixture and hash
+transition are recorded. The second actual-container run passed all 6 tests,
+verified unchanged runtime sources, and left no device owners. The serial campaign
+was then started. This is software readiness, not a performance result.

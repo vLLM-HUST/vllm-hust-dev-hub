@@ -64,7 +64,6 @@ def request():
         prompt_token_ids=[42] * 32,
         sampling_params=SamplingParams(max_tokens=160, ignore_eos=True),
         pooling_params=None,
-        eos_token_id=0,
     )
 
 
@@ -125,7 +124,7 @@ def test_dla_runs_through_real_host_policy_controller():
 
 
 def test_scheduler_option_is_default_off_and_can_be_enabled():
-    assert not SchedulerConfig(max_model_len=1024).scheduler_reserve_output_budget
+    assert not SchedulerConfig(max_model_len=1024, is_encoder_decoder=False).scheduler_reserve_output_budget
     assert SchedulerConfig(
-        max_model_len=1024, scheduler_reserve_output_budget=True
+        max_model_len=1024, is_encoder_decoder=False, scheduler_reserve_output_budget=True
     ).scheduler_reserve_output_budget
