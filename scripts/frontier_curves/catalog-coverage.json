@@ -89,9 +89,23 @@
       "artifact_type": "bridge",
       "public": true,
       "repository": "https://github.com/vllm-project/vllm",
-      "local_path": "/home/shuhao/vllm",
-      "source_revision": null,
-      "status": "source-audit-pending"
+      "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/core-dla",
+      "source_revision": "d0f22d2bda562156e4dbf433ce645e1769b4f804",
+      "status": "ascend-store-integration-pending",
+      "source_repository": "https://github.com/vLLM-HUST/vllm-hust",
+      "source_witnesses": [
+        {
+          "path": "vllm/distributed/kv_transfer/kv_connector/v1/mooncake/store/connector.py",
+          "line": 87,
+          "text": "MooncakeStoreConnector supports HMA."
+        },
+        {
+          "path": "vllm/distributed/kv_transfer/kv_connector/v1/mooncake/store/worker.py",
+          "line": 1360,
+          "text": "Save path instantiates torch.cuda.Event; must validate Ascend event adaptation before qualification."
+        }
+      ],
+      "next_action": "Inspect frozen Ascend adapters, qualify NPU transfer-engine/store setup and Mamba/APC semantics; source HMA support alone is insufficient."
     },
     {
       "id": "pegaflow",
@@ -101,7 +115,25 @@
       "repository": "https://github.com/vLLM-HUST/pegaflow-hust",
       "local_path": "/home/shuhao/pegaflow-hust",
       "source_revision": "a3c574b8526969b70654715d86976474a4cc1b58",
-      "status": "source-audit-pending"
+      "status": "hybrid-connector-integration-pending",
+      "source_witnesses": [
+        {
+          "path": "python/pegaflow/connector/__init__.py",
+          "line": 39,
+          "text": "PegaKVConnector derives KVConnectorBase_V1 without SupportsHMA."
+        },
+        {
+          "path": "python/pegaflow/connector/scheduler.py",
+          "line": 289,
+          "text": "Ordinary store connector extracts only blocks.get_block_ids()[0]; other HMA cache-group addresses require integration."
+        },
+        {
+          "path": "python/pegaflow/nixl_connector/connector.py",
+          "line": 81,
+          "text": "NixlBaseConnector separately supports HMA; do not generalize the ordinary store-connector restriction to all PegaFlow paths."
+        }
+      ],
+      "next_action": "Qualify a hybrid-safe Ascend connector and owned external service; ordinary connector cannot be activated as an unchanged Qwen3.5 HMA control."
     },
     {
       "id": "pegaflow-vllm-connectors",
@@ -111,7 +143,25 @@
       "repository": "https://github.com/vLLM-HUST/pegaflow-hust",
       "local_path": "/home/shuhao/pegaflow-hust",
       "source_revision": "a3c574b8526969b70654715d86976474a4cc1b58",
-      "status": "source-audit-pending"
+      "status": "hybrid-connector-integration-pending",
+      "source_witnesses": [
+        {
+          "path": "python/pegaflow/connector/__init__.py",
+          "line": 39,
+          "text": "PegaKVConnector derives KVConnectorBase_V1 without SupportsHMA."
+        },
+        {
+          "path": "python/pegaflow/connector/scheduler.py",
+          "line": 289,
+          "text": "Ordinary store connector extracts only blocks.get_block_ids()[0]; other HMA cache-group addresses require integration."
+        },
+        {
+          "path": "python/pegaflow/nixl_connector/connector.py",
+          "line": 81,
+          "text": "NixlBaseConnector separately supports HMA; do not generalize the ordinary store-connector restriction to all PegaFlow paths."
+        }
+      ],
+      "next_action": "Qualify a hybrid-safe Ascend connector and owned external service; ordinary connector cannot be activated as an unchanged Qwen3.5 HMA control."
     },
     {
       "id": "bidkv",
