@@ -664,7 +664,13 @@
             "additional_config": {}
           }
         }
-      ]
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source and complete Git tree inspection",
+        "source_path": "src/vllm_ascend_quantized_kv_cache/dtypes.py",
+        "source_sha256": "5be616ab97ac3c409e6b303634c80e8bfbb43188702a43785f1dd1692150320c",
+        "finding": "Package contains device-independent dtype and packed-layout arithmetic. Active quantize/dequantize/attention kernels and host allocation/layout/transfer integration are not supplied by that implementation; archived historical patches are provenance, not enabled runtime code."
+      }
     },
     {
       "id": "simllm-migration",
@@ -720,7 +726,13 @@
             "additional_config": {}
           }
         }
-      ]
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source and complete Git tree inspection",
+        "source_path": "src/vllm_ascend_simllm/license_gate.py",
+        "source_sha256": "76e96bf550efb7731347bbea6e9ca80884130d5bac3bf29a23b4d5972c96f597",
+        "finding": "Package contains source-evidence validation and a non-activating host descriptor; module explicitly contains no SimLLM implementation. No similarity index, embedding provider or runtime rewrite implementation is present in the pinned src tree."
+      }
     },
     {
       "id": "unified-communication-migration",
@@ -935,7 +947,18 @@
             "additional_config": {}
           }
         }
-      ]
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source and complete Git tree inspection",
+        "source_path": "src/vllm_hust_activation_sparsity/config.py",
+        "source_sha256": "e4e59e06c3959723617c44dc387a57372d6449780638443ce89c5b2f084100d9",
+        "finding": "Only configuration validation/hash is packaged; enabled compatibility check rejects TP2 and requires calibration. Projection/weight transforms and sparse linear host integration remain absent from the package.",
+        "cpu_compatibility_probe": {
+          "tp1_control": "accepted",
+          "tp2_candidate": "activation sparsity requires tensor_parallel_size=1",
+          "scope": "Exact pinned configuration function, no real calibration/model/NPU execution"
+        }
+      }
     },
     {
       "id": "pipeline-microbatch-migration",

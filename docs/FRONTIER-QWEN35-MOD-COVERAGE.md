@@ -27,13 +27,13 @@
 | KNorm | 固定版本完整 Git 树仅含四个文档/维护文件，没有运行实现。 | [e0e872ab](https://github.com/vLLM-HUST/vllm-hust-knorm/tree/e0e872abfc9fa88659b3e83c1c8b8b2b3de88fc0) |
 | PyramidKV Ascend | 除 import_only 和缺少宿主接入外，固定实现只接受 Llama/Qwen2 全注意力单缓存组，拒绝 MTP、TP2 和 FULL_AND_PIECEWISE；本轮配置被多项独立检查拒绝（源码核查）。 | [77b0862c](https://github.com/vLLM-HUST/vllm-ascend-pyramidkv-hust/tree/77b0862c1e5be8c883fda934cdb383c57cf7ad0d) |
 | SliceGPT | 固定版本完整 Git 树仅含四个文档/维护文件，没有运行实现。 | [6acf19d9](https://github.com/vLLM-HUST/vllm-hust-slicegpt/tree/6acf19d9cbb3ed6caa3f5e6341b1da41941f9f2e) |
-| Quantized KV Cache | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [8dd24cdc](https://github.com/vLLM-HUST/vllm-ascend-quantized-kv-cache-hust/tree/8dd24cdce248519c173710993f6c633a96107c0d) |
-| SimLLM | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [dcdc6edf](https://github.com/vLLM-HUST/vllm-ascend-simllm-hust/tree/dcdc6edf7bdcc68bdf35058888ebfd9752ae3566) |
+| Quantized KV Cache | 当前包仅实现 dtype 与打包布局计算；缺少启用中的量化/反量化/注意力算子和宿主分配、传输接入，历史补丁归档不等于当前运行实现。 | [8dd24cdc](https://github.com/vLLM-HUST/vllm-ascend-quantized-kv-cache-hust/tree/8dd24cdce248519c173710993f6c633a96107c0d) |
+| SimLLM | 完整源码树仅含来源校验和非激活描述器；该模块明确不含 SimLLM 实现，没有可测的相似度索引、嵌入或请求改写执行路径。 | [dcdc6edf](https://github.com/vLLM-HUST/vllm-ascend-simllm-hust/tree/dcdc6edf7bdcc68bdf35058888ebfd9752ae3566) |
 | Unified Communication | 策略/注册表存在，但尚缺宿主 collective 接入。 | [f00d1ef4](https://github.com/vLLM-HUST/vllm-hust-unified-comm/tree/f00d1ef4c19a992d67ef8012952a9405d52dd447) |
 | Split-Batch / Full-Graph Parallel | 除缺少宿主执行接口外，实际纯函数预检查在开启推测解码时返回 speculative_decode_conflict，与本轮 MTP2 冲突；关闭推测解码的同参数控制通过该检查。 | [b46de46e](https://github.com/vLLM-HUST/vllm-ascend-split-batch-hust/tree/b46de46e90204a0a7636a1dbc952f73178859ada) |
 | KV Transfer Observability | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [ec3446d9](https://github.com/vLLM-HUST/vllm-hust-kv-transfer-observability/tree/ec3446d936b6ac148e0be33b1dba831f9ecfc0c4) |
 | Layered Prefill | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [a45e4170](https://github.com/vLLM-HUST/vllm-ascend-layered-prefill-hust/tree/a45e41709ccacc3d7c736910b93c1b5985d9ee94) |
-| Activation Sparsity | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [0e4d0628](https://github.com/vLLM-HUST/vllm-hust-activation-sparsity/tree/0e4d0628c1972d5086a217b0007576c1fd8998a3) |
+| Activation Sparsity | 当前包仅含配置验证和哈希；实际 CPU 兼容检查拒绝 TP2（TP1 控制通过），且缺少投影变换/稀疏算子的宿主接入。 | [0e4d0628](https://github.com/vLLM-HUST/vllm-hust-activation-sparsity/tree/0e4d0628c1972d5086a217b0007576c1fd8998a3) |
 | Pipeline Microbatch | C1/C2/C4/C8/C16 的 Native 配对观测已发布；每点仍为单次观测，不能据此宣称稳定加速。 | [a15a2296](https://github.com/vLLM-HUST/vllm-hust-pipeline-microbatch/tree/a15a22961a0e4858da74a0ab806575c82cb254e6) |
 | QoS Scheduler | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [13d376a7](https://github.com/vLLM-HUST/vllm-hust-qos-scheduler/tree/13d376a7d8990c4dcf5c0903cb6fbf2398ef0fb0) |
 | StateHarbor | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | 内部来源，详见覆盖账本 |
