@@ -59,3 +59,15 @@ Native launcher's environment to execute the real runtime integration suite,
 records its log/exit code, verifies source hashes before and after, and only then
 sets `software_tests_passed=true`. This runner is prepared and syntax checked;
 it has not been executed against the container yet.
+
+`import_website.py` prepares a separate five-point series for each of Native,
+BidKV and DLA only after all three actual arms pass and release their devices.
+It validates raw streaming-window counts using two participating chips, compares
+exact source records and normalized common launch arguments, and distinguishes
+admission activity from preemption activity. It does not join historical TP2
+controls that used a different core. No actual phase4 observations exist yet.
+The preparation/import/controller/counter CPU checks pass (11 tests).
+
+The source lock additionally pins all 65 installed BidKV Python files to
+`a0cba97d9abdc99908e46616db622f0e0099127f`. A read-only container hash snapshot
+matched all 65 files; preparation repeats this check before starting anything.

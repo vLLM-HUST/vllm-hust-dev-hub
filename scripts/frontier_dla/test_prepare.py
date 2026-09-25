@@ -85,6 +85,10 @@ vllm serve MODEL --port 33782 --served-model-name frontier-qwen35-pp2 --tensor-p
         lock[name] = dict(
             revision=revision, archive=archive_path.name, sha256=digest(archive_path)
         )
+    lock["bidkv"] = dict(
+        revision="fixture-bidkv-revision",
+        files={"src/bidkv/__init__.py": digest(bidkv)},
+    )
     (root / "source-lock.json").write_text(json.dumps(lock))
     (root / "core-output-budget.patch.gz").write_bytes(b"fixture patch")
     module.main()

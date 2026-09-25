@@ -12,7 +12,7 @@
 | Mooncake vLLM Connectors | Store Connector 支持 HMA，但保存路径使用 CUDA Event；Ascend 适配、外部服务和状态正确性待验证。 | [d0f22d2b](https://github.com/vLLM-HUST/vllm-hust/tree/d0f22d2bda562156e4dbf433ce645e1769b4f804) |
 | PegaFlow | 普通 PegaKVConnector 未声明 HMA 且只使用第 0 缓存组；独立 NIXL 路径需另行验证，不能一概声称不支持。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
 | PegaFlow vLLM Connectors | 普通 PegaKVConnector 未声明 HMA 且只使用第 0 缓存组；独立 NIXL 路径需另行验证，不能一概声称不支持。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
-| BidKV | 已有 C4/C16；准备在新共同运行时补齐五档并发。已有窗口未触发抢占，不能宣称抢占收益。 | [仓库](https://github.com/vLLM-HUST/vllm-hust-bidkv)；完整来源待补 |
+| BidKV | 已有 C4/C16；准备在新共同运行时补齐五档并发。已有窗口未触发抢占，不能宣称抢占收益。 | [a0cba97d](https://github.com/vLLM-HUST/vllm-hust-bidkv/tree/a0cba97d9abdc99908e46616db622f0e0099127f) |
 | DiffSpec | 当前载体要求 EAGLE3/TP4 且关闭 APC、async，不能直接替代本轮 MTP2/APC/async 配置。 | [42e5909f](https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec/tree/42e5909fc6fe276ba0defe1901257a523653aefb) |
 | vSpec | 发现针对 Qwen3.5-35B-A3B 的 EAGLE3 草稿模型；权重下载尚未成功，动态 ABI/硬件资格未通过。 | [d4c4f659](https://github.com/vLLM-HUST/vllm-hust-vSpec/tree/d4c4f659495826e64802eedb195de52019282b47) |
 | LatchMoE | 当前启动器拒绝 APC；已执行对应拒绝路径测试。 | [9b2d4acd](https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE/tree/9b2d4acdbfbe6463a22dd0bb8e6ca5bfda47e2c1) |

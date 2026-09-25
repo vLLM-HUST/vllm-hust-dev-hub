@@ -87,6 +87,11 @@ def main():
     bidkv_sources = list((BASE / "bidkv/src/bidkv").rglob("*.py"))
     if not bidkv_sources:
         raise RuntimeError("Missing BidKV source files")
+    actual_bidkv = {
+        str(path.relative_to(BASE / "bidkv")): digest(path) for path in bidkv_sources
+    }
+    if actual_bidkv != lock["bidkv"]["files"]:
+        raise RuntimeError("Installed BidKV does not match the pinned source tree")
     for path in [bidkv_pth, *bidkv_sources]:
         shared_sources["../" + str(path.relative_to(BASE))] = digest(path)
     programs = []
@@ -112,6 +117,7 @@ def main():
             campaign="qwen35-dla-bidkv-curves-20260925",
             core_commit=CORE,
             dla_commit=DLA if arm == "dla" else None,
+            bidkv_commit=lock["bidkv"]["revision"] if arm == "bidkv" else None,
             mods=[] if arm == "native" else [arm],
             launch_script_sha256=digest(ROOT / f"launch-{arm}.sh"),
             comparison="Fresh TP2 common output-budget-capable capsule; one900s observation per cell",

@@ -169,9 +169,10 @@
       "artifact_type": "runtime_component",
       "public": true,
       "repository": "https://github.com/vLLM-HUST/vllm-hust-bidkv",
-      "local_path": "/home/shuhao/vllm-hust-bidkv",
-      "source_revision": null,
-      "status": "curve-completion-prepared"
+      "local_path": "/home/shuhao/bidkv",
+      "source_revision": "a0cba97d9abdc99908e46616db622f0e0099127f",
+      "status": "curve-completion-prepared",
+      "installed_source_validation": "All65Pythonfiles match pinned Git src/bidkv tree in assigned container"
     },
     {
       "id": "diffspec",
