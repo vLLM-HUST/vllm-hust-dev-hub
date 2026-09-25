@@ -37,3 +37,11 @@ pending. Never import this preparation as leaderboard evidence.
 hybrid Mamba cache groups, the actual preemption controller and scheduler option.
 It has been syntax checked but has not yet run in the target package environment.
 Run CPU-only suites separately from live benchmark windows.
+
+`run_campaign.py` runs Native, BidKV, then DLA serially under the dedicated
+supervisor. It refuses an incomplete software-test manifest and stops after any
+failed qualification, measurement, or device-release receipt. Each arm has a
+16,000-second wall-clock deadline; no automatic restart or repeated observation
+is enabled. Start `campaign` only after the runtime integration receipt is valid.
+The controller and counter-receipt CPU suites pass (6 tests); these do not replace
+the pending actual-runtime and hardware checks.

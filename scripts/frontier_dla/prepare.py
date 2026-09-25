@@ -130,6 +130,20 @@ stdout_logfile_maxbytes=100MB
 """
                 + ("stopasgroup=true\nkillasgroup=true\n" if name == arm else "")
             )
+    programs.append(
+        f"""[program:campaign]
+command={BASE}/.venv/bin/python {ROOT}/run_campaign.py --attempt matched-curves-r1
+directory={ROOT}
+autostart=false
+autorestart=false
+startsecs=1
+startretries=0
+stopwaitsecs=420
+redirect_stderr=true
+stdout_logfile={ROOT}/receipts/campaign.log
+stdout_logfile_maxbytes=100MB
+"""
+    )
     prefix = (
         (OLD / "supervisord.conf")
         .read_text()

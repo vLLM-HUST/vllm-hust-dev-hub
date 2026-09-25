@@ -1,4 +1,4 @@
-"""Supervised PP2 qualification and calibration with owned-server release."""
+"""Supervised TP2 Native/BidKV/DLA qualification with owned-server release."""
 
 import argparse
 import hashlib
