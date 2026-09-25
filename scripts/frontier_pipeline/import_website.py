@@ -100,10 +100,10 @@ def build(template, root, arm, cell, evidence_url):
     c = config["concurrency"]
     point = copy.deepcopy(template)
     point["id"] = f"qwen35-sweprefix-k8s-{arm}-tp2-pp2-c{c}-r1-20260925"
-    group = "Pipeline Microbatch · K8s PP2" if candidate else "Native · K8s PP2"
+    group = "Pipeline Microbatch · TP2 PP2" if candidate else "Native · TP2 PP2"
     point["label"] = f"{group} · C{c} · r1"
     cfg = point["configuration"]
-    cfg["experiment_group"] = group
+    cfg.pop("experiment_group", None)
     cfg["mods"] = [MOD] if candidate else []
     cfg["hardware"]["accelerator_count"] = 4
     cfg["engine_version"] = (
