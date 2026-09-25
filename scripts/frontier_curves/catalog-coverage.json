@@ -204,7 +204,24 @@
           "text": "NixlBaseConnector separately supports HMA; do not generalize the ordinary store-connector restriction to all PegaFlow paths."
         }
       ],
-      "next_action": "Qualify a hybrid-safe Ascend connector and owned external service; ordinary connector cannot be activated as an unchanged Qwen3.5 HMA control."
+      "next_action": "Ordinary connector needs hybrid-group integration. NIXL HMA path additionally requires real NPU device/memory/transport support: current map excludes npu and common NPUPlatform inherits an empty extension. Do not bypass the guard or substitute a CUDA alias; qualify actual transfers before measuring.",
+      "nixl_readiness_evidence": {
+        "kind": "pinned-source-analysis-not-runtime-test",
+        "supports_hma": true,
+        "builtin_device_types": [
+          "cuda",
+          "tpu",
+          "xpu",
+          "cpu"
+        ],
+        "ascend_device_type": "npu",
+        "ascend_overrides_get_nixl_supported_devices": false,
+        "base_platform_device_extension": {},
+        "rejection_witness": "python/pegaflow/nixl_connector/base_worker.py:334",
+        "device_map_witness": "python/pegaflow/nixl_connector/utils.py:18-31",
+        "base_platform_witness": "vllm/platforms/interface.py:1221",
+        "scope": "Current pinned connector and common Ascend capsule; does not rule out a future NPU transport implementation."
+      }
     },
     {
       "id": "pegaflow-vllm-connectors",
@@ -232,7 +249,24 @@
           "text": "NixlBaseConnector separately supports HMA; do not generalize the ordinary store-connector restriction to all PegaFlow paths."
         }
       ],
-      "next_action": "Qualify a hybrid-safe Ascend connector and owned external service; ordinary connector cannot be activated as an unchanged Qwen3.5 HMA control."
+      "next_action": "Ordinary connector needs hybrid-group integration. NIXL HMA path additionally requires real NPU device/memory/transport support: current map excludes npu and common NPUPlatform inherits an empty extension. Do not bypass the guard or substitute a CUDA alias; qualify actual transfers before measuring.",
+      "nixl_readiness_evidence": {
+        "kind": "pinned-source-analysis-not-runtime-test",
+        "supports_hma": true,
+        "builtin_device_types": [
+          "cuda",
+          "tpu",
+          "xpu",
+          "cpu"
+        ],
+        "ascend_device_type": "npu",
+        "ascend_overrides_get_nixl_supported_devices": false,
+        "base_platform_device_extension": {},
+        "rejection_witness": "python/pegaflow/nixl_connector/base_worker.py:334",
+        "device_map_witness": "python/pegaflow/nixl_connector/utils.py:18-31",
+        "base_platform_witness": "vllm/platforms/interface.py:1221",
+        "scope": "Current pinned connector and common Ascend capsule; does not rule out a future NPU transport implementation."
+      }
     },
     {
       "id": "bidkv",
