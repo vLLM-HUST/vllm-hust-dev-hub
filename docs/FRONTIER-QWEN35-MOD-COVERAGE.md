@@ -14,7 +14,7 @@
 | Mooncake vLLM Connectors | 找到 AscendStore HMA 路径；共同 NPU 运行时已有 Event 兼容处理。保持 APC/async/MTP/图模式的完整资格测试待执行。 | [d0f22d2b](https://github.com/vLLM-HUST/vllm-hust/tree/d0f22d2bda562156e4dbf433ce645e1769b4f804) |
 | PegaFlow | 普通连接器未声明 HMA 且只使用第 0 缓存组；NIXL 路径虽支持 HMA，但固定版本设备表无 NPU，共同 Ascend 平台未扩展该表，会被设备检查拒绝。需实际 NPU 传输适配，不能仅绕过检查。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
 | PegaFlow vLLM Connectors | 普通连接器未声明 HMA 且只使用第 0 缓存组；NIXL 路径虽支持 HMA，但固定版本设备表无 NPU，共同 Ascend 平台未扩展该表，会被设备检查拒绝。需实际 NPU 传输适配，不能仅绕过检查。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
-| BidKV | 新共同运行时下 C1/C2/C4/C8/C16 与 Native 配对测试全部完成，原始记录校验与设备释放通过，待发布。未触发抢占，不能宣称抢占收益。 | [a0cba97d](https://github.com/vLLM-HUST/vllm-hust-bidkv/tree/a0cba97d9abdc99908e46616db622f0e0099127f) |
+| BidKV | 新共同运行时下 C1/C2/C4/C8/C16 与 Native 配对测试全部完成，原始记录校验与设备释放通过，已由 PR #283 发布。未触发抢占，不能宣称抢占收益。 | [a0cba97d](https://github.com/vLLM-HUST/vllm-hust-bidkv/tree/a0cba97d9abdc99908e46616db622f0e0099127f) |
 | DiffSpec | 当前载体要求 EAGLE3/TP4 且关闭 APC、async，不能直接替代本轮 MTP2/APC/async 配置。 | [42e5909f](https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec/tree/42e5909fc6fe276ba0defe1901257a523653aefb) |
 | vSpec | 发现针对 Qwen3.5-35B-A3B 的 EAGLE3 草稿模型；权重下载尚未成功，动态 ABI/硬件资格未通过。 | [d4c4f659](https://github.com/vLLM-HUST/vllm-hust-vSpec/tree/d4c4f659495826e64802eedb195de52019282b47) |
 | LatchMoE | 当前启动器拒绝 APC；已执行对应拒绝路径测试。 | [9b2d4acd](https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE/tree/9b2d4acdbfbe6463a22dd0bb8e6ca5bfda47e2c1) |
@@ -41,7 +41,9 @@
 | Request Lifecycle Causal Profiler | 插件依赖当前共同核心缺少的 kv_recovery_profile 观察接口；诊断功能不等于优化收益。 | [e32a0e91](https://github.com/vLLM-HUST/vllm-hust-request-lifecycle-profiler/tree/e32a0e91027ae7a2b96bf48d2dcb7db1b3c42c87) |
 | KV Materialization Arrival Control | 需要特定请求元数据和分段复用宿主接口；无元数据的软件探针只选择重新计算，不能据此生成优化成绩。 | [10428b81](https://github.com/vLLM-HUST/vllm-hust-kv-materialization-arrival-control/tree/10428b81e2b383cdcb183d4548f38a98929fd0e4) |
 | BetterScale | 网站已有实测；本轮不冒充新增结果。 | [仓库](https://github.com/vLLM-HUST/BetterScale)；账本已记录网页 40 点的四个逐点来源版本 |
-| DLA | 已知输出预算版本的五档并发全部完成并通过原始记录校验，待发布。准入检查已执行，延后与抢占为零；不是学习型长度预测或已证实收益。 | [dc20d0f8](https://github.com/vLLM-HUST/vllm-hust-dla/tree/dc20d0f8ea8d09106f77571e1947b9a2f8702545) |
+| DLA | 已知输出预算版本的五档并发全部完成并通过原始记录校验，已由 PR #283 发布。准入检查已执行，延后与抢占为零；不是学习型长度预测或已证实收益。 | [dc20d0f8](https://github.com/vLLM-HUST/vllm-hust-dla/tree/dc20d0f8ea8d09106f77571e1947b9a2f8702545) |
 | TraceLoom | 当前版本是离线 C++ 分析器，没有在线推理优化入口；不生成虚构的服务性能曲线。 | [37323af5](https://github.com/vLLM-HUST/vllm-hust-perf-analyzer/tree/37323af55aeb5851b9a70b97155f5eacf104eafc) |
 
 已发布的新增对照点见网站 PR [#279](https://github.com/vLLM-HUST/vllm-hust-website/pull/279) 、[#280](https://github.com/vLLM-HUST/vllm-hust-website/pull/280) 与补齐 Pipeline 五档并发的 [#282](https://github.com/vLLM-HUST/vllm-hust-website/pull/282)。环境归组修正见 [#281](https://github.com/vLLM-HUST/vllm-hust-website/pull/281)。单次观测不能证明稳定加速；未触发的优化机制须明确标注。
+
+Native/BidKV/DLA 的 15 个共同运行时观测已由 [#283](https://github.com/vLLM-HUST/vllm-hust-website/pull/283) 发布。Mooncake 安装版还存在导入后进程退出 SIGABRT（两种导入顺序均复现），且缺少 hccn.conf；这不是传输资格或性能结果。
