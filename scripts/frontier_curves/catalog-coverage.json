@@ -214,6 +214,22 @@
         "archive": "serving-capacity-control-evidence.tar.gz",
         "archive_sha256": "637405d49011869855793b8aa200c864ff736716e32e332bd704041f708cbfab",
         "scope": "Qualification only; no performance curve. Capacity alone is not a sufficient fix; root cause undetermined."
+      },
+      "tracker_fix_candidate": {
+        "revision": "03766ac696fde5ab1980d80ca0b8543d3580c989",
+        "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust",
+        "base": "66350e7b7d8ec68ad68a14fb841678054f2c0f98",
+        "finding": "Running cached request omitted num_computed_tokens when updating Mamba tracker, preventing expired-prefix clearing. Pass request.num_computed_tokens before scheduler advances it.",
+        "regression": "Original failed expired-block assertion; fixed scheduler file 68 tests passed.",
+        "related_tests": {
+          "passed": 330,
+          "skipped": 10,
+          "failed": 1,
+          "failure": "test_as_cache_tuple_list: mock torch missing ones; reproduced unchanged base"
+        },
+        "format_ci": "passed with architecture-correct existing lint tools",
+        "hardware_retest": "not started",
+        "scope": "Concrete tracker bug fixed; not proven cause or fix of previous model output/heap corruption."
       }
     },
     {
@@ -370,6 +386,22 @@
         "archive": "serving-capacity-control-evidence.tar.gz",
         "archive_sha256": "637405d49011869855793b8aa200c864ff736716e32e332bd704041f708cbfab",
         "scope": "Qualification only; no performance curve. Capacity alone is not a sufficient fix; root cause undetermined."
+      },
+      "tracker_fix_candidate": {
+        "revision": "03766ac696fde5ab1980d80ca0b8543d3580c989",
+        "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust",
+        "base": "66350e7b7d8ec68ad68a14fb841678054f2c0f98",
+        "finding": "Running cached request omitted num_computed_tokens when updating Mamba tracker, preventing expired-prefix clearing. Pass request.num_computed_tokens before scheduler advances it.",
+        "regression": "Original failed expired-block assertion; fixed scheduler file 68 tests passed.",
+        "related_tests": {
+          "passed": 330,
+          "skipped": 10,
+          "failed": 1,
+          "failure": "test_as_cache_tuple_list: mock torch missing ones; reproduced unchanged base"
+        },
+        "format_ci": "passed with architecture-correct existing lint tools",
+        "hardware_retest": "not started",
+        "scope": "Concrete tracker bug fixed; not proven cause or fix of previous model output/heap corruption."
       }
     },
     {
