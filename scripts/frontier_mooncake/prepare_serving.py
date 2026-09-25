@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import shlex
+import shutil
 import socket
 from pathlib import Path
 
@@ -14,7 +15,7 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def prepare(root_name="phase5", segment_gib=1):
+def prepare(root_name="phase5", segment_gib=1, tracker_fix=None):
     if not root_name.replace("-", "").isalnum() or not 1 <= segment_gib <= 16:
         raise ValueError("Invalid isolated root or segment size")
     ROOT = BASE / root_name
@@ -46,7 +47,41 @@ def prepare(root_name="phase5", segment_gib=1):
         prefer_alloc_in_same_node=True,
     )
     (ROOT / "mooncake.json").write_text(json.dumps(config, indent=2) + "\n")
-    original = (BASE / "phase4/launch-native.sh").read_text()
+    wheel = BASE / "phase2/ascend-wheel"
+    if tracker_fix is not None:
+        relative = Path(
+            "vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/pool_scheduler.py"
+        )
+        before = "ccf9d0bab338dbf2012948513b52b35456df8f78312f0157649aa050b09194bd"
+        after = "287fd133af2403e0831b0a5c0d3e01e2419fa7d3506fac5dc55fd824b7eb1024"
+        if digest(wheel / relative) != before or digest(tracker_fix) != after:
+            raise RuntimeError("Tracker source does not match pinned before/after")
+        shutil.copytree(
+            wheel,
+            ROOT / "ascend-wheel",
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        )
+        wheel = ROOT / "ascend-wheel"
+        shutil.copyfile(tracker_fix, wheel / relative)
+        (ROOT / "tracker-fix.json").write_text(
+            json.dumps(
+                {
+                    "revision": "03766ac696fde5ab1980d80ca0b8543d3580c989",
+                    "base": "66350e7b7d8ec68ad68a14fb841678054f2c0f98",
+                    "file": str(relative),
+                    "before_sha256": before,
+                    "after_sha256": after,
+                    "scope": "Single source change in copied qualified wheel; same runtime in both arms",
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+    original = (
+        (BASE / "phase4/launch-native.sh")
+        .read_text()
+        .replace(str(BASE / "phase2/ascend-wheel"), str(wheel))
+    )
     common = original.replace("cd " + str(BASE / "phase4"), "cd " + str(ROOT)).replace(
         "frontier-qwen35-dla", "frontier-qwen35-mooncake"
     )
@@ -156,6 +191,10 @@ stdout_logfile_maxbytes=100MB
     for path in (build / "deps/usr/lib/aarch64-linux-gnu").glob("*.so*"):
         if path.is_file():
             hashes[str(path)] = digest(path)
+    if tracker_fix is not None:
+        for path in wheel.rglob("*"):
+            if path.is_file():
+                hashes[str(path.relative_to(ROOT))] = digest(path)
     for path in ROOT.iterdir():
         if path.is_file():
             hashes[path.name] = digest(path)
@@ -186,5 +225,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--root-name", default="phase5")
     parser.add_argument("--segment-gib", type=int, default=1)
+    parser.add_argument("--tracker-fix", type=Path)
     args = parser.parse_args()
-    prepare(args.root_name, args.segment_gib)
+    prepare(args.root_name, args.segment_gib, args.tracker_fix)
