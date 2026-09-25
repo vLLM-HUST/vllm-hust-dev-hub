@@ -1,9 +1,11 @@
 # Qwen3.5 Mooncake qualification prerequisites
 
-Status: preparation only; no Mooncake service or NPU transfer has been run.
+Status: fixed-source build, imports, Ascend initialization and bounded real
+transfers have passed. Mooncake Store and Qwen3.5 serving qualification remain
+pending; no performance observations exist.
 The Native/BidKV/DLA campaign has completed and released its devices.
-Read-only network queries below ran after release; no transfer engine or
-Mooncake server has been started.
+All probes below ran after that release. No Mooncake-backed vLLM service
+has been started.
 
 Use the assigned SSH31769 container after the previous campaign releases devices.
 Keep the compiled SWE workload, BF16, 262144 context, APC, Mamba align, actual MTP2,
@@ -90,3 +92,14 @@ verified initialization blocker. Actual memory transfer, hybrid cache save/load
 and serving qualification are still pending. Neither import nor initialization
 is a performance point. The old installed-binary crash remains a separate
 observation; the fixed-source build does not use those installed binaries.
+
+
+`transfer_probe.py` then passed actual two-process transfers on assigned devices
+0 and 1 using the staged source-built engine. Each of host-to-host,
+host-to-device, device-to-host and device-to-device performed a 2 MiB write,
+independent receiver SHA256 verification, local overwrite, readback and SHA256
+verification. All eight transfer calls returned zero; both workers exited zero,
+and device owners were empty before and after. Protocol was Ascend Direct with
+RoCE enabled. No host networking or hccn configuration was changed. These are
+bounded transport correctness probes, not serving throughput, hybrid-cache
+qualification, or an optimization benefit.

@@ -127,6 +127,31 @@
         "owners_after": [],
         "scope": "Import-only subprocess abort on exit; no engine initialized, not performance",
         "artifact": "mooncake-import-diagnostics.json"
+      },
+      "pinned_build_validation": {
+        "source_revision": "8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca",
+        "build_exit": 0,
+        "private_staging": true,
+        "imports_exit": [
+          0,
+          0,
+          0
+        ],
+        "ascend_initialize_return": 0,
+        "transfer_cases_passed": [
+          "host-host",
+          "host-device",
+          "device-host",
+          "device-device"
+        ],
+        "bytes_per_transfer": 2097152,
+        "worker_exits": [
+          0,
+          0
+        ],
+        "owners_after": [],
+        "hccn_conf_present": false,
+        "scope": "Actual bounded transport correctness only; Store hybrid save/load and serving qualification pending. No performance measurements."
       }
     },
     {
@@ -196,6 +221,31 @@
         "owners_after": [],
         "scope": "Import-only subprocess abort on exit; no engine initialized, not performance",
         "artifact": "mooncake-import-diagnostics.json"
+      },
+      "pinned_build_validation": {
+        "source_revision": "8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca",
+        "build_exit": 0,
+        "private_staging": true,
+        "imports_exit": [
+          0,
+          0,
+          0
+        ],
+        "ascend_initialize_return": 0,
+        "transfer_cases_passed": [
+          "host-host",
+          "host-device",
+          "device-host",
+          "device-device"
+        ],
+        "bytes_per_transfer": 2097152,
+        "worker_exits": [
+          0,
+          0
+        ],
+        "owners_after": [],
+        "hccn_conf_present": false,
+        "scope": "Actual bounded transport correctness only; Store hybrid save/load and serving qualification pending. No performance measurements."
       }
     },
     {
