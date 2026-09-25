@@ -276,9 +276,10 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-bidkv",
       "local_path": "/home/shuhao/bidkv",
       "source_revision": "a0cba97d9abdc99908e46616db622f0e0099127f",
-      "status": "matched-five-point-campaign-running",
+      "status": "matched-five-point-measured-validated-publication-pending",
       "installed_source_validation": "All65Pythonfiles match pinned Git src/bidkv tree in assigned container",
-      "measurement_scope": "New common runtime; completed Native control, BidKV measurement in progress. Earlier C4/C16 published separately. No phase4 publication until matched campaign validates."
+      "measurement_scope": "All five C1/C2/C4/C8/C16 900s cells completed with matched fresh Native control; all 15 campaign cells qualified, raw-stream validated and released. Imported locally; publication pending. No changed admission/preemption decisions observed.",
+      "campaign_archive_sha256": "192c3ce54b94aa70d28758ef09e523273afb574e099a4aa9a9c915a8ea3896f2"
     },
     {
       "id": "diffspec",
@@ -1248,13 +1249,15 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-dla",
       "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/dla",
       "source_revision": "dc20d0f8ea8d09106f77571e1947b9a2f8702545",
-      "status": "runtime-integration-passed-hardware-campaign-queued",
+      "status": "matched-five-point-measured-validated-publication-pending",
       "upstream_base_revision": "2fc5651c1ad1e0fd1a5db5ac9eb9f83ac3f94922",
       "runtime_validation": {
         "actual_container_tests_passed": 6,
         "provenance_archive_sha256": "364b6d0cbd8d3ffc8bf59a9a26e14d2a1325bc34d61f7c5338fb38f5919c5fa5",
-        "scope": "Runtime integration tests only; real DLA performance measurements remain pending after Native/BidKV."
-      }
+        "scope": "Actual container integration passed before all five real online measurements; known output budgets, no learned predictor."
+      },
+      "measurement_scope": "All five C1/C2/C4/C8/C16 900s cells completed with matched fresh Native control; all 15 campaign cells qualified, raw-stream validated and released. Imported locally; publication pending. No changed admission/preemption decisions observed.",
+      "campaign_archive_sha256": "192c3ce54b94aa70d28758ef09e523273afb574e099a4aa9a9c915a8ea3896f2"
     },
     {
       "id": "traceloom",
