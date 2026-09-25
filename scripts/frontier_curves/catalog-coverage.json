@@ -348,7 +348,8 @@
             "additional_config": {}
           }
         }
-      ]
+      ],
+      "implementation_scope": "ContinuingPrefillObserver in observer.py only evaluates/requires host contract receipt; its docstring explicitly calls it a component placeholder. No KV quantization execution occurs in this object."
     },
     {
       "id": "ascend-quant-toolkit",
@@ -726,7 +727,14 @@
             "additional_config": {}
           }
         }
-      ]
+      ],
+      "compatibility_probe": {
+        "kind": "pure-source-check-not-performance",
+        "source": "src/vllm_ascend_split_batch/planner.py:59",
+        "speculative_decode_true": "speculative_decode_conflict",
+        "otherwise_identical_speculative_decode_false": null,
+        "runtime_impact": "MTP2 cannot pass existing precheck even after wiring host contracts"
+      }
     },
     {
       "id": "kv-transfer-observability-migration",
@@ -824,7 +832,15 @@
             "additional_config": {}
           }
         }
-      ]
+      ],
+      "missing_host_contracts": [
+        "vllm.scheduler.layered-prefill.v1",
+        "vllm.model.partial-forward.v1",
+        "vllm.worker.request-state.v1",
+        "vllm.ascend.moe-cursor.v1"
+      ],
+      "contract_source": "HOST_CONTRACT.md",
+      "common_runtime_contract_search": "None of these four advertised contract identifiers found in pinned common core/Ascend trees."
     },
     {
       "id": "activation-sparsity-migration",

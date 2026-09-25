@@ -30,7 +30,7 @@
 | Quantized KV Cache | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [8dd24cdc](https://github.com/vLLM-HUST/vllm-ascend-quantized-kv-cache-hust/tree/8dd24cdce248519c173710993f6c633a96107c0d) |
 | SimLLM | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [dcdc6edf](https://github.com/vLLM-HUST/vllm-ascend-simllm-hust/tree/dcdc6edf7bdcc68bdf35058888ebfd9752ae3566) |
 | Unified Communication | 策略/注册表存在，但尚缺宿主 collective 接入。 | [f00d1ef4](https://github.com/vLLM-HUST/vllm-hust-unified-comm/tree/f00d1ef4c19a992d67ef8012952a9405d52dd447) |
-| Split-Batch / Full-Graph Parallel | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [b46de46e](https://github.com/vLLM-HUST/vllm-ascend-split-batch-hust/tree/b46de46e90204a0a7636a1dbc952f73178859ada) |
+| Split-Batch / Full-Graph Parallel | 除缺少宿主执行接口外，实际纯函数预检查在开启推测解码时返回 speculative_decode_conflict，与本轮 MTP2 冲突；关闭推测解码的同参数控制通过该检查。 | [b46de46e](https://github.com/vLLM-HUST/vllm-ascend-split-batch-hust/tree/b46de46e90204a0a7636a1dbc952f73178859ada) |
 | KV Transfer Observability | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [ec3446d9](https://github.com/vLLM-HUST/vllm-hust-kv-transfer-observability/tree/ec3446d936b6ac148e0be33b1dba831f9ecfc0c4) |
 | Layered Prefill | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [a45e4170](https://github.com/vLLM-HUST/vllm-ascend-layered-prefill-hust/tree/a45e41709ccacc3d7c736910b93c1b5985d9ee94) |
 | Activation Sparsity | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [0e4d0628](https://github.com/vLLM-HUST/vllm-hust-activation-sparsity/tree/0e4d0628c1972d5086a217b0007576c1fd8998a3) |
