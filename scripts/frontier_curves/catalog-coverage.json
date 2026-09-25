@@ -90,9 +90,17 @@
         "supports_hma": true,
         "mamba_cache_mode_required": "align",
         "cuda_event_compatibility": "Frozen NPUModelRunner wrapper retains torch.cuda.Event = torch.npu.Event",
-        "runtime_qualification": "Not run; current Pipeline benchmark owns all devices"
+        "runtime_qualification": "Not run; serial Native/BidKV/DLA campaign is active",
+        "installed_source_revision_verified": false,
+        "installed_direct_url_present": false,
+        "catalog_source_package_version": "0.3.12.post1",
+        "catalog_upstream_revision": "6cc1a100404ea40a13940b49616a9127c5662b1d",
+        "fork_diff_paths": [
+          ".github/workflows/sync-upstream.yml",
+          "HUST_FORK.md"
+        ]
       },
-      "next_action": "After scheduled measurements release devices, validate assigned-device network configuration and local owned Mooncake service; keep APC, async, MTP2 and graph modes; use kv_load_failure_policy=fail for hybrid correctness. Qualify actual cache save/load before publishing.",
+      "next_action": "After scheduled measurements release devices, validate assigned-device network configuration and local owned Mooncake service; keep APC, async, MTP2 and graph modes; use kv_load_failure_policy=fail for hybrid correctness. Qualify actual cache save/load before publishing. Installed 0.3.11.post1 is not proven to match catalog 0.3.12.post1 source; establish actual binary/source provenance or build pinned source before attributing a result to that revision.",
       "ascend_source_witnesses": [
         {
           "path": "vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/ascend_store_connector.py",
@@ -133,7 +141,7 @@
           "text": "Save path instantiates torch.cuda.Event; must validate Ascend event adaptation before qualification."
         }
       ],
-      "next_action": "After scheduled measurements release devices, validate assigned-device network configuration and local owned Mooncake service; keep APC, async, MTP2 and graph modes; use kv_load_failure_policy=fail for hybrid correctness. Qualify actual cache save/load before publishing.",
+      "next_action": "After scheduled measurements release devices, validate assigned-device network configuration and local owned Mooncake service; keep APC, async, MTP2 and graph modes; use kv_load_failure_policy=fail for hybrid correctness. Qualify actual cache save/load before publishing. Installed 0.3.11.post1 is not proven to match catalog 0.3.12.post1 source; establish actual binary/source provenance or build pinned source before attributing a result to that revision.",
       "readiness_evidence": {
         "installed_distribution": "mooncake-transfer-engine-npu==0.3.11.post1",
         "master_executable_present": true,
@@ -142,7 +150,15 @@
         "supports_hma": true,
         "mamba_cache_mode_required": "align",
         "cuda_event_compatibility": "Frozen NPUModelRunner wrapper retains torch.cuda.Event = torch.npu.Event",
-        "runtime_qualification": "Not run; current Pipeline benchmark owns all devices"
+        "runtime_qualification": "Not run; serial Native/BidKV/DLA campaign is active",
+        "installed_source_revision_verified": false,
+        "installed_direct_url_present": false,
+        "catalog_source_package_version": "0.3.12.post1",
+        "catalog_upstream_revision": "6cc1a100404ea40a13940b49616a9127c5662b1d",
+        "fork_diff_paths": [
+          ".github/workflows/sync-upstream.yml",
+          "HUST_FORK.md"
+        ]
       },
       "ascend_source_witnesses": [
         {
