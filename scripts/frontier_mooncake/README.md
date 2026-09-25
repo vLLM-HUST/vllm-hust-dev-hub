@@ -73,3 +73,20 @@ empty before and after. `mooncake-import-diagnostics.json` retains both exact
 commands, outputs and hashes of 10 distribution binary/metadata files. This
 establishes a software failure in the installed environment, not its cause;
 initialization success must not be assumed or published as qualification.
+
+The pinned source was subsequently built in the assigned container with an
+isolated dependency prefix (39 downloaded Debian packages, no system package
+installation or upgrade). Build attempt `build-r4` completed all 208 steps with
+exit 0. `stage_build.py` copied the completed binaries into a private package;
+no global CMake install hooks ran. Engine-only, Store-only and torch/NPU-first
+imports all exited 0, with all resolved module paths verified inside that
+private package and no missing dynamic libraries.
+
+A bounded actual device-0 initialization of this staged Ascend Direct engine
+then returned 0 and exited normally. ADXL initialization succeeded with
+`HCCL_INTRA_ROCE_ENABLE=1`; device owners were empty before and after. This
+succeeded while `/etc/hccn.conf` was still absent, so its absence alone is not a
+verified initialization blocker. Actual memory transfer, hybrid cache save/load
+and serving qualification are still pending. Neither import nor initialization
+is a performance point. The old installed-binary crash remains a separate
+observation; the fixed-source build does not use those installed binaries.
