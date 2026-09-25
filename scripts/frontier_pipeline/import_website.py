@@ -176,7 +176,7 @@ def build(template, root, arm, cell, evidence_url):
 
 def main(args):
     root = args.artifacts
-    pair = read(root / "receipts/paired-measurement-r1/status.json")
+    pair = read(root / "receipts" / args.pair_attempt / "status.json")
     if not pair["passed"] or len(pair["arms"]) != 2:
         raise ValueError("Matched pair not complete")
     data_path = args.site / "data/leaderboard_frontier.json"
@@ -207,4 +207,5 @@ if __name__ == "__main__":
     parser.add_argument("--site", type=Path, required=True)
     parser.add_argument("--artifacts", type=Path, required=True)
     parser.add_argument("--evidence-url", required=True)
+    parser.add_argument("--pair-attempt", default="paired-measurement-r2")
     main(parser.parse_args())

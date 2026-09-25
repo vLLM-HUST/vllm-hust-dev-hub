@@ -39,7 +39,7 @@ def test_pair_stops_partially_started_controller(tmp_path, monkeypatch):
         json.dumps(dict(passed=True, release=dict(exit=0, owners=[])))
     )
     monkeypatch.setattr(module, "owners", lambda: [])
-    monkeypatch.setattr(module.subprocess, "check_output", lambda *args, **kwargs: "0")
+    monkeypatch.setattr(module, "controller_pid", lambda program: 0)
     calls = []
 
     def run(command, **kwargs):
@@ -52,3 +52,26 @@ def test_pair_stops_partially_started_controller(tmp_path, monkeypatch):
     with pytest.raises(subprocess.CalledProcessError):
         module.main("candidate-pass")
     assert calls == [["start", "measure-nativepp"], ["stop", "measure-nativepp"]]
+
+
+def test_supervisor_stopped_status_is_not_a_query_failure(tmp_path, monkeypatch):
+    module = load(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        module.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(returncode=7, stdout="0\n"),
+    )
+    assert module.controller_pid("measure-nativepp") == 0
+
+
+def test_unknown_program_remains_an_error(tmp_path, monkeypatch):
+    module = load(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        module.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=7, stdout="ERROR: no such process"
+        ),
+    )
+    with pytest.raises(RuntimeError, match="Cannot query"):
+        module.controller_pid("wrong")

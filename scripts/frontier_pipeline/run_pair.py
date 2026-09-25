@@ -17,8 +17,20 @@ def verify_parent():
         raise RuntimeError("Pair controller lacks dedicated supervisor custody")
 
 
-def main(gate_attempt):
-    out = ROOT / "receipts/paired-measurement-r1"
+def controller_pid(program):
+    result = subprocess.run(
+        CTL + ["pid", program], capture_output=True, text=True, timeout=10
+    )
+    # supervisorctl returns NOT_RUNNING (7), not success, for a stopped program.
+    if result.returncode == 7 and result.stdout.strip() == "0":
+        return 0
+    if result.returncode:
+        raise RuntimeError(f"Cannot query owned controller {program}")
+    return int(result.stdout.strip())
+
+
+def main(gate_attempt, pair_attempt="paired-measurement-r1"):
+    out = ROOT / "receipts" / pair_attempt
     out.mkdir(exist_ok=False)
     signal.signal(signal.SIGTERM, interrupted)
     signal.signal(signal.SIGINT, interrupted)
@@ -40,23 +52,19 @@ def main(gate_attempt):
             program = f"measure-{arm}"
             if (ROOT / "receipts" / attempt).exists() or owners():
                 raise RuntimeError("Existing output or occupied participating devices")
-            if int(subprocess.check_output(CTL + ["pid", program], text=True)) != 0:
+            if controller_pid(program) != 0:
                 raise RuntimeError("Measurement controller already active")
             active = program
             state["active_arm"] = arm
             write(out / "status.json", state)
             subprocess.run(CTL + ["start", program], check=True, timeout=20)
-            pid = int(subprocess.check_output(CTL + ["pid", program], text=True))
+            pid = controller_pid(program)
             command = Path(f"/proc/{pid}/cmdline").read_bytes()
             if str(ROOT).encode() not in command or attempt.encode() not in command:
                 raise RuntimeError("Unexpected measurement controller identity")
             deadline = time.monotonic() + 6500
             while True:
-                current = int(
-                    subprocess.check_output(
-                        CTL + ["pid", program], text=True, timeout=10
-                    )
-                )
+                current = controller_pid(program)
                 if current == 0:
                     break
                 if current != pid:
@@ -96,4 +104,6 @@ def main(gate_attempt):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gate", required=True)
-    main(parser.parse_args().gate)
+    parser.add_argument("--attempt", default="paired-measurement-r1")
+    args = parser.parse_args()
+    main(args.gate, args.attempt)

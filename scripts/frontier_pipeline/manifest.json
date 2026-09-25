@@ -8,7 +8,7 @@
     "pp_fence_retirement": 1,
     "calibration_fitter": 3,
     "policy_receipt": 3,
-    "paired_controller": 2,
+    "paired_controller": 4,
     "exporter": 5
   },
   "kind": "real-online-matched-PP2-measurement",
@@ -41,7 +41,7 @@
     "qualify.py": "a55c91acdc02608190bdd81c6a98346c62d80aab912de626d93fdaf6db9b973a",
     "pipeline_worker.py": "75fb09ac32c83d3d26a7d4d60448e6f986652d911aed5ca85bd8af07a08ce359",
     "launch-nativepp.sh": "6f229478173e7e1ec6bd1e47aed6ec4de718ea4b074fafcc305b60c1637eb77a",
-    "supervisord.conf": "4a82ce0981fa044f4d3b048c196f07afc246abe1cae8f1696313ed39c20ab906",
+    "supervisord.conf": "b369ae3c4e5b9082f9804ed0370160ec4987b2fed73b14eb913a95b43988d412",
     "plugin/src/vllm_hust_pipeline_microbatch/policy.py": "194da88d7363a00daba25a3b3accc6aee89a96c14de56e1c7d7083d842822ebf",
     "plugin/src/vllm_hust_pipeline_microbatch/planner.py": "edc7b0ea1983865c12309d6a2d30d30dcb9083eee11af133f46e480c90710c54",
     "../frontier_worker.py": "a63c615acf7dd23062ab5e8407fcd8c30d1346c51becf2f5f9bd6483beb457e6",
@@ -64,7 +64,7 @@
     "calibrated-profile-r9/validation.json": "30c316f3888f7c371eb41f405fec4b251f4b1121ae794b9c90b285d877b70f84",
     "calibrated-profile-r12/policy.json": "75f1b100201142938cbf3bca9fc3057705e62d0358e51f961552df440c790bea",
     "calibrated-profile-r12/validation.json": "7f408b1054514a2bca9927264b273f6c920ca67c24c7cb747352b702add509d5",
-    "run_pair.py": "5a0cfcd6e87f3f3d2f71ad913f4e16c52f09dc02e70bd3802eea4229fe933184",
+    "run_pair.py": "3138136a5367a424f0abde2ddba45e6f411e6052dc5bbea3d50b19f9d356f90d",
     "metadata-nativepp.json": "f4ae6e0f10b6c1f2778ef5230c7d8f3b5f2e8cbb2a88a050d38a28a345b5749e",
     "metadata-pipelinepp.json": "9c09e1011ea06c0ba3e15331f6c6b3bc12d8a5283c939be2cc812683819106c9"
   },
