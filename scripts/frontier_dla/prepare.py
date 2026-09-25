@@ -1,0 +1,157 @@
+"""Prepare matched Native/BidKV/DLA TP2 launchers after curve devices release."""
+
+import hashlib
+import json
+import socket
+from pathlib import Path
+
+BASE = Path("/home/coder/frontier-mods-qwen35-20260925")
+ROOT = BASE / "phase4"
+OLD = BASE / "phase2"
+POD = "coder-admin-shuhao-evaluation-664b765847-wfh7z"
+CORE = "d0f22d2bda562156e4dbf433ce645e1769b4f804"
+DLA = "dc20d0f8ea8d09106f77571e1947b9a2f8702545"
+
+
+def digest(path):
+    h = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(8 * 1024 * 1024), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def main():
+    if socket.gethostname() != POD:
+        raise RuntimeError("Wrong container")
+    import qualify
+
+    if qualify.owners():
+        raise RuntimeError("Wait for the preceding campaign to release its devices")
+    for p in ("core/vllm/v1/core/output_budget.py", "plugin/src/dla/preemption.py"):
+        if not (ROOT / p).is_file():
+            raise RuntimeError(f"Missing pinned source archive: {p}")
+    for name, item in json.loads((BASE / "model-manifest.json").read_text()).items():
+        path = BASE / "model" / name
+        if path.stat().st_size != item["bytes"] or digest(path) != item["sha256"]:
+            raise RuntimeError(f"Model source mismatch: {name}")
+    if (
+        digest(BASE / "prepared/qwen35.json")
+        != "aa23f49e08a946d94eaab21307e9e015140cc8598adfbd5f7e244bdded7b17d0"
+    ):
+        raise RuntimeError("Workload changed")
+    # This preparation must be followed by the software integration suite; it
+    # cannot itself authorize measurements by writing software_tests_passed.
+    (ROOT / "receipts").mkdir(exist_ok=False)
+    launch = (OLD / "launch-nativepp.sh").read_text()
+    launch = launch.replace(f"cd {OLD}", f"cd {ROOT}")
+    launch = launch.replace(
+        "ASCEND_RT_VISIBLE_DEVICES=0,1,2,3", "ASCEND_RT_VISIBLE_DEVICES=0,1"
+    )
+    launch = launch.replace(str(OLD / "core"), str(ROOT / "core"))
+    launch = launch.replace(str(OLD / "plugin/src"), str(ROOT / "plugin/src"))
+    launch = launch.replace("33782", "33783").replace(
+        "frontier-qwen35-pp2", "frontier-qwen35-dla"
+    )
+    launch = launch.replace("--pipeline-parallel-size 2", "--pipeline-parallel-size 1")
+    programs = []
+    for arm in ("native", "bidkv", "dla"):
+        command = launch.rstrip()
+        if arm == "bidkv":
+            command += " --preemption-policy bidkv.adapters.vllm_hust.selector.BidkvPreemptionPolicy"
+        elif arm == "dla":
+            command = command.replace(
+                '{"enable_cpu_binding":false}',
+                '{"enable_cpu_binding":false,"dla_exact_output_budgets":true}',
+            )
+            command += " --preemption-policy dla.preemption.DeclaredBudgetPreemptionPolicy --scheduler-reserve-output-budget"
+        (ROOT / f"launch-{arm}.sh").write_text(command + "\n")
+        metadata = json.loads((OLD / "metadata-nativepp.json").read_text())
+        metadata.update(
+            pod=POD,
+            pod_uid="19a77c6d-a27a-4c6e-b955-e016beca3a82",
+            container_allocated_npus=4,
+            serving_chips=2,
+            serving_devices=[0, 1],
+            port=33783,
+            campaign="qwen35-dla-bidkv-curves-20260925",
+            core_commit=CORE,
+            dla_commit=DLA if arm == "dla" else None,
+            mods=[] if arm == "native" else [arm],
+            launch_script_sha256=digest(ROOT / f"launch-{arm}.sh"),
+            comparison="Fresh TP2 common output-budget-capable capsule; one900s observation per cell",
+            output_budget_admission=arm == "dla",
+            length_source="Declared exact ignore_eos output budget; no learned predictor",
+            concurrency_sweep=[1, 2, 4, 8, 16],
+        )
+        metadata["environment"]["ASCEND_RT_VISIBLE_DEVICES"] = "0,1"
+        metadata["runtime_source_files"] = {
+            str(p.relative_to(ROOT)): digest(p)
+            for sub in ("core/vllm", "plugin/src/dla")
+            for p in (ROOT / sub).rglob("*.py")
+        }
+        (ROOT / f"metadata-{arm}.json").write_text(
+            json.dumps(metadata, indent=2) + "\n"
+        )
+        for name, cmd, stop in (
+            (arm, f"/bin/bash {ROOT}/launch-{arm}.sh", 90),
+            (
+                f"measure-{arm}",
+                f"{BASE}/.venv/bin/python {ROOT}/qualify.py --attempt {arm}-measured-r1 --program {arm} --measure --metadata metadata-{arm}.json",
+                300,
+            ),
+        ):
+            programs.append(
+                f"""[program:{name}]
+command={cmd}
+directory={ROOT}
+autostart=false
+autorestart=false
+startsecs=1
+startretries=0
+stopwaitsecs={stop}
+redirect_stderr=true
+stdout_logfile={ROOT}/receipts/{name}.log
+stdout_logfile_maxbytes=100MB
+"""
+                + ("stopasgroup=true\nkillasgroup=true\n" if name == arm else "")
+            )
+    prefix = (
+        (OLD / "supervisord.conf")
+        .read_text()
+        .split("[program:")[0]
+        .replace(str(OLD), str(ROOT))
+    )
+    (ROOT / "supervisord.conf").write_text(prefix + "\n".join(programs))
+    manifest = {
+        "software_tests_passed": False,
+        "core_revision": CORE,
+        "dla_revision": DLA,
+        "sha256": {
+            str(p.relative_to(ROOT)): digest(p)
+            for p in ROOT.rglob("*")
+            if p.is_file()
+            and "__pycache__" not in p.parts
+            and p.name != "manifest.json"
+        },
+    }
+    # Exact common Ascend/worker identities must remain pinned as well.
+    old_manifest = json.loads((OLD / "manifest.json").read_text())
+    for name, sha in old_manifest["sha256"].items():
+        if name.startswith("ascend-wheel/") or name in {
+            "pipeline_worker.py",
+            "../frontier_worker.py",
+        }:
+            manifest["sha256"]["../phase2/" + name] = sha
+    manifest["sha256"]["../prepared/qwen35.json"] = digest(
+        BASE / "prepared/qwen35.json"
+    )
+    manifest["sha256"]["../frontier_qualify.py"] = (
+        "9221d6e069d44051d5b54b2ce0962fe34542a136c8226bfb2907d0f605b44d70"
+    )
+    (ROOT / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    print("Prepared inactive campaign; runtime integration tests are still required")
+
+
+if __name__ == "__main__":
+    main()
