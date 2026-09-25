@@ -31,13 +31,13 @@
 | SimLLM | 完整源码树仅含来源校验和非激活描述器；该模块明确不含 SimLLM 实现，没有可测的相似度索引、嵌入或请求改写执行路径。 | [dcdc6edf](https://github.com/vLLM-HUST/vllm-ascend-simllm-hust/tree/dcdc6edf7bdcc68bdf35058888ebfd9752ae3566) |
 | Unified Communication | 策略/注册表存在，但尚缺宿主 collective 接入。 | [f00d1ef4](https://github.com/vLLM-HUST/vllm-hust-unified-comm/tree/f00d1ef4c19a992d67ef8012952a9405d52dd447) |
 | Split-Batch / Full-Graph Parallel | 除缺少宿主执行接口外，实际纯函数预检查在开启推测解码时返回 speculative_decode_conflict，与本轮 MTP2 冲突；关闭推测解码的同参数控制通过该检查。 | [b46de46e](https://github.com/vLLM-HUST/vllm-ascend-split-batch-hust/tree/b46de46e90204a0a7636a1dbc952f73178859ada) |
-| KV Transfer Observability | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [ec3446d9](https://github.com/vLLM-HUST/vllm-hust-kv-transfer-observability/tree/ec3446d936b6ac148e0be33b1dba831f9ecfc0c4) |
+| KV Transfer Observability | 已有独立事件/观察器设施，所需生命周期、区域描述、身份和观察注册协议未见于共同核心；诊断设施不能冒充传输优化。 | [ec3446d9](https://github.com/vLLM-HUST/vllm-hust-kv-transfer-observability/tree/ec3446d936b6ac148e0be33b1dba831f9ecfc0c4) |
 | Layered Prefill | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [a45e4170](https://github.com/vLLM-HUST/vllm-ascend-layered-prefill-hust/tree/a45e41709ccacc3d7c736910b93c1b5985d9ee94) |
 | Activation Sparsity | 当前包仅含配置验证和哈希；实际 CPU 兼容检查拒绝 TP2（TP1 控制通过），且缺少投影变换/稀疏算子的宿主接入。 | [0e4d0628](https://github.com/vLLM-HUST/vllm-hust-activation-sparsity/tree/0e4d0628c1972d5086a217b0007576c1fd8998a3) |
 | Pipeline Microbatch | C1/C2/C4/C8/C16 的 Native 配对观测已发布；每点仍为单次观测，不能据此宣称稳定加速。 | [a15a2296](https://github.com/vLLM-HUST/vllm-hust-pipeline-microbatch/tree/a15a22961a0e4858da74a0ab806575c82cb254e6) |
-| QoS Scheduler | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [13d376a7](https://github.com/vLLM-HUST/vllm-hust-qos-scheduler/tree/13d376a7d8990c4dcf5c0903cb6fbf2398ef0fb0) |
-| StateHarbor | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | 内部来源，详见覆盖账本 |
-| Scheduler Policy Lab | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | 内部来源，详见覆盖账本 |
+| QoS Scheduler | 已有请求期限模型和排序函数，但缺少 QoS API 元数据、排序注册和输出观察接入；本轮请求未携带 SLO，第一阶段契约尚未覆盖 MTP。 | [13d376a7](https://github.com/vLLM-HUST/vllm-hust-qos-scheduler/tree/13d376a7d8990c4dcf5c0903cb6fbf2398ef0fb0) |
+| StateHarbor | 当前只提供协调器/工作进程参考状态机和窗口策略；调度、KV 分配、传输和设备集成尚未接入，没有 vLLM 激活钩子。 | 内部来源，详见覆盖账本 |
+| Scheduler Policy Lab | 已有独立策略函数，尚缺策略注册、KV 预算/请求快照、完成事件和调度后观察接入；共同核心中未找到所需的四个协议标识。 | 内部来源，详见覆盖账本 |
 | Request Lifecycle Causal Profiler | 插件依赖当前共同核心缺少的 kv_recovery_profile 观察接口；诊断功能不等于优化收益。 | [e32a0e91](https://github.com/vLLM-HUST/vllm-hust-request-lifecycle-profiler/tree/e32a0e91027ae7a2b96bf48d2dcb7db1b3c42c87) |
 | KV Materialization Arrival Control | 需要特定请求元数据和分段复用宿主接口；无元数据的软件探针只选择重新计算，不能据此生成优化成绩。 | [10428b81](https://github.com/vLLM-HUST/vllm-hust-kv-materialization-arrival-control/tree/10428b81e2b383cdcb183d4548f38a98929fd0e4) |
 | BetterScale | 网站已有实测；本轮不冒充新增结果。 | [仓库](https://github.com/vLLM-HUST/BetterScale)；完整来源待补 |

@@ -847,7 +847,13 @@
             "additional_config": {}
           }
         }
-      ]
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source/host contract inspection; no hardware activation claimed",
+        "source_path": "HOST_CONTRACT.md",
+        "source_sha256": "6636fa2281b184dec7c2b6a1e8f457a1183e3ca95a4984a4d97638dad3b0e961",
+        "finding": "Host-independent observer/event sinks require typed lifecycle, region descriptors, stable identity and observer registration. These are diagnostic facilities, not an implemented transfer optimization; the required exact protocol identifiers are absent from the common core Python source."
+      }
     },
     {
       "id": "layered-prefill-migration",
@@ -1028,7 +1034,13 @@
             "additional_config": {}
           }
         }
-      ]
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source/host contract inspection; no hardware activation claimed",
+        "source_path": "HOST_CONTRACT.md",
+        "source_sha256": "03ad81ec1a76cb94e3f6777065689717f44c678bccea04eba397ed1802741191",
+        "finding": "Request/deadline model and ordering keys exist, but activation requires QoS API metadata, request snapshots, scheduler ordering registration and output observation. Phase-one contract excludes unqualified speculative decoding; current workload does not provide QoS SLO metadata."
+      }
     },
     {
       "id": "stateharbor",
@@ -1064,7 +1076,13 @@
             "additional_config": {}
           }
         }
-      ]
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source/host contract inspection; no hardware activation claimed",
+        "source_path": "README.md",
+        "source_sha256": "a98f4402f72c9feabffc102cb37b1556a5444bbd6da8cea982027a799f97ed58",
+        "finding": "Reference coordinator/worker state machines and window policy only. Actual scheduler, worker, KV allocation, transport and device integration are outside this package; no vLLM activation hook."
+      }
     },
     {
       "id": "scheduler-policy-lab",
@@ -1122,7 +1140,13 @@
             "additional_config": {}
           }
         }
-      ]
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source/host contract inspection; no hardware activation claimed",
+        "source_path": "HOST_CONTRACT.md",
+        "source_sha256": "4e27936e633cf8e5a6d4e34a7919c7bce67a5291cc56000579e24eb4617823fb",
+        "finding": "Host-independent policy functions require policy registration, KV-budget/request snapshots, completion lifecycle and post-schedule observers. None of the four exact protocol identifiers appears in the common core Python source; this scoped search does not prove no semantically similar internal API exists."
+      }
     },
     {
       "id": "request-lifecycle-profiler",
