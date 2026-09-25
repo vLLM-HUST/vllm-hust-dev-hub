@@ -1239,7 +1239,26 @@
       "repository": "https://github.com/vLLM-HUST/BetterScale",
       "local_path": "/home/shuhao/BetterScale",
       "source_revision": null,
-      "status": "existing-measured"
+      "status": "existing-measured",
+      "source_revisions": [
+        {
+          "revision": "3e99033a3d47df794cf282bc0d4a9f7faec82c5a",
+          "active_website_points": 2
+        },
+        {
+          "revision": "b0b8bb2d88c8673fe8431fefb2d47157fd91c76d",
+          "active_website_points": 8
+        },
+        {
+          "revision": "ce2ac3f4e2ddd663199fc9d39374c5f6c6d37a3d",
+          "active_website_points": 20
+        },
+        {
+          "revision": "f7598b9f1d4cb13607a94a3d4f13246d0b76fbd4",
+          "active_website_points": 10
+        }
+      ],
+      "source_revision_scope": "Multiple historical point-specific pins, no single common revision; copied from published MOD source receipts, not new measurements."
     },
     {
       "id": "dla",
