@@ -448,7 +448,7 @@
       "repository": "https://github.com/vLLM-HUST/pegaflow-hust",
       "local_path": "/home/shuhao/pegaflow-hust",
       "source_revision": "a3c574b8526969b70654715d86976474a4cc1b58",
-      "status": "hybrid-connector-integration-pending",
+      "status": "hybrid-NPU-transport-integration-missing",
       "source_witnesses": [
         {
           "path": "python/pegaflow/connector/__init__.py",
@@ -493,7 +493,7 @@
       "repository": "https://github.com/vLLM-HUST/pegaflow-hust",
       "local_path": "/home/shuhao/pegaflow-hust",
       "source_revision": "a3c574b8526969b70654715d86976474a4cc1b58",
-      "status": "hybrid-connector-integration-pending",
+      "status": "hybrid-NPU-transport-integration-missing",
       "source_witnesses": [
         {
           "path": "python/pegaflow/connector/__init__.py",
@@ -552,7 +552,14 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec",
       "local_path": "/home/shuhao/vllm-ascend-hust-diffspec",
       "source_revision": "42e5909fc6fe276ba0defe1901257a523653aefb",
-      "status": "EAGLE3-TP4-APCoff-asyncoff-contract"
+      "status": "EAGLE3-TP4-APCoff-asyncoff-contract",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 122,
+          "text": "- Prefix caching, async scheduling, quantization, MLA, and M-RoPE disabled"
+        }
+      ]
     },
     {
       "id": "vspec",
@@ -655,7 +662,19 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE",
       "local_path": "/home/shuhao/vllm-ascend-hust-LatchMoE",
       "source_revision": "9b2d4acdbfbe6463a22dd0bb8e6ca5bfda47e2c1",
-      "status": "APC-guard-rejects"
+      "status": "APC-guard-rejects",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 29,
+          "text": "LatchMoE currently does **not** support vLLM prefix-cache reuse. The supported"
+        },
+        {
+          "path": "README.md",
+          "line": 34,
+          "text": "automatically and rejects an explicit `--enable-prefix-caching` request."
+        }
+      ]
     },
     {
       "id": "ascend-adaptive-quantized-kv",
@@ -792,7 +811,19 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-kvcompress-hust",
       "local_path": "/home/shuhao/vllm-ascend-kvcompress-hust",
       "source_revision": "7c0d21144d99096736138812f727d6f59a93028a",
-      "status": "hybrid-MTP-APC-async-TP-guards-reject"
+      "status": "hybrid-MTP-APC-async-TP-guards-reject",
+      "source_witnesses": [
+        {
+          "path": "src/vllm_ascend_kvcompress/provider.py",
+          "line": 318,
+          "text": "        reasons.append(\"prefix caching must be disabled\")"
+        },
+        {
+          "path": "src/vllm_ascend_kvcompress/provider.py",
+          "line": 333,
+          "text": "    if bool(getattr(vllm_config.scheduler_config, \"async_scheduling\", False)):"
+        }
+      ]
     },
     {
       "id": "prefix-router-migration",
@@ -802,7 +833,14 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-prefix-router",
       "local_path": "/home/shuhao/vllm-hust-prefix-router",
       "source_revision": "4e007c4fc1bd376a6dccfefbc1fd851019c8ceb6",
-      "status": "no-runnable-release"
+      "status": "no-runnable-release",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "**Status: migration scaffold. This repository does not yet contain an"
+        }
+      ]
     },
     {
       "id": "kv-tiering-migration",
@@ -1089,7 +1127,19 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-unified-comm",
       "local_path": "/home/shuhao/vllm-hust-unified-comm",
       "source_revision": "f00d1ef4c19a992d67ef8012952a9405d52dd447",
-      "status": "collective-host-integration-missing"
+      "status": "collective-host-integration-missing",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: device-neutral contracts, registry, and decision policies are installable and tested; vLLM collective delegation remains blocked until the host contracts in `HOST_CONTRACT.md` exist.**"
+        },
+        {
+          "path": "src/vllm_hust_unified_comm/vllm-hust-extension-v0.2.json",
+          "line": 57,
+          "text": "    \"entry_points\": [],"
+        }
+      ]
     },
     {
       "id": "split-batch-full-graph-migration",
@@ -1503,7 +1553,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-request-lifecycle-profiler",
       "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/request-lifecycle-profiler-ssh",
       "source_revision": "e32a0e91027ae7a2b96bf48d2dcb7db1b3c42c87",
-      "status": "profiler-runtime-ABI-audit-pending",
+      "status": "required-host-observer-interface-missing",
       "source_witnesses": [
         {
           "path": "src/vllm_request_lifecycle_profiler/plugin.py",
