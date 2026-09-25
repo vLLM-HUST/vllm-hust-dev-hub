@@ -57,11 +57,16 @@ def receipt(before, after, *, program):
     return dict(
         policy=POLICIES[program],
         enabled=True,
+        status="exercised"
+        if counts["selections"] > 0 or budget["deferred"] > 0
+        else "not-exercised",
+        admission_check_executed=budget["extended_checks"] > 0,
+        admission_deferral_observed=budget["deferred"] > 0,
         preemption_status="exercised" if counts["selections"] > 0 else "not-exercised",
         preemption=counts,
         admission=budget,
         admission_status="exercised"
         if budget["extended_checks"] > 0
         else "not-exercised",
-        scope="Real counter deltas including drain; not evidence of a speedup",
+        scope="Real counter deltas including drain. Capacity checks alone do not establish a changed scheduling decision; observed deferrals/selections do not establish a speedup",
     )

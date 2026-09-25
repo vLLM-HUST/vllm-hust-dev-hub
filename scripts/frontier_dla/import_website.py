@@ -147,20 +147,13 @@ def build(template, root, arm, cell, evidence_url):
         if candidate
         else None
     )
-    if effect:
-        effect["status"] = (
-            "exercised"
-            if effect["admission_status"] == "exercised"
-            or effect["preemption_status"] == "exercised"
-            else "not-exercised"
-        )
     c = config["concurrency"]
     point = copy.deepcopy(template)
     point["id"] = f"qwen35-sweprefix-budget-capsule-{arm}-tp2-c{c}-r1-20260925"
     group = f"{MODS.get(arm, 'Native')} · TP2"
     point["label"] = f"{group} · C{c} · r1"
     if candidate and effect["status"] == "not-exercised":
-        point["label"] += " · 未触发抢占"
+        point["label"] += " · 未触发准入延后/抢占" if arm == "dla" else " · 未触发抢占"
     cfg = point["configuration"]
     cfg.pop("experiment_group", None)
     cfg["mods"] = [arm] if candidate else []

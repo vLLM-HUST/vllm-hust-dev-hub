@@ -71,3 +71,9 @@ The preparation/import/controller/counter CPU checks pass (11 tests).
 The source lock additionally pins all 65 installed BidKV Python files to
 `a0cba97d9abdc99908e46616db622f0e0099127f`. A read-only container hash snapshot
 matched all 65 files; preparation repeats this check before starting anything.
+
+A positive `extended_checks` counter only proves that the capacity check ran.
+The overall effectiveness label remains `not-exercised` when neither admission
+deferrals nor preemption selections occurred. Receipts expose these separately;
+even observed deferrals/selections do not by themselves prove a speedup or that
+a matched Native request would have made a different decision.

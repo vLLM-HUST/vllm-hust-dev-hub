@@ -38,6 +38,9 @@ def test_real_admission_does_not_imply_real_preemption(tmp_path):
     result = module.receipt(a, b, program="dla")
     assert result["admission_status"] == "exercised"
     assert result["preemption_status"] == "not-exercised"
+    assert result["admission_check_executed"] is True
+    assert result["admission_deferral_observed"] is False
+    assert result["status"] == "not-exercised"
 
 
 def test_faults_fail_even_with_admission_activity(tmp_path):
@@ -54,3 +57,14 @@ def test_bidkv_control_rejects_admission_treatment(tmp_path):
     metrics(b, "bidkv", checks=1)
     with pytest.raises(ValueError, match="must not enable"):
         module.receipt(a, b, program="bidkv")
+
+
+def test_capacity_deferral_is_distinct_from_check_execution(tmp_path):
+    a, b = tmp_path / "a", tmp_path / "b"
+    metrics(a)
+    metrics(b, checks=4, extended_checks=4, passed=3, deferred=1)
+    result = module.receipt(a, b, program="dla")
+    assert result["admission_check_executed"] is True
+    assert result["admission_deferral_observed"] is True
+    assert result["preemption_status"] == "not-exercised"
+    assert result["status"] == "exercised"
