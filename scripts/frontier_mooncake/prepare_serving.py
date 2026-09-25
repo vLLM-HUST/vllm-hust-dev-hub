@@ -1,5 +1,6 @@
 """Prepare an isolated Qwen3.5 Mooncake retrieval qualification, not measurements."""
 
+import argparse
 import hashlib
 import json
 import shlex
@@ -7,14 +8,16 @@ import socket
 from pathlib import Path
 
 BASE = Path("/home/coder/frontier-mods-qwen35-20260925")
-ROOT = BASE / "phase5"
 
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def prepare():
+def prepare(root_name="phase5", segment_gib=1):
+    if not root_name.replace("-", "").isalnum() or not 1 <= segment_gib <= 16:
+        raise ValueError("Invalid isolated root or segment size")
+    ROOT = BASE / root_name
     if socket.gethostname() != "coder-admin-shuhao-evaluation-664b765847-wfh7z":
         raise RuntimeError("Wrong assigned container")
     build = BASE / "mooncake-build"
@@ -37,7 +40,7 @@ def prepare():
         protocol="ascend",
         device_name="",
         master_server_address="127.0.0.1:33894",
-        global_segment_size=1073741824,
+        global_segment_size=segment_gib * 1073741824,
         local_buffer_size=0,
         preferred_segment=False,
         prefer_alloc_in_same_node=True,
@@ -67,7 +70,9 @@ export MOONCAKE_CONFIG_PATH={ROOT}/mooncake.json
         kv_role="kv_both",
         kv_load_failure_policy="fail",
         kv_connector_extra_config=dict(
-            backend="mooncake", use_layerwise=False, lookup_rpc_port="frontier_phase5"
+            backend="mooncake",
+            use_layerwise=False,
+            lookup_rpc_port="frontier_" + root_name,
         ),
     )
     (ROOT / "launch-mooncake.sh").write_text(
@@ -83,7 +88,7 @@ exec {stage}/bin/mooncake_master --rpc_address=127.0.0.1 --rpc_port=33894 --metr
     controller = (
         (BASE / "phase4/qualify.py")
         .read_text()
-        .replace('ROOT = BASE / "phase4"', 'ROOT = BASE / "phase5"')
+        .replace('ROOT = BASE / "phase4"', f"ROOT = BASE / {json.dumps(root_name)}")
         .replace("frontier-qwen35-dla", "frontier-qwen35-mooncake")
         .replace('choices=["native", "bidkv", "dla"]', 'choices=["native", "mooncake"]')
     )
@@ -121,6 +126,7 @@ serverurl=unix://{ROOT}/supervisor.sock
         "master": f"/bin/bash {ROOT}/launch-master.sh",
         "mooncake": f"/bin/bash {ROOT}/launch-mooncake.sh",
         "native": f"/bin/bash {ROOT}/launch-native.sh",
+        "qualify-native": f"{BASE}/.venv/bin/python {ROOT}/qualify.py --attempt native-retrieval-r1 --program native --qualification-only",
         "qualify-mooncake": f"{BASE}/.venv/bin/python {ROOT}/qualify.py --attempt mooncake-retrieval-r1 --program mooncake --qualification-only",
     }
     for name, command in programs.items():
@@ -177,4 +183,8 @@ stdout_logfile_maxbytes=100MB
 
 
 if __name__ == "__main__":
-    prepare()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root-name", default="phase5")
+    parser.add_argument("--segment-gib", type=int, default=1)
+    args = parser.parse_args()
+    prepare(args.root_name, args.segment_gib)
