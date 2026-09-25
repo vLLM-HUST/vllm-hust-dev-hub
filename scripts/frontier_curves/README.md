@@ -30,3 +30,10 @@ Initial software validation: 13 controller/release/policy tests. Active attempt:
 unchanged. Publication requires completed raw windows, policy receipts and
 verified release; preparing or starting this campaign is not a performance
 result.
+
+`catalog-coverage.json` retains all46 ecosystem entries, including bridge,
+router and model-preparation entries that a runtime-component-only filter would
+miss. Infrastructure is identified separately. Pending source audits are not
+claimed as blockers or completed measurements. This is an in-progress coverage
+ledger; completion requires actual curves or verified, specific impediments for
+each applicable treatment.

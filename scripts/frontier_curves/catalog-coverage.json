@@ -1,0 +1,467 @@
+{
+  "status": "in-progress-not-completion-audit",
+  "catalog_components": 46,
+  "catalog_repository": "https://github.com/vLLM-HUST/vllm-hust-website",
+  "components": [
+    {
+      "id": "vllm-hust-runtime",
+      "name": "vLLM-HUST Runtime",
+      "artifact_type": "runtime_core",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust",
+      "local_path": "/home/shuhao/vllm-hust",
+      "source_revision": "48b27166f36ecd093af6a3328e92651d23feb48e",
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-hust-extension-manager",
+      "name": "vLLM-HUST Extension Manager",
+      "artifact_type": "tool",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/extension-manager",
+      "local_path": "/home/shuhao/extension-manager",
+      "source_revision": "cf1ea71e3e2cb81ab06267ef05eddb3e580ea20b",
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-production-stack",
+      "name": "vLLM Production Stack HUST",
+      "artifact_type": "external_system",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/production-stack-hust",
+      "local_path": "/home/shuhao/production-stack-hust",
+      "source_revision": "07497fb11504ac23bc9aca9f2c6ddf4319255ef1",
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-ascend-hust",
+      "name": "vLLM Ascend HUST",
+      "artifact_type": "platform_profile",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust",
+      "local_path": "/home/shuhao/vllm-ascend-hust",
+      "source_revision": "1a529de2084eb0d9d85e2d4111903bb359f1ea9a",
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-metal-hust",
+      "name": "vLLM Metal HUST",
+      "artifact_type": "platform_profile",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-metal-hust",
+      "local_path": "/home/shuhao/vllm-metal-hust",
+      "source_revision": "5c1cd1cd9c7793b0d75d184c7e2e9e8476e212b0",
+      "status": "infrastructure"
+    },
+    {
+      "id": "triton-ascend-hust",
+      "name": "Triton Ascend HUST",
+      "artifact_type": "external_system",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/triton-ascend-hust",
+      "local_path": "/home/shuhao/triton-ascend-hust",
+      "source_revision": "9a5812b47819af63560009a40e5fd519922bb36f",
+      "status": "infrastructure"
+    },
+    {
+      "id": "sglang-hust",
+      "name": "SGLang HUST",
+      "artifact_type": "runtime_core",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/sglang-hust",
+      "local_path": "/home/shuhao/sglang-hust",
+      "source_revision": "7176db7d9477de35d159f4a2412dc146fd039865",
+      "status": "infrastructure"
+    },
+    {
+      "id": "mooncake",
+      "name": "Mooncake HUST",
+      "artifact_type": "external_system",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/mooncake-hust",
+      "local_path": "/home/shuhao/mooncake-hust",
+      "source_revision": "8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "mooncake-vllm-connectors",
+      "name": "Mooncake vLLM Connectors",
+      "artifact_type": "bridge",
+      "public": true,
+      "repository": "https://github.com/vllm-project/vllm",
+      "local_path": "/home/shuhao/vllm",
+      "source_revision": null,
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "pegaflow",
+      "name": "PegaFlow",
+      "artifact_type": "external_system",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/pegaflow-hust",
+      "local_path": "/home/shuhao/pegaflow-hust",
+      "source_revision": "a3c574b8526969b70654715d86976474a4cc1b58",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "pegaflow-vllm-connectors",
+      "name": "PegaFlow vLLM Connectors",
+      "artifact_type": "bridge",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/pegaflow-hust",
+      "local_path": "/home/shuhao/pegaflow-hust",
+      "source_revision": "a3c574b8526969b70654715d86976474a4cc1b58",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "bidkv",
+      "name": "BidKV",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-bidkv",
+      "local_path": "/home/shuhao/vllm-hust-bidkv",
+      "source_revision": null,
+      "status": "curve-completion-prepared"
+    },
+    {
+      "id": "diffspec",
+      "name": "DiffSpec",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec",
+      "local_path": "/home/shuhao/vllm-ascend-hust-diffspec",
+      "source_revision": "42e5909fc6fe276ba0defe1901257a523653aefb",
+      "status": "EAGLE3-TP4-APCoff-asyncoff-contract"
+    },
+    {
+      "id": "vspec",
+      "name": "vSpec",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-vSpec",
+      "local_path": "/home/shuhao/vllm-hust-vSpec",
+      "source_revision": null,
+      "status": "draft-download-pending"
+    },
+    {
+      "id": "latchmoe",
+      "name": "LatchMoE",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE",
+      "local_path": "/home/shuhao/vllm-ascend-hust-LatchMoE",
+      "source_revision": "9b2d4acdbfbe6463a22dd0bb8e6ca5bfda47e2c1",
+      "status": "APC-guard-rejects"
+    },
+    {
+      "id": "ascend-adaptive-quantized-kv",
+      "name": "Adaptive Quantized KV",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-adaptive-quantized-kv-hust",
+      "local_path": "/home/shuhao/vllm-ascend-adaptive-quantized-kv-hust",
+      "source_revision": "ddd306fce8d885b9b9cfeb8c947ed576c5269e66",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "ascend-quant-toolkit",
+      "name": "Ascend Quant Toolkit",
+      "artifact_type": "tool",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-quant-hust",
+      "local_path": "/home/shuhao/vllm-ascend-quant-hust",
+      "source_revision": "f161daab91b2b558bc8ee65d2b1bc76cd78e00b6",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "ascend-quant-runtime-descriptor",
+      "name": "Ascend Quant Runtime Descriptor",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-quant-hust/tree/main/runtime-extension",
+      "local_path": "/home/shuhao/runtime-extension",
+      "source_revision": null,
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "kvcompress-ascend",
+      "name": "Ascend KV Compression",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-kvcompress-hust",
+      "local_path": "/home/shuhao/vllm-ascend-kvcompress-hust",
+      "source_revision": "7c0d21144d99096736138812f727d6f59a93028a",
+      "status": "hybrid-MTP-APC-async-TP-guards-reject"
+    },
+    {
+      "id": "prefix-router-migration",
+      "name": "Prefix Router",
+      "artifact_type": "external_system",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-prefix-router",
+      "local_path": "/home/shuhao/vllm-hust-prefix-router",
+      "source_revision": "4e007c4fc1bd376a6dccfefbc1fd851019c8ceb6",
+      "status": "no-runnable-release"
+    },
+    {
+      "id": "kv-tiering-migration",
+      "name": "KV Tiering",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-tiering",
+      "local_path": "/home/shuhao/vllm-hust-kv-tiering",
+      "source_revision": "3a73c7e1628801ea5d4f585bcc9d06260161a78c",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "knorm-migration",
+      "name": "KNorm",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-knorm",
+      "local_path": "/home/shuhao/vllm-hust-knorm",
+      "source_revision": "e0e872abfc9fa88659b3e83c1c8b8b2b3de88fc0",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "pyramidkv-ascend-migration",
+      "name": "PyramidKV Ascend",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-pyramidkv-hust",
+      "local_path": "/home/shuhao/vllm-ascend-pyramidkv-hust",
+      "source_revision": "77b0862c1e5be8c883fda934cdb383c57cf7ad0d",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "slicegpt-migration",
+      "name": "SliceGPT",
+      "artifact_type": "tool",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-slicegpt",
+      "local_path": "/home/shuhao/vllm-hust-slicegpt",
+      "source_revision": "6acf19d9cbb3ed6caa3f5e6341b1da41941f9f2e",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "ride-control-plane",
+      "name": "RIDE Control Plane",
+      "artifact_type": "external_system",
+      "public": true,
+      "repository": "",
+      "local_path": null,
+      "source_revision": null,
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-local-control-host",
+      "name": "vLLM Local Control Host",
+      "artifact_type": "bridge",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust",
+      "local_path": "/home/shuhao/vllm-hust",
+      "source_revision": "48b27166f36ecd093af6a3328e92651d23feb48e",
+      "status": "infrastructure"
+    },
+    {
+      "id": "ride-runtime-bridge",
+      "name": "RIDE Remote Runtime Sidecar",
+      "artifact_type": "bridge",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust",
+      "local_path": "/home/shuhao/vllm-hust",
+      "source_revision": "48b27166f36ecd093af6a3328e92651d23feb48e",
+      "status": "infrastructure"
+    },
+    {
+      "id": "quantized-kv-cache-migration",
+      "name": "Quantized KV Cache",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-quantized-kv-cache-hust",
+      "local_path": "/home/shuhao/vllm-ascend-quantized-kv-cache-hust",
+      "source_revision": "8dd24cdce248519c173710993f6c633a96107c0d",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "simllm-migration",
+      "name": "SimLLM",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-simllm-hust",
+      "local_path": "/home/shuhao/vllm-ascend-simllm-hust",
+      "source_revision": "dcdc6edf7bdcc68bdf35058888ebfd9752ae3566",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "unified-communication-migration",
+      "name": "Unified Communication",
+      "artifact_type": "bridge",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-unified-comm",
+      "local_path": "/home/shuhao/vllm-hust-unified-comm",
+      "source_revision": "f00d1ef4c19a992d67ef8012952a9405d52dd447",
+      "status": "collective-host-integration-missing"
+    },
+    {
+      "id": "split-batch-full-graph-migration",
+      "name": "Split-Batch / Full-Graph Parallel",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-split-batch-hust",
+      "local_path": "/home/shuhao/vllm-ascend-split-batch-hust",
+      "source_revision": "b46de46e90204a0a7636a1dbc952f73178859ada",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "kv-transfer-observability-migration",
+      "name": "KV Transfer Observability",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-transfer-observability",
+      "local_path": "/home/shuhao/vllm-hust-kv-transfer-observability",
+      "source_revision": "ec3446d936b6ac148e0be33b1dba831f9ecfc0c4",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "layered-prefill-migration",
+      "name": "Layered Prefill",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-layered-prefill-hust",
+      "local_path": "/home/shuhao/vllm-ascend-layered-prefill-hust",
+      "source_revision": "a45e41709ccacc3d7c736910b93c1b5985d9ee94",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "activation-sparsity-migration",
+      "name": "Activation Sparsity",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-activation-sparsity",
+      "local_path": "/home/shuhao/vllm-hust-activation-sparsity",
+      "source_revision": "0e4d0628c1972d5086a217b0007576c1fd8998a3",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "pipeline-microbatch-migration",
+      "name": "Pipeline Microbatch",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-pipeline-microbatch",
+      "local_path": "/home/shuhao/vllm-hust-pipeline-microbatch",
+      "source_revision": "a15a22961a0e4858da74a0ab806575c82cb254e6",
+      "status": "running"
+    },
+    {
+      "id": "qos-scheduler-migration",
+      "name": "QoS Scheduler",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-qos-scheduler",
+      "local_path": "/home/shuhao/vllm-hust-qos-scheduler",
+      "source_revision": "13d376a7d8990c4dcf5c0903cb6fbf2398ef0fb0",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "stateharbor",
+      "name": "StateHarbor",
+      "artifact_type": "bridge",
+      "public": false,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-stateharbor",
+      "local_path": "/home/shuhao/vllm-hust-stateharbor",
+      "source_revision": "e1366f3c33f384437201e70ad482b84fdb1dcf60",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "scheduler-policy-lab",
+      "name": "Scheduler Policy Lab",
+      "artifact_type": "tool",
+      "public": false,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-scheduler-policy-lab",
+      "local_path": "/home/shuhao/vllm-hust-scheduler-policy-lab",
+      "source_revision": "215bdab44fb572f125e1426f78103e4d4ac7b833",
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "request-lifecycle-profiler",
+      "name": "Request Lifecycle Causal Profiler",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-request-lifecycle-profiler",
+      "local_path": "/home/shuhao/vllm-hust-request-lifecycle-profiler",
+      "source_revision": null,
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "kv-materialization-arrival-control",
+      "name": "KV Materialization Arrival Control",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-materialization-arrival-control",
+      "local_path": "/home/shuhao/vllm-hust-kv-materialization-arrival-control",
+      "source_revision": null,
+      "status": "source-audit-pending"
+    },
+    {
+      "id": "vllm-hust-benchmark",
+      "name": "vLLM-HUST Benchmark",
+      "artifact_type": "tool",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-benchmark",
+      "local_path": "/home/shuhao/vllm-hust-benchmark",
+      "source_revision": "e8a68923768adffb85c2d0fa255b2cec79af8ab5",
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-hust-docs",
+      "name": "vLLM-HUST Documentation",
+      "artifact_type": "tool",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-docs",
+      "local_path": "/home/shuhao/vllm-hust-docs",
+      "source_revision": "e70e4234c56512d312ac58cd39080411a13667f1",
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-hust-website",
+      "name": "vLLM-HUST Website",
+      "artifact_type": "application",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-website",
+      "local_path": "/home/shuhao/vllm-hust-website",
+      "source_revision": "b46065782c562b33242dd3df2675c86bc535f699",
+      "status": "infrastructure"
+    },
+    {
+      "id": "betterscale",
+      "name": "BetterScale",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/BetterScale",
+      "local_path": "/home/shuhao/BetterScale",
+      "source_revision": null,
+      "status": "existing-measured"
+    },
+    {
+      "id": "dla",
+      "name": "DLA",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-dla",
+      "local_path": "/home/shuhao/vllm-hust-dla",
+      "source_revision": "2fc5651c1ad1e0fd1a5db5ac9eb9f83ac3f94922",
+      "status": "runtime-integration-pending"
+    },
+    {
+      "id": "traceloom",
+      "name": "TraceLoom",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-perf-analyzer",
+      "local_path": "/home/shuhao/vllm-hust-perf-analyzer",
+      "source_revision": "37323af55aeb5851b9a70b97155f5eacf104eafc",
+      "status": "source-audit-pending"
+    }
+  ]
+}
