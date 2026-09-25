@@ -1,8 +1,8 @@
 # Qwen3.5 Mooncake qualification prerequisites
 
 Status: fixed-source build, imports, Ascend initialization and bounded real
-transfers have passed. Mooncake Store and Qwen3.5 serving qualification remain
-pending; no performance observations exist.
+transfers have passed. Cross-client multi-buffer Store operations also passed; Qwen3.5 serving
+qualification remains pending; no performance observations exist.
 The Native/BidKV/DLA campaign has completed and released its devices.
 All probes below ran after that release. No Mooncake-backed vLLM service
 has been started.
@@ -103,3 +103,14 @@ and device owners were empty before and after. Protocol was Ascend Direct with
 RoCE enabled. No host networking or hccn configuration was changed. These are
 bounded transport correctness probes, not serving throughput, hybrid-cache
 qualification, or an optimization benefit.
+
+
+`store_probe.py` passed against an owned private master and two NPU clients,
+using the same `batch_put_from_multi_buffers` / `batch_get_into_multi_buffers`
+API family as the Ascend backend. One object held 2 MiB and 1 MiB NPU buffers.
+After save, both clients overwrote their local buffers; the second client read
+3145728 bytes and matched both original SHA256 values. Existence checks before
+save, after save and after forced deletion passed. Both clients and the owned
+master exited zero; device owners were empty. Each client contributed 1 GiB
+with Ascend/P2PHANDSHAKE and no local copy buffer. This proves bounded Store
+operations, not Qwen3.5 hybrid-cache correctness or serving performance.

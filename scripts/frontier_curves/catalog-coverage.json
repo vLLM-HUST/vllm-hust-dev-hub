@@ -151,7 +151,22 @@
         ],
         "owners_after": [],
         "hccn_conf_present": false,
-        "scope": "Actual bounded transport correctness only; Store hybrid save/load and serving qualification pending. No performance measurements."
+        "scope": "Actual bounded transport correctness only; Store hybrid save/load and serving qualification pending. No performance measurements.",
+        "store_probe": {
+          "passed": true,
+          "buffer_sizes": [
+            2097152,
+            1048576
+          ],
+          "cross_client_read_bytes": 3145728,
+          "client_exits": [
+            0,
+            0
+          ],
+          "master_exit": 0,
+          "owners_after": [],
+          "scope": "Raw NPU multi-buffer Store operations; Qwen3.5 hybrid serving not yet qualified"
+        }
       }
     },
     {
@@ -245,7 +260,22 @@
         ],
         "owners_after": [],
         "hccn_conf_present": false,
-        "scope": "Actual bounded transport correctness only; Store hybrid save/load and serving qualification pending. No performance measurements."
+        "scope": "Actual bounded transport correctness only; Store hybrid save/load and serving qualification pending. No performance measurements.",
+        "store_probe": {
+          "passed": true,
+          "buffer_sizes": [
+            2097152,
+            1048576
+          ],
+          "cross_client_read_bytes": 3145728,
+          "client_exits": [
+            0,
+            0
+          ],
+          "master_exit": 0,
+          "owners_after": [],
+          "scope": "Raw NPU multi-buffer Store operations; Qwen3.5 hybrid serving not yet qualified"
+        }
       }
     },
     {
