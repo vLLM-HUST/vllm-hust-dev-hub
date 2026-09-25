@@ -197,6 +197,7 @@ def build(template, root, arm, cell, evidence_url):
                 id=arm,
                 repository=f"https://github.com/vLLM-HUST/vllm-hust-{arm}",
                 revision=meta[f"{arm}_commit"],
+                source_capsule="frontier-qwen35-output-budget-tp2-20260925",
                 scope="Known-budget admission and original victim selector"
                 if arm == "dla"
                 else "Original BidKV selector on common core",
