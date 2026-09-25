@@ -3,6 +3,7 @@
 import hashlib
 import json
 import socket
+import tarfile
 from pathlib import Path
 
 BASE = Path("/home/coder/frontier-mods-qwen35-20260925")
@@ -28,9 +29,22 @@ def main():
 
     if qualify.owners():
         raise RuntimeError("Wait for the preceding campaign to release its devices")
-    for p in ("core/vllm/v1/core/output_budget.py", "plugin/src/dla/preemption.py"):
-        if not (ROOT / p).is_file():
-            raise RuntimeError(f"Missing pinned source archive: {p}")
+    lock = json.loads((ROOT / "source-lock.json").read_text())
+    for name, expected_revision in (("core", CORE), ("plugin", DLA)):
+        item = lock[name]
+        if (
+            item["revision"] != expected_revision
+            or digest(ROOT / item["archive"]) != item["sha256"]
+        ):
+            raise RuntimeError(f"Source archive identity mismatch: {name}")
+        if (ROOT / name).exists():
+            raise RuntimeError(
+                f"Refuse to overwrite an existing source capsule: {name}"
+            )
+    for name in ("core", "plugin"):
+        (ROOT / name).mkdir()
+        with tarfile.open(ROOT / lock[name]["archive"], "r:gz") as archive:
+            archive.extractall(ROOT / name, filter="data")
     for name, item in json.loads((BASE / "model-manifest.json").read_text()).items():
         path = BASE / "model" / name
         if path.stat().st_size != item["bytes"] or digest(path) != item["sha256"]:

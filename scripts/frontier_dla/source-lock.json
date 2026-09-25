@@ -1,0 +1,12 @@
+{
+  "core": {
+    "revision": "d0f22d2bda562156e4dbf433ce645e1769b4f804",
+    "archive": "core-source.tar.gz",
+    "sha256": "3d96a16276922446b6a6f1657019f90528c6b7d863a1eac23984c6ed13029d81"
+  },
+  "plugin": {
+    "revision": "dc20d0f8ea8d09106f77571e1947b9a2f8702545",
+    "archive": "plugin-source.tar.gz",
+    "sha256": "90a20b1d6497179d5fa9af309117efe812e551aea6dac19b0e0de1a44df3738b"
+  }
+}

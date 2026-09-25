@@ -15,8 +15,10 @@ preemption selector was called. Counter receipts distinguish these mechanisms.
 
 Pinned runtime commits are recorded in `prepare.py`. The core starts from the
 previous common capsule77e6192; `core-output-budget.patch.gz` gives its exact
-changes relative to752a3a5. Materialize `core/` from `git archive CORE vllm`, and
-`plugin/` from `git archive DLA src` using those exact commits. Common Ascend
+changes relative to752a3a5. Provide `core-source.tar.gz` and `plugin-source.tar.gz` matching
+`source-lock.json` (gzip with mtime=0 over `git archive CORE vllm` and
+`git archive DLA src`). Preparation verifies and extracts these exact archives,
+refusing existing source directories. Common Ascend
 binaries and Python overlay remain the phase2 capsule; no running files change.
 
 This directory is preparation, not a published result. The script refuses the
@@ -30,3 +32,8 @@ Software checks so far: core7 admission-boundary tests and all changed-file
 pre-commit checks (including mypy); DLA21tests/1optional-predictor skip;
 4counter-receipt tests. Hardware qualification and full runtime integration are
 pending. Never import this preparation as leaderboard evidence.
+
+`test_runtime_integration.py` exercises the real allocator for full-attention and
+hybrid Mamba cache groups, the actual preemption controller and scheduler option.
+It has been syntax checked but has not yet run in the target package environment.
+Run CPU-only suites separately from live benchmark windows.
