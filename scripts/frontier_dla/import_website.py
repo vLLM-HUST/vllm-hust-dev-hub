@@ -11,7 +11,7 @@ from pathlib import Path
 
 from policy_receipt import receipt
 
-MODS = {"bidkv": "BidKV", "dla": "DLA"}
+MODS = {"bidkv": "BidKV", "dla": "DLA（已知输出预算）"}
 WORKLOAD = "aa23f49e08a946d94eaab21307e9e015140cc8598adfbd5f7e244bdded7b17d0"
 
 
