@@ -14,7 +14,7 @@
 | PegaFlow vLLM Connectors | 普通 PegaKVConnector 未声明 HMA 且只使用第 0 缓存组；独立 NIXL 路径需另行验证，不能一概声称不支持。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
 | BidKV | 已有 C4/C16；准备在新共同运行时补齐五档并发。已有窗口未触发抢占，不能宣称抢占收益。 | [仓库](https://github.com/vLLM-HUST/vllm-hust-bidkv)；完整来源待补 |
 | DiffSpec | 当前载体要求 EAGLE3/TP4 且关闭 APC、async，不能直接替代本轮 MTP2/APC/async 配置。 | [42e5909f](https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec/tree/42e5909fc6fe276ba0defe1901257a523653aefb) |
-| vSpec | 发现针对 Qwen3.5-35B-A3B 的 EAGLE3 草稿模型；权重下载尚未成功，动态 ABI/硬件资格未通过。 | [仓库](https://github.com/vLLM-HUST/vllm-hust-vSpec)；完整来源待补 |
+| vSpec | 发现针对 Qwen3.5-35B-A3B 的 EAGLE3 草稿模型；权重下载尚未成功，动态 ABI/硬件资格未通过。 | [d4c4f659](https://github.com/vLLM-HUST/vllm-hust-vSpec/tree/d4c4f659495826e64802eedb195de52019282b47) |
 | LatchMoE | 当前启动器拒绝 APC；已执行对应拒绝路径测试。 | [9b2d4acd](https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE/tree/9b2d4acdbfbe6463a22dd0bb8e6ca5bfda47e2c1) |
 | Adaptive Quantized KV | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [ddd306fc](https://github.com/vLLM-HUST/vllm-ascend-adaptive-quantized-kv-hust/tree/ddd306fce8d885b9b9cfeb8c947ed576c5269e66) |
 | Ascend Quant Toolkit | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [f161daab](https://github.com/vLLM-HUST/vllm-ascend-quant-hust/tree/f161daab91b2b558bc8ee65d2b1bc76cd78e00b6) |
@@ -39,7 +39,7 @@
 | Request Lifecycle Causal Profiler | 插件依赖当前共同核心缺少的 kv_recovery_profile 观察接口；诊断功能不等于优化收益。 | [e32a0e91](https://github.com/vLLM-HUST/vllm-hust-request-lifecycle-profiler/tree/e32a0e91027ae7a2b96bf48d2dcb7db1b3c42c87) |
 | KV Materialization Arrival Control | 需要特定请求元数据和分段复用宿主接口；无元数据的软件探针只选择重新计算，不能据此生成优化成绩。 | [10428b81](https://github.com/vLLM-HUST/vllm-hust-kv-materialization-arrival-control/tree/10428b81e2b383cdcb183d4548f38a98929fd0e4) |
 | BetterScale | 网站已有实测；本轮不冒充新增结果。 | [仓库](https://github.com/vLLM-HUST/BetterScale)；完整来源待补 |
-| DLA | 已准备已知输出预算准入与原始抢占选择器；容器内运行时验证和实测尚未完成。不是学习型长度预测结果。 | [2fc5651c](https://github.com/vLLM-HUST/vllm-hust-dla/tree/2fc5651c1ad1e0fd1a5db5ac9eb9f83ac3f94922) |
+| DLA | 已准备已知输出预算准入与原始抢占选择器；容器内运行时验证和实测尚未完成。不是学习型长度预测结果。 | [dc20d0f8](https://github.com/vLLM-HUST/vllm-hust-dla/tree/dc20d0f8ea8d09106f77571e1947b9a2f8702545) |
 | TraceLoom | 当前版本是离线 C++ 分析器，没有在线推理优化入口；不生成虚构的服务性能曲线。 | [37323af5](https://github.com/vLLM-HUST/vllm-hust-perf-analyzer/tree/37323af55aeb5851b9a70b97155f5eacf104eafc) |
 
 已发布的新增对照点见网站 PR [#279](https://github.com/vLLM-HUST/vllm-hust-website/pull/279) 与 [#280](https://github.com/vLLM-HUST/vllm-hust-website/pull/280)。环境归组修正见 [#281](https://github.com/vLLM-HUST/vllm-hust-website/pull/281)。单次观测不能证明稳定加速；未触发的优化机制须明确标注。

@@ -189,8 +189,8 @@
       "artifact_type": "runtime_component",
       "public": true,
       "repository": "https://github.com/vLLM-HUST/vllm-hust-vSpec",
-      "local_path": "/home/shuhao/vllm-hust-vSpec",
-      "source_revision": null,
+      "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/vspec",
+      "source_revision": "d4c4f659495826e64802eedb195de52019282b47",
       "status": "draft-download-pending"
     },
     {
@@ -1014,9 +1014,10 @@
       "artifact_type": "runtime_component",
       "public": true,
       "repository": "https://github.com/vLLM-HUST/vllm-hust-dla",
-      "local_path": "/home/shuhao/vllm-hust-dla",
-      "source_revision": "2fc5651c1ad1e0fd1a5db5ac9eb9f83ac3f94922",
-      "status": "runtime-integration-pending"
+      "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/dla",
+      "source_revision": "dc20d0f8ea8d09106f77571e1947b9a2f8702545",
+      "status": "runtime-integration-pending",
+      "upstream_base_revision": "2fc5651c1ad1e0fd1a5db5ac9eb9f83ac3f94922"
     },
     {
       "id": "traceloom",
