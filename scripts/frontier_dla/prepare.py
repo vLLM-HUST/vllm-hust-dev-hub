@@ -68,6 +68,27 @@ def main():
         "frontier-qwen35-pp2", "frontier-qwen35-dla"
     )
     launch = launch.replace("--pipeline-parallel-size 2", "--pipeline-parallel-size 1")
+    old_manifest = json.loads((OLD / "manifest.json").read_text())
+    shared_sources = {}
+    for name, sha in old_manifest["sha256"].items():
+        if name.startswith("ascend-wheel/") or name in {
+            "pipeline_worker.py",
+            "../frontier_worker.py",
+        }:
+            if digest(OLD / name) != sha:
+                raise RuntimeError(f"Shared runtime source changed: {name}")
+            shared_sources["../phase2/" + name] = sha
+    bidkv_pth = (
+        BASE
+        / ".venv/lib/python3.12/site-packages/__editable__.vllm_hust_bidkv-0.2.1.pth"
+    )
+    if bidkv_pth.read_text().strip() != str(BASE / "bidkv/src"):
+        raise RuntimeError("BidKV editable source path changed")
+    bidkv_sources = list((BASE / "bidkv/src/bidkv").rglob("*.py"))
+    if not bidkv_sources:
+        raise RuntimeError("Missing BidKV source files")
+    for path in [bidkv_pth, *bidkv_sources]:
+        shared_sources["../" + str(path.relative_to(BASE))] = digest(path)
     programs = []
     for arm in ("native", "bidkv", "dla"):
         command = launch.rstrip()
@@ -98,12 +119,27 @@ def main():
             length_source="Declared exact ignore_eos output budget; no learned predictor",
             concurrency_sweep=[1, 2, 4, 8, 16],
         )
+        metadata.pop("source_commits_are_bases", None)
+        metadata["source_revision_kinds"] = {
+            "core": "full pinned commit and exact archive",
+            "ascend": "base commit plus qualified patch and exact shared files",
+        }
+        metadata["source_patches_sha256"].pop("core-qualified.patch.gz", None)
+        metadata["source_patches_sha256"]["core-output-budget.patch.gz"] = digest(
+            ROOT / "core-output-budget.patch.gz"
+        )
+        metadata["runtime_common_changes"] += (
+            "; opt-in known-output-budget capacity admission and event metrics; "
+            "disabled for Native/BidKV, enabled for DLA"
+        )
+        metadata["source_archives"] = lock
         metadata["environment"]["ASCEND_RT_VISIBLE_DEVICES"] = "0,1"
         metadata["runtime_source_files"] = {
             str(p.relative_to(ROOT)): digest(p)
             for sub in ("core/vllm", "plugin/src/dla")
             for p in (ROOT / sub).rglob("*.py")
         }
+        metadata["runtime_source_files"].update(shared_sources)
         (ROOT / f"metadata-{arm}.json").write_text(
             json.dumps(metadata, indent=2) + "\n"
         )
@@ -163,14 +199,7 @@ stdout_logfile_maxbytes=100MB
             and p.name != "manifest.json"
         },
     }
-    # Exact common Ascend/worker identities must remain pinned as well.
-    old_manifest = json.loads((OLD / "manifest.json").read_text())
-    for name, sha in old_manifest["sha256"].items():
-        if name.startswith("ascend-wheel/") or name in {
-            "pipeline_worker.py",
-            "../frontier_worker.py",
-        }:
-            manifest["sha256"]["../phase2/" + name] = sha
+    manifest["sha256"].update(shared_sources)
     manifest["sha256"]["../prepared/qwen35.json"] = digest(
         BASE / "prepared/qwen35.json"
     )

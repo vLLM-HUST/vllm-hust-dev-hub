@@ -45,3 +45,10 @@ failed qualification, measurement, or device-release receipt. Each arm has a
 is enabled. Start `campaign` only after the runtime integration receipt is valid.
 The controller and counter-receipt CPU suites pass (6 tests); these do not replace
 the pending actual-runtime and hardware checks.
+
+Preparation also pins the installed editable BidKV source path and every BidKV
+Python file, plus the qualified Ascend binaries and common worker, in both the
+manifest and per-arm metadata. Core metadata identifies the new full commit and
+output-budget patch instead of inheriting the old PP2 core patch description.
+A fixture preparation test verifies matched TP2/PP1, APC, async and MTP flags,
+DLA-only admission flags, and those source records; it is not a hardware test.
