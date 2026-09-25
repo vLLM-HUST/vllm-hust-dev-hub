@@ -1,5 +1,5 @@
 {
-  "status": "in-progress-not-completion-audit",
+  "status": "coverage-audited-with-unqualified-components",
   "catalog_components": 46,
   "catalog_repository": "https://github.com/vLLM-HUST/vllm-hust-website",
   "components": [
