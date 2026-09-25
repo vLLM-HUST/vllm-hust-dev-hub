@@ -10,8 +10,8 @@
 
 | 组件 | 当前证据与下一步 | 固定来源 |
 | --- | --- | --- |
-| Mooncake HUST | 已从固定源码构建，四类真实传输与跨进程 NPU Store 读写通过；Qwen3.5 检索资格在 warm-131072 失败，尚无性能曲线。 | [8b8c7ae7](https://github.com/vLLM-HUST/mooncake-hust/tree/8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca) |
-| Mooncake vLLM Connectors | 实际 AscendStore HMA/align 服务已加载模型并捕获图；26 项检索进行到第 8 项失败。正在用 Native 对照和独立容量配置排查。 | [d0f22d2b](https://github.com/vLLM-HUST/vllm-hust/tree/d0f22d2bda562156e4dbf433ce645e1769b4f804) |
+| Mooncake HUST | 已从固定源码构建，四类真实传输与跨进程 NPU Store 读写通过；Qwen3.5 检索资格两次失败：1 GiB/rank 在 warm-131072 失败；16 GiB/rank 在 warm-262080 失败，尚无性能曲线。 | [8b8c7ae7](https://github.com/vLLM-HUST/mooncake-hust/tree/8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca) |
+| Mooncake vLLM Connectors | 实际 AscendStore HMA/align 服务已加载模型并捕获图；相同环境 Native 26 项全通过；扩大容量后候选第 10 项 warm-262080 仍失败，且无容量错误日志。需修复混合缓存正确性与退出问题。 | [d0f22d2b](https://github.com/vLLM-HUST/vllm-hust/tree/d0f22d2bda562156e4dbf433ce645e1769b4f804) |
 | PegaFlow | 普通连接器未声明 HMA 且只使用第 0 缓存组；NIXL 路径虽支持 HMA，但固定版本设备表无 NPU，共同 Ascend 平台未扩展该表，会被设备检查拒绝。需实际 NPU 传输适配，不能仅绕过检查。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
 | PegaFlow vLLM Connectors | 普通连接器未声明 HMA 且只使用第 0 缓存组；NIXL 路径虽支持 HMA，但固定版本设备表无 NPU，共同 Ascend 平台未扩展该表，会被设备检查拒绝。需实际 NPU 传输适配，不能仅绕过检查。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
 | BidKV | 新共同运行时下 C1/C2/C4/C8/C16 与 Native 配对测试全部完成，原始记录校验与设备释放通过，已由 PR #283 发布。未触发抢占，不能宣称抢占收益。 | [a0cba97d](https://github.com/vLLM-HUST/vllm-hust-bidkv/tree/a0cba97d9abdc99908e46616db622f0e0099127f) |
@@ -47,3 +47,5 @@
 已发布的新增对照点见网站 PR [#279](https://github.com/vLLM-HUST/vllm-hust-website/pull/279) 、[#280](https://github.com/vLLM-HUST/vllm-hust-website/pull/280) 与补齐 Pipeline 五档并发的 [#282](https://github.com/vLLM-HUST/vllm-hust-website/pull/282)。环境归组修正见 [#281](https://github.com/vLLM-HUST/vllm-hust-website/pull/281)。单次观测不能证明稳定加速；未触发的优化机制须明确标注。
 
 Native/BidKV/DLA 的 15 个共同运行时观测已由 [#283](https://github.com/vLLM-HUST/vllm-hust-website/pull/283) 发布。Mooncake 原安装版导入退出 SIGABRT 的失败证据已保留；固定源码新构建已通过导入、四类传输和原始 Store 读写。实际服务在 131K 冷请求答对、复用缓存后连续输出 48 个 `!`，同时观察到 Store 容量不足和退出时堆损坏；尚未证明根因。原始失败归档与 SHA256 见覆盖账本。缺少 hccn.conf 未阻止已通过的传输测试，不能再单独据此判定不可运行。
+
+16 GiB/rank 对照已完成：Native 26/26 通过，Mooncake 在第 10 项 warm-262080 再次返回 48 个 `!`，而对应冷请求通过。此次没有记录到 Store put/get 失败，失败请求日志的外部 `need_to_load=0`，所以不能直接归因为外部读取错误。退出时两个 worker 被 SIGKILL，仍有堆损坏日志；最终设备均释放。2744 个源文件哈希复核一致，完整归档 SHA256 为 `637405d49011869855793b8aa200c864ff736716e32e332bd704041f708cbfab`。扩大容量不足以解决资格失败，未进行 Mooncake 性能测量。

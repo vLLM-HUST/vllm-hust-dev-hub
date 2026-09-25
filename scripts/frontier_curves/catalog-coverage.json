@@ -81,7 +81,7 @@
       "repository": "https://github.com/vLLM-HUST/mooncake-hust",
       "local_path": "/home/shuhao/mooncake-hust",
       "source_revision": "8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca",
-      "status": "ascend-hybrid-store-qualification-pending",
+      "status": "real-hybrid-retrieval-failed",
       "readiness_evidence": {
         "installed_distribution": "mooncake-transfer-engine-npu==0.3.11.post1",
         "master_executable_present": true,
@@ -100,7 +100,7 @@
           "HUST_FORK.md"
         ]
       },
-      "next_action": "Diagnose actual Qwen3.5 retrieval failure without changing MTP2/APC/async/graph configuration. Independent phase5b qualification compares Native control and 16 GiB per-rank Store; no performance authorization until correctness passes.",
+      "next_action": "Fix hybrid cache correctness and teardown before any performance run. 16 GiB/rank eliminated observed capacity errors but warm-262080 still failed; matched Native passed all 26. Failing request reported no external load, so do not attribute specifically to external reads without further diagnosis.",
       "ascend_source_witnesses": [
         {
           "path": "vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/ascend_store_connector.py",
@@ -189,6 +189,31 @@
         "archive": "serving-r1-failed-evidence.tar.gz",
         "archive_sha256": "2a71073a8a55b29008291f8804c246daa3bce3f0f37e13e0f583b494c5175476",
         "scope": "Correctness qualification failed; observed errors are not a proven root cause. Supervisor API exit 0 does not establish clean worker teardown."
+      },
+      "capacity_control_qualification": {
+        "attempt": "phase5b/mooncake-retrieval-r1",
+        "passed": false,
+        "store_segment_bytes_per_rank": 17179869184,
+        "native_passed_requests": 26,
+        "candidate_completed_requests": 10,
+        "candidate_expected_requests": 26,
+        "candidate_failed_label": "warm-262080",
+        "cold_262080_passed": true,
+        "warm_131072_passed": true,
+        "warm_262080_text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+        "warm_262080_cached_tokens": 258048,
+        "failing_request_external_need_to_load": 0,
+        "logged_put_failures": 0,
+        "logged_get_failures": 0,
+        "shutdown_observations": [
+          "Two workers required SIGKILL after SIGTERM",
+          "malloc(): unsorted double linked list corrupted"
+        ],
+        "owners_after": [],
+        "source_hash_mismatches": [],
+        "archive": "serving-capacity-control-evidence.tar.gz",
+        "archive_sha256": "637405d49011869855793b8aa200c864ff736716e32e332bd704041f708cbfab",
+        "scope": "Qualification only; no performance curve. Capacity alone is not a sufficient fix; root cause undetermined."
       }
     },
     {
@@ -199,7 +224,7 @@
       "repository": "https://github.com/vllm-project/vllm",
       "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/core-dla",
       "source_revision": "d0f22d2bda562156e4dbf433ce645e1769b4f804",
-      "status": "ascend-hybrid-store-qualification-pending",
+      "status": "real-hybrid-retrieval-failed",
       "source_repository": "https://github.com/vLLM-HUST/vllm-hust",
       "source_witnesses": [
         {
@@ -213,7 +238,7 @@
           "text": "Save path instantiates torch.cuda.Event; must validate Ascend event adaptation before qualification."
         }
       ],
-      "next_action": "Diagnose actual Qwen3.5 retrieval failure without changing MTP2/APC/async/graph configuration. Independent phase5b qualification compares Native control and 16 GiB per-rank Store; no performance authorization until correctness passes.",
+      "next_action": "Fix hybrid cache correctness and teardown before any performance run. 16 GiB/rank eliminated observed capacity errors but warm-262080 still failed; matched Native passed all 26. Failing request reported no external load, so do not attribute specifically to external reads without further diagnosis.",
       "readiness_evidence": {
         "installed_distribution": "mooncake-transfer-engine-npu==0.3.11.post1",
         "master_executable_present": true,
@@ -320,6 +345,31 @@
         "archive": "serving-r1-failed-evidence.tar.gz",
         "archive_sha256": "2a71073a8a55b29008291f8804c246daa3bce3f0f37e13e0f583b494c5175476",
         "scope": "Correctness qualification failed; observed errors are not a proven root cause. Supervisor API exit 0 does not establish clean worker teardown."
+      },
+      "capacity_control_qualification": {
+        "attempt": "phase5b/mooncake-retrieval-r1",
+        "passed": false,
+        "store_segment_bytes_per_rank": 17179869184,
+        "native_passed_requests": 26,
+        "candidate_completed_requests": 10,
+        "candidate_expected_requests": 26,
+        "candidate_failed_label": "warm-262080",
+        "cold_262080_passed": true,
+        "warm_131072_passed": true,
+        "warm_262080_text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+        "warm_262080_cached_tokens": 258048,
+        "failing_request_external_need_to_load": 0,
+        "logged_put_failures": 0,
+        "logged_get_failures": 0,
+        "shutdown_observations": [
+          "Two workers required SIGKILL after SIGTERM",
+          "malloc(): unsorted double linked list corrupted"
+        ],
+        "owners_after": [],
+        "source_hash_mismatches": [],
+        "archive": "serving-capacity-control-evidence.tar.gz",
+        "archive_sha256": "637405d49011869855793b8aa200c864ff736716e32e332bd704041f708cbfab",
+        "scope": "Qualification only; no performance curve. Capacity alone is not a sufficient fix; root cause undetermined."
       }
     },
     {
