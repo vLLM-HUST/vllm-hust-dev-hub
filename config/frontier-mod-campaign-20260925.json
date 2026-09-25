@@ -1,0 +1,417 @@
+{
+  "schema_version": "frontier-mod-campaign-plan/v1",
+  "status": "measured-and-released",
+  "created_date": "2026-09-25",
+  "website_source_commit": "f75126f",
+  "evidence_label_on_success": "real-online",
+  "publication_ready": true,
+  "measurement_seconds": 900,
+  "qualification_seconds": 60,
+  "qualification_concurrency": 2,
+  "total_pilot_measurement_seconds": 10800,
+  "pilot_window_count": 12,
+  "notes": [
+    "User-confirmed first campaign baseline model: Qwen3.5-35B-A3B. Other models are outside the first campaign.",
+    "Historical observations are not fresh baselines.",
+    "Do not run reference server commands before binding actual runtime capsule, workload, model, ports and owned resources.",
+    "No performance values are supplied by this plan.",
+    "A mechanism not invoked is retained as not-exercised, not as a demonstrated benefit.",
+    "Exact prepared workload equality or explicitly reviewed structural equivalence is required."
+  ],
+  "required_receipts": [
+    "immutable runtime and MOD source identities, dirty status and build provenance",
+    "prepared workload SHA256 and tokenizer fingerprint",
+    "device process/FD clearance, task reservation and durable supervisor identity",
+    "fresh baseline and candidate correctness including cold/warm/long/concurrent retrieval",
+    "graph capture/replay, exact-token stream protocol and measured prefix reuse",
+    "policy-call receipts (zero calls must be labelled not-exercised), zero invalid selections/failures",
+    "900-second summary and raw request timing/token artifacts",
+    "owned-server clean exit and device release"
+  ],
+  "lanes": [
+    {
+      "cohort": {
+        "id": "qwen35-35b-a3b-bf16-sweprefix-smoke-v1",
+        "model": {
+          "id": "qwen35-35b-a3b-712cf743",
+          "label": "Qwen3.5-35B-A3B",
+          "revision": "712cf74392b05026a6db2bf213d343747d1f6d45"
+        },
+        "precision": {
+          "id": "bf16-weights-compute-kv",
+          "label": "BF16"
+        },
+        "context_tokens": 262144,
+        "workload": {
+          "id": "sweprefix-qwen35-eight-traces-900s-v1",
+          "label": "SWE prefix reuse · 15 min smoke",
+          "contract": {
+            "profile": "smoke",
+            "measurement_seconds": 900,
+            "repository_url": "https://github.com/vLLM-HUST/swe-prefix-reuse",
+            "source_pool": {
+              "dataset": "nvidia/Open-SWE-Traces",
+              "revision": "fb0c0dccc7a5cce79b3f6de891848acdede36685",
+              "sessions": 8,
+              "assistant_turns": 360,
+              "bundle_sha256": "a31abfc7dea176a8b4bf339ff8b104194040f29244577eab9ba4ca951a01739b",
+              "selection": "8 evenly spaced size ranks among first 32 rows, after conservative credential-like-content exclusion"
+            },
+            "prepared_workload_sha256": "8044561ffa1bb430bea8f778ef814d96649321e1a92654b95f64263b996d5e85",
+            "tokenizer_fingerprint": "3f9ca78537850303ee04bfa6640c020be89723c62f37121c0f27a4c0babc53e0",
+            "chat_template": "Qwen3.5 thinking-enabled; tokenize fixed input deltas and original assistant bodies independently; structural closing delimiters are fixed input",
+            "history": "Actual generated token IDs, then next source input delta; no generated-text retokenization or history rerendering",
+            "output_policy": "Exact source-derived per-turn token budget, greedy ignore_eos; native real MTP accept/reject if enabled; never forced synthetic acceptance",
+            "arrival": "Closed-loop C continuously replenished HTTP request lanes; one request per session; no original tool/human delays; cyclic whole-session queue",
+            "cache": "Unique salt and sticky routing identity per play; preserved within session; cross-session common-prefix reuse deliberately excluded",
+            "warmup": "Separate short protocol/cache qualification before measured traffic. Measured sessions start with fresh salts, no primers. No one-hour formal window.",
+            "aggregation": "One unpooled 900s observation per point; count actual output tokens received inside window, drain only already in-flight requests; no post-window token credit",
+            "x_axis": "P90 across fully completed in-window requests of (N-1)/(last-token-time-first-token-time); grouped SSE token times, not inverse P90 TPOT",
+            "y_axis": "In-window generated tokens / 900 seconds / every allocated chip",
+            "acceptance": "All exact prompt-ID echoes, budget/usage/DONE checks pass; no request errors, verified prefix reuse and owned-resource release. Not answer-quality or peak-capacity certification.",
+            "context_scope": "262144 configured capacity; eight full shapes end at 15494..141269 tokens. Short-window observed prompt lengths are recorded per point; no claim that each run reaches full 256K.",
+            "limitations": "Small deterministic size-spread sample; cold-start/finite-window request mixes and reached context differ across loads/engines. Shared-host single observations; natural MTP output content may differ. Historical AgentX results are a separate workload.",
+            "status": "15-minute smoke, tuning incomplete; retained historical native C16 functional caveats apply; not SWE task solving",
+            "prepared_workload_variants": [
+              {
+                "sha256": "8044561ffa1bb430bea8f778ef814d96649321e1a92654b95f64263b996d5e85",
+                "transformers": "5.17.0"
+              },
+              {
+                "sha256": "e95703601e8ded66e94f1ade997adc9281c41a0b9ee8ffb2b4811b46d9dd7fed",
+                "transformers": "5.14.1"
+              }
+            ],
+            "prepared_workload_equivalence": "Direct structural comparison: all360 fixed input-ID deltas, output budgets, session ordering, source identity and policy identical. Files differ only in tokenizer path/version metadata; tokenizer fingerprint identical. Exact file identity retained per point.",
+            "client_versions": "0.1.0 routes session affinity by cache_salt at relay;0.1.1 additionally sends X-Correlation-ID equal to that salt. Same sticky-play policy; exact revision/transport retained per point.",
+            "concurrency_curves_url": "./assets/frontier-qwen35-swe-concurrency.svg?v=sweprefix-curves-20260924-5"
+          }
+        }
+      },
+      "reference_point_id": "qwen35-sweprefix-capacity16-native-tp2-c4-20260924",
+      "reference_configuration": {
+        "engine": "vLLM + vLLM-Ascend",
+        "engine_version": "0.25.1 / 0.25.1rc1",
+        "mods": [],
+        "hardware": {
+          "label": "Ascend 910B2",
+          "accelerator_count": 2
+        },
+        "context_capacity_tokens": 262144,
+        "parameters": {
+          "tensor_parallel_size": 2,
+          "pipeline_parallel_size": 1,
+          "data_parallel_size": 1,
+          "expert_parallel": false,
+          "max_num_seqs": 16,
+          "max_num_batched_tokens": 4096,
+          "async_scheduling": true,
+          "prefix_caching": true,
+          "mamba_cache_mode": "align",
+          "gpu_memory_utilization": 0.95,
+          "host_kv_budget_gib": 0,
+          "host_memory_policy": "No host KV offload; opportunistic shared-host execution; no claimed RAM reservation",
+          "mtp_draft_tokens": 2,
+          "thinking": true,
+          "generation_temperature": 0,
+          "task_queue_enable": 1,
+          "graph_mode": "FULL_AND_PIECEWISE",
+          "graph_capture_sizes": [
+            3,
+            6,
+            12,
+            24,
+            48
+          ],
+          "runtime_base_commits": {
+            "vllm": "752a3a504485790a2e8491cacbb35c137339ad34",
+            "vllm-ascend": "9bf964cb4b87c8cd0d6852c41a55b3c29711fa95"
+          },
+          "source_capsule": "baseline-source",
+          "availability": "Native engine plus required Mamba ABI bridge; no BetterScale treatment",
+          "sampler": "Native real accept/reject MTP2",
+          "kv_cache_memory_bytes": 26038239232,
+          "kv_memory_scope": "Per chip; explicit bytes override utilization; includes hybrid cache allocations",
+          "capacity_policy": "Validated provisional per-arm KV budget, not a capacity maximum or equal-KV control",
+          "comparison_scope": "One serial 900s observation of this configuration; not a repeatability estimate, equal-KV ablation or certified capacity peak",
+          "functional_limit": "Native C16 cold retrieval divergences retained with and without MTP; not quality-certified",
+          "checkpoint_revision": "712cf74392b05026a6db2bf213d343747d1f6d45",
+          "warmup_policy": "Separate protocol qualification; fresh salt/cold measured sessions; no measured-session primer",
+          "benchmark_repository": "https://github.com/vLLM-HUST/swe-prefix-reuse",
+          "benchmark_revision": "59ea20a669904bca63076e4891313e0bc05cf4fb",
+          "observed_max_prompt_tokens": 73616,
+          "measured_mean_client_inflight": 3.998771407892507,
+          "full_client_concurrency_fraction": 0.9987743359491449,
+          "prefix_cache_scope": "Within session only; unique cache_salt/X-Correlation-ID per play",
+          "qualification": {
+            "concurrency": 2,
+            "measurement_seconds": 60,
+            "fresh_measured_session_salts": true,
+            "capacity_gate": false
+          },
+          "execution_host": "local",
+          "deployment_note": "Completed windows only; continuous selected-card guard had not triggered during these windows or their drain. Foreign process detected later during C16; incomplete C16 excluded, owned server exited zero, release observation complete.",
+          "physical_devices": [
+            0,
+            1
+          ],
+          "transport": "Client and server on execution host loopback",
+          "server_command": [
+            "python",
+            "-m",
+            "vllm.entrypoints.cli.main",
+            "serve",
+            "$MODEL",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "33781",
+            "--served-model-name",
+            "swe-native16",
+            "--tensor-parallel-size",
+            "2",
+            "--distributed-executor-backend",
+            "mp",
+            "--worker-cls",
+            "native_worker.Worker",
+            "--dtype",
+            "bfloat16",
+            "--kv-cache-dtype",
+            "auto",
+            "--max-model-len",
+            "262144",
+            "--max-num-seqs",
+            "16",
+            "--max-num-batched-tokens",
+            "4096",
+            "--gpu-memory-utilization",
+            "0.95",
+            "--seed",
+            "17",
+            "--enable-prefix-caching",
+            "--mamba-cache-mode",
+            "align",
+            "--enable-prompt-tokens-details",
+            "--async-scheduling",
+            "--shutdown-timeout",
+            "60",
+            "--additional-config",
+            "{\"enable_cpu_binding\":false}",
+            "--limit-mm-per-prompt",
+            "{\"image\":0,\"video\":0}",
+            "--compilation-config",
+            "{\"cudagraph_mode\": \"FULL_AND_PIECEWISE\", \"cudagraph_capture_sizes\": [3, 6, 12, 24, 48], \"max_cudagraph_capture_size\": 48}",
+            "--speculative-config",
+            "{\"method\": \"mtp\", \"num_speculative_tokens\": 2}",
+            "--generation-config",
+            "vllm",
+            "--override-generation-config",
+            "{\"temperature\": 0.0, \"top_p\": 1.0, \"top_k\": -1, \"presence_penalty\": 0.0}",
+            "--default-chat-template-kwargs",
+            "{\"enable_thinking\":true}",
+            "--kv-cache-memory-bytes",
+            "26038239232"
+          ],
+          "max_cudagraph_capture_size": 48,
+          "worker_class": "native_worker.Worker"
+        }
+      },
+      "status": "preparing-kubernetes-container",
+      "pilot_concurrency": [
+        4,
+        16
+      ],
+      "followup_concurrency": [
+        1,
+        2,
+        8
+      ],
+      "paired_repetitions": 3,
+      "pair_order": [
+        "baseline,candidate",
+        "candidate,baseline",
+        "baseline,candidate"
+      ],
+      "candidate_mod": "bidkv",
+      "candidate_source_revision": "a0cba97d9abdc99908e46616db622f0e0099127f",
+      "candidate_policy": "bidkv.adapters.vllm_hust.selector.BidkvPreemptionPolicy",
+      "candidate_environment": {
+        "BIDKV_UTILITY_ENABLE": "1"
+      },
+      "interface_requirement": "vllm.preemption-policy.v1; missing from the recorded Frontier core base; any qualified bridge must be identical in baseline and candidate",
+      "allowed_pair_differences": [
+        "explicit BidKV activation and policy selection"
+      ],
+      "reference_is_new_run_authorization": false
+    }
+  ],
+  "baseline_model": "Qwen3.5-35B-A3B",
+  "runtime_rebuild": {
+    "directory": "/data/codex-build-work/frontier-mods-qwen35-20260925",
+    "image_reference": "quay.io/ascend/vllm-ascend@sha256:f2906b9810d28df0a8969b7bd655e128fbb249dcba4b3b27bb1ed89d1f4f93f9",
+    "image_channel": "nightly-releases-v0.25.1rc",
+    "cann_reference": "quay.io/ascend/cann@sha256:015a54052176ed74b92f2acb0048ac4026fe349091446d895ffda77bae39b7dd",
+    "core_commit": "752a3a504485790a2e8491cacbb35c137339ad34",
+    "ascend_commit": "9bf964cb4b87c8cd0d6852c41a55b3c29711fa95",
+    "model_path": "/data/shared_models/modelscope_cache/Qwen/Qwen3___5-35B-A3B",
+    "prospective_physical_devices": [],
+    "resources_reserved": false,
+    "historical_environment_equivalence": "pending package, workload and runtime qualification",
+    "shared_core_patch_origin": "33dc7d82d7",
+    "shared_core_patch_status": "Installed common baseline/candidate patch; final installed backend scheduler/preemption tests31 passed",
+    "status": "local preparation stopped after user selected Kubernetes container",
+    "shared_core_patch_sha256": "f8e1418e288725da8ad9653148abdb3264fc6f99f0e3581ae8b3900ed242a829"
+  },
+  "execution_target": {
+    "kind": "user-provided-kubernetes-container",
+    "ssh_host": "223.92.35.180",
+    "ssh_port": 30033,
+    "ssh_user": "root",
+    "bare_host_execution_allowed": false,
+    "connection_status": "kubectl exec available; MacBook public key already authorized",
+    "device_allocation": "Pod quota8 NPUs; TP2 deployment participates on container devices0,1; all experimental execution in container",
+    "namespace": "coder-workspaces",
+    "pod": "coder-admin-shuhao-workspace-665dc6dff5-dmmbh",
+    "pod_uid": "33e57f4a-ee9b-4000-a326-7b5d45529e65",
+    "container": "dev",
+    "node": "host-192-168-0-84",
+    "allocated_npus": 8,
+    "container_image_digest": "sha256:00049e9679cf9d787bcd455708fc2b77e6015a3b3d207453fb8a7c05b8276cbd",
+    "experiment_directory": "/home/coder/frontier-mods-qwen35-20260925",
+    "mounted_model_status": "read-only mount incomplete; isolated model now complete with22 files SHA256 verified",
+    "observed_original_packages": {
+      "vllm": "0.23.0+empty",
+      "vllm_ascend": "0.23.0.post1",
+      "torch": "2.10.0+cpu",
+      "torch_npu": "2.10.0.post4",
+      "transformers": "5.5.4"
+    },
+    "cann": "9.1.0",
+    "qualified_model_path": "/home/coder/frontier-mods-qwen35-20260925/model",
+    "runtime": {
+      "vllm": "0.25.1+frontier.bidkv",
+      "vllm_ascend": "0.25.1rc1",
+      "ascend_wheel_sha256": "0e6ba24d581ef9200aa38ae6773363633070a21a84ce229fbe41bbedc054ae42",
+      "ascend_source_comparison": "477 Python files checked; only generated _version.py differs",
+      "environment_override": {
+        "VLLM_VERSION": "0.25.1"
+      },
+      "override_reason": "Ascend exact version selector otherwise selects incompatible old FLA path for local version suffix",
+      "worker": "frontier_worker.Worker, common V1 SD Mamba ABI bridge",
+      "shared_correctness_patches": [
+        "scripts/frontier_runtime/core-feedback-mailbox.patch.gz",
+        "scripts/frontier_runtime/ascend-feedback-mailbox.patch.gz"
+      ],
+      "qualification": {
+        "retrieval": "26/26 passed including cold/warm1024..262080 and16concurrent",
+        "receipt": "receipts/native-retrieval-r6/summary.json",
+        "protocol": "passed C2/60s,20 requests0 failures; prefix-hit token delta79872",
+        "supervisor_program": "bench-native-r1",
+        "output": "runs/native-r1"
+      }
+    },
+    "model_revision_verification": {
+      "provider": "ModelScope",
+      "revision": "712cf74392b05026a6db2bf213d343747d1f6d45",
+      "files_checked": 22,
+      "sha256_and_size_all_match": true,
+      "receipt": "receipts/model-revision-verified.json"
+    }
+  },
+  "prepared_workload": {
+    "sha256": "aa23f49e08a946d94eaab21307e9e015140cc8598adfbd5f7e244bdded7b17d0",
+    "tokenizer_fingerprint": "3f9ca78537850303ee04bfa6640c020be89723c62f37121c0f27a4c0babc53e0",
+    "sessions": 8,
+    "turns": 360,
+    "rejected_sessions": 0,
+    "compiler_unchanged_since": "59ea20a",
+    "revision": "6861242dbd9f17b707003191e4200b7752911d7c",
+    "path": "/home/coder/frontier-mods-qwen35-20260925/prepared/qwen35.json",
+    "transformers": "5.14.1",
+    "equivalence_receipt": "receipts/workload-equivalence.json",
+    "equivalence": "Metadata-only substitution of tokenizer path and Transformers version exactly reconstructs historical8044561f SHA256"
+  },
+  "continuation": {
+    "supervisor_program": "continue-bidkv",
+    "status": "completed",
+    "script": "scripts/frontier_runtime/run_next_arm.py",
+    "candidate_output": "runs/bidkv-r1"
+  },
+  "completed_windows": [
+    {
+      "arm": "native",
+      "concurrency": 4,
+      "release_pending": false,
+      "measurement_seconds": 900.0,
+      "valid": true,
+      "output_tokens_per_second": 242.08,
+      "output_tokens_per_second_per_chip": 121.04,
+      "decode_tokens_per_second_p90": 88.99847362666397,
+      "failed_requests": 0,
+      "preemptions": 0
+    },
+    {
+      "arm": "native",
+      "concurrency": 16,
+      "release_pending": false,
+      "measurement_seconds": 900.0,
+      "valid": true,
+      "output_tokens_per_second": 368.04,
+      "output_tokens_per_second_per_chip": 184.02,
+      "decode_tokens_per_second_p90": 35.544937972002025,
+      "failed_requests": 0,
+      "preemptions": 0
+    },
+    {
+      "arm": "bidkv",
+      "concurrency": 4,
+      "release_pending": false,
+      "measurement_seconds": 900.0,
+      "valid": true,
+      "output_tokens_per_second": 239.03,
+      "output_tokens_per_second_per_chip": 119.515,
+      "decode_tokens_per_second_p90": 89.2017211690655,
+      "failed_requests": 0,
+      "preemptions": 0,
+      "policy_effectiveness": {
+        "enabled": true,
+        "policy": "bidkv.adapters.vllm_hust.selector.BidkvPreemptionPolicy",
+        "calls": 0.0,
+        "selections": 0.0,
+        "failures": 0.0,
+        "abstentions": 0.0,
+        "invalid_selections": 0.0,
+        "preemptions": 0.0,
+        "status": "not-exercised",
+        "scope": "Counter deltas covering measured window and in-flight drain; calls alone do not establish optimization benefit"
+      }
+    },
+    {
+      "arm": "bidkv",
+      "concurrency": 16,
+      "release_pending": false,
+      "measurement_seconds": 900.0,
+      "valid": true,
+      "output_tokens_per_second": 369.70444444444445,
+      "output_tokens_per_second_per_chip": 184.85222222222222,
+      "decode_tokens_per_second_p90": 35.39954478270594,
+      "failed_requests": 0,
+      "preemptions": 0,
+      "policy_effectiveness": {
+        "enabled": true,
+        "policy": "bidkv.adapters.vllm_hust.selector.BidkvPreemptionPolicy",
+        "calls": 0.0,
+        "selections": 0.0,
+        "failures": 0.0,
+        "abstentions": 0.0,
+        "invalid_selections": 0.0,
+        "preemptions": 0.0,
+        "status": "not-exercised",
+        "scope": "Counter deltas covering measured window and in-flight drain; calls alone do not establish optimization benefit"
+      }
+    }
+  ],
+  "actual_window_count": 4,
+  "actual_measurement_seconds": 3600,
+  "repeat_decision": "Stopped after first matched pair at each concurrency because BidKV policy calls were zero in both cells; no optimization-effect inference from single observations."
+}
