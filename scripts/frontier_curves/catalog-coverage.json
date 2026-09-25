@@ -81,7 +81,35 @@
       "repository": "https://github.com/vLLM-HUST/mooncake-hust",
       "local_path": "/home/shuhao/mooncake-hust",
       "source_revision": "8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca",
-      "status": "source-audit-pending"
+      "status": "ascend-hybrid-store-qualification-pending",
+      "readiness_evidence": {
+        "installed_distribution": "mooncake-transfer-engine-npu==0.3.11.post1",
+        "master_executable_present": true,
+        "hccn_config_present": false,
+        "ascend_connector": "AscendStoreConnector",
+        "supports_hma": true,
+        "mamba_cache_mode_required": "align",
+        "cuda_event_compatibility": "Frozen NPUModelRunner wrapper retains torch.cuda.Event = torch.npu.Event",
+        "runtime_qualification": "Not run; current Pipeline benchmark owns all devices"
+      },
+      "next_action": "After scheduled measurements release devices, validate assigned-device network configuration and local owned Mooncake service; keep APC, async, MTP2 and graph modes; use kv_load_failure_policy=fail for hybrid correctness. Qualify actual cache save/load before publishing.",
+      "ascend_source_witnesses": [
+        {
+          "path": "vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/ascend_store_connector.py",
+          "line": 76,
+          "text": "AscendStoreConnector derives SupportsHMA."
+        },
+        {
+          "path": "vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/pool_scheduler.py",
+          "line": 84,
+          "text": "Hybrid Mamba cache requires align mode, matching current benchmark."
+        },
+        {
+          "path": "vllm_ascend/worker/model_runner_v1.py",
+          "line": 4892,
+          "text": "Common frozen worker keeps CUDA compatibility event backed by real NPU event."
+        }
+      ]
     },
     {
       "id": "mooncake-vllm-connectors",
@@ -91,7 +119,7 @@
       "repository": "https://github.com/vllm-project/vllm",
       "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/core-dla",
       "source_revision": "d0f22d2bda562156e4dbf433ce645e1769b4f804",
-      "status": "ascend-store-integration-pending",
+      "status": "ascend-hybrid-store-qualification-pending",
       "source_repository": "https://github.com/vLLM-HUST/vllm-hust",
       "source_witnesses": [
         {
@@ -105,7 +133,34 @@
           "text": "Save path instantiates torch.cuda.Event; must validate Ascend event adaptation before qualification."
         }
       ],
-      "next_action": "Inspect frozen Ascend adapters, qualify NPU transfer-engine/store setup and Mamba/APC semantics; source HMA support alone is insufficient."
+      "next_action": "After scheduled measurements release devices, validate assigned-device network configuration and local owned Mooncake service; keep APC, async, MTP2 and graph modes; use kv_load_failure_policy=fail for hybrid correctness. Qualify actual cache save/load before publishing.",
+      "readiness_evidence": {
+        "installed_distribution": "mooncake-transfer-engine-npu==0.3.11.post1",
+        "master_executable_present": true,
+        "hccn_config_present": false,
+        "ascend_connector": "AscendStoreConnector",
+        "supports_hma": true,
+        "mamba_cache_mode_required": "align",
+        "cuda_event_compatibility": "Frozen NPUModelRunner wrapper retains torch.cuda.Event = torch.npu.Event",
+        "runtime_qualification": "Not run; current Pipeline benchmark owns all devices"
+      },
+      "ascend_source_witnesses": [
+        {
+          "path": "vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/ascend_store_connector.py",
+          "line": 76,
+          "text": "AscendStoreConnector derives SupportsHMA."
+        },
+        {
+          "path": "vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/pool_scheduler.py",
+          "line": 84,
+          "text": "Hybrid Mamba cache requires align mode, matching current benchmark."
+        },
+        {
+          "path": "vllm_ascend/worker/model_runner_v1.py",
+          "line": 4892,
+          "text": "Common frozen worker keeps CUDA compatibility event backed by real NPU event."
+        }
+      ]
     },
     {
       "id": "pegaflow",

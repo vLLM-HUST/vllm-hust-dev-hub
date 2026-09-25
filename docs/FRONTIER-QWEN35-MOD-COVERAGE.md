@@ -8,8 +8,8 @@
 
 | 组件 | 当前证据与下一步 | 固定来源 |
 | --- | --- | --- |
-| Mooncake HUST | 外部服务和 Ascend 连接器部署仍待完成；没有本轮实测证据。 | [8b8c7ae7](https://github.com/vLLM-HUST/mooncake-hust/tree/8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca) |
-| Mooncake vLLM Connectors | Store Connector 支持 HMA，但保存路径使用 CUDA Event；Ascend 适配、外部服务和状态正确性待验证。 | [d0f22d2b](https://github.com/vLLM-HUST/vllm-hust/tree/d0f22d2bda562156e4dbf433ce645e1769b4f804) |
+| Mooncake HUST | 容器已有 Mooncake 0.3.11.post1 和 master；AscendStore 支持 HMA/align。缺少 hccn.conf，通信配置与真实缓存读写仍待资格验证。 | [8b8c7ae7](https://github.com/vLLM-HUST/mooncake-hust/tree/8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca) |
+| Mooncake vLLM Connectors | 找到 AscendStore HMA 路径；共同 NPU 运行时已有 Event 兼容处理。保持 APC/async/MTP/图模式的完整资格测试待执行。 | [d0f22d2b](https://github.com/vLLM-HUST/vllm-hust/tree/d0f22d2bda562156e4dbf433ce645e1769b4f804) |
 | PegaFlow | 普通 PegaKVConnector 未声明 HMA 且只使用第 0 缓存组；独立 NIXL 路径需另行验证，不能一概声称不支持。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
 | PegaFlow vLLM Connectors | 普通 PegaKVConnector 未声明 HMA 且只使用第 0 缓存组；独立 NIXL 路径需另行验证，不能一概声称不支持。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
 | BidKV | 已有 C4/C16；准备在新共同运行时补齐五档并发。已有窗口未触发抢占，不能宣称抢占收益。 | [a0cba97d](https://github.com/vLLM-HUST/vllm-hust-bidkv/tree/a0cba97d9abdc99908e46616db622f0e0099127f) |
