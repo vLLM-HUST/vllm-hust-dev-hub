@@ -1,5 +1,6 @@
 import copy
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -59,3 +60,14 @@ def test_actual_deployment_topology_must_agree_with_client():
     config["server_metadata"]["serving_devices"] = [0, 1]
     with pytest.raises(ValueError, match="topology"):
         module.validate_window(config, summary)
+
+
+def test_summary_cannot_hide_a_truncated_raw_request(tmp_path):
+    path = tmp_path / "requests.jsonl"
+    row = dict(success=True, error=None, token_ids=[1, 2], expected_output_tokens=3)
+    path.write_text(json.dumps(row) + "\n")
+    with pytest.raises(ValueError, match="output budgets"):
+        module.validate_requests(path)
+    row["token_ids"].append(3)
+    path.write_text(json.dumps(row) + "\n")
+    module.validate_requests(path)

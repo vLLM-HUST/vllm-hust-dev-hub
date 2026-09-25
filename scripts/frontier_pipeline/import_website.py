@@ -57,6 +57,17 @@ def prefix_hits(path):
     )
 
 
+def validate_requests(path):
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    if not rows or any(
+        not row["success"]
+        or row["error"]
+        or len(row["token_ids"]) != row["expected_output_tokens"]
+        for row in rows
+    ):
+        raise ValueError("Raw requests failed or violated exact output budgets")
+
+
 def build(template, root, arm, cell, evidence_url):
     run = root / "receipts" / f"{arm}-measured-r1"
     state = read(run / "status.json")
@@ -73,6 +84,7 @@ def build(template, root, arm, cell, evidence_url):
         read(run / cell / "summary.json"),
     )
     validate_window(config, summary)
+    validate_requests(run / cell / "requests.jsonl")
     meta = config["server_metadata"]
     hits = prefix_hits(run / f"{cell}-after.prom") - prefix_hits(
         run / f"{cell}-before.prom"
