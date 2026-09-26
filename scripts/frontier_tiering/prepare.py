@@ -7,7 +7,7 @@ import socket
 from pathlib import Path
 
 BASE = Path("/home/coder/frontier-mods-qwen35-20260925")
-ROOT = BASE / "phase6/serving-r7"
+ROOT = BASE / "phase6/serving-r8"
 OLD = BASE / "phase4"
 VENV = BASE / "phase6/.venv-r7"
 
@@ -47,7 +47,7 @@ def main():
     (ROOT / "manager-tiering.json").write_text(
         (BASE / "phase6/manager-tiering.json")
         .read_text()
-        .replace("tiering-storage-r1", "tiering-storage-r7")
+        .replace("tiering-storage-r1", "tiering-storage-r8")
     )
     for name in ["run_campaign.py", "transfer_receipt.py"]:
         (ROOT / name).write_bytes((BASE / "phase6" / name).read_bytes())

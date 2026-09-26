@@ -23,3 +23,19 @@ def test_missing_reset_and_store_only_do_not_claim_restored_cache(tmp_path):
     after.write_text("")
     with pytest.raises(ValueError, match="Missing"):
         receipt(before, after)
+
+
+def test_declared_counter_without_children_is_zero(tmp_path):
+    before, after = tmp_path / "before.prom", tmp_path / "after.prom"
+    declarations = (
+        "# TYPE vllm:kv_offload_load_bytes_total counter\n"
+        "# TYPE vllm:kv_offload_store_bytes_total counter\n"
+    )
+    before.write_text(declarations)
+    after.write_text(
+        declarations + 'vllm:kv_offload_store_bytes_total{engine="0"} 80\n'
+    )
+    observed = receipt(before, after)
+    assert observed["status"] == "store-only"
+    assert observed["load_bytes"] == 0
+    assert observed["store_bytes"] == 80
