@@ -2,6 +2,7 @@
 
 import argparse
 import copy
+import gzip
 import hashlib
 import json
 import sys
@@ -70,7 +71,21 @@ def normalized_launch(custody, arm):
     return args, connector
 
 
-def build(template, root, arm, cell, evidence_url):
+def compact_metadata(metadata, url, raw):
+    result = copy.deepcopy(metadata)
+    files = result.pop("runtime_source_files")
+    result["runtime_source_files_sha256"] = hashlib.sha256(
+        json.dumps(files, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    result["runtime_source_file_count"] = len(files)
+    result["full_metadata"] = {
+        "url": url,
+        "sha256": hashlib.sha256(raw).hexdigest(),
+    }
+    return result
+
+
+def build(template, root, arm, cell, evidence_url, artifact_base_url):
     run = root / "receipts" / f"{arm}-measured-r1"
     state = read(run / "status.json")
     released(state)
@@ -88,6 +103,9 @@ def build(template, root, arm, cell, evidence_url):
     validate_window(config, summary)
     validate_requests(run / cell / "requests.jsonl", summary)
     meta = config["server_metadata"]
+    metadata_path = root / f"metadata-{arm}.json"
+    if meta != read(metadata_path):
+        raise ValueError("Window metadata differs from the qualified launcher")
     mods = ["kv-tiering"] if arm == "tiering" else []
     if meta["mods"] != mods:
         raise ValueError("MOD metadata disagrees with campaign")
@@ -138,7 +156,11 @@ def build(template, root, arm, cell, evidence_url):
     ):
         params.pop(key, None)
     params.update(
-        runtime_receipt=meta,
+        runtime_receipt=compact_metadata(
+            meta,
+            f"{artifact_base_url}/metadata-{arm}.json",
+            metadata_path.read_bytes(),
+        ),
         server_command=" ".join(custody["serving_child"]["argv"]),
         source_capsule="frontier-managed-tiering-20260926",
         scheduler_reserve_output_budget=False,
@@ -195,6 +217,7 @@ def build(template, root, arm, cell, evidence_url):
         requests_artifact_sha256=hashlib.sha256(
             (run / cell / "requests.jsonl").read_bytes()
         ).hexdigest(),
+        requests_artifact_url=f"{artifact_base_url}/{arm}-{cell}-requests.jsonl.gz",
         validation=dict(
             owned_server_exit_zero=True,
             selected_devices_released=True,
@@ -245,13 +268,45 @@ def main(args):
         if p["id"] == "qwen35-sweprefix-budget-capsule-native-tp2-c4-r1-20260925"
     )
     additions = [
-        build(template, root, arm, f"c{c}", args.evidence_url)
+        build(
+            template,
+            root,
+            arm,
+            f"c{c}",
+            args.evidence_url,
+            args.artifact_base_url.rstrip("/"),
+        )
         for arm in ("native", "tiering")
         for c in (1, 2, 4, 8, 16)
     ]
     existing = {p["id"] for p in data["points"]}
     if any(p["id"] in existing for p, _ in additions):
         raise ValueError("Observation already exists")
+    archive = args.site / "reports/frontier-managed-tiering-20260926"
+    archive.mkdir(parents=True, exist_ok=False)
+    for arm in ("native", "tiering"):
+        (archive / f"metadata-{arm}.json").write_bytes(
+            (root / f"metadata-{arm}.json").read_bytes()
+        )
+        run = root / "receipts" / f"{arm}-measured-r1"
+        gates = {
+            "status": read(run / "status.json"),
+            "retrieval": read(run / "retrieval/summary.json"),
+            "prefix_reuse": read(run / "prefix-reuse.json"),
+            "custody": read(run / "custody.json"),
+        }
+        (archive / f"{arm}-qualification.json").write_text(
+            json.dumps(gates, indent=2) + "\n"
+        )
+        for c in (1, 2, 4, 8, 16):
+            raw = (run / f"c{c}/requests.jsonl").read_bytes()
+            (archive / f"{arm}-c{c}-requests.jsonl.gz").write_bytes(
+                gzip.compress(raw, mtime=0)
+            )
+            for phase in ("before", "after"):
+                (archive / f"{arm}-c{c}-{phase}.prom").write_bytes(
+                    (run / f"c{c}-{phase}.prom").read_bytes()
+                )
     data["points"].extend(p for p, _ in additions)
     evidence["runs"].extend(row for _, row in additions)
     data_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
@@ -264,4 +319,5 @@ if __name__ == "__main__":
     parser.add_argument("--site", type=Path, required=True)
     parser.add_argument("--artifacts", type=Path, required=True)
     parser.add_argument("--evidence-url", required=True)
+    parser.add_argument("--artifact-base-url", required=True)
     main(parser.parse_args())
