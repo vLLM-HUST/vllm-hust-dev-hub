@@ -219,8 +219,12 @@ def build(template, root, arm, cell, evidence_url, artifact_base_url):
         metrics=point["metrics"],
         retrieval_qualification=gate,
         requests_artifact_sha256=hashlib.sha256(
+            gzip.compress((run / cell / "requests.jsonl").read_bytes(), mtime=0)
+        ).hexdigest(),
+        requests_content_sha256=hashlib.sha256(
             (run / cell / "requests.jsonl").read_bytes()
         ).hexdigest(),
+        requests_artifact_encoding="gzip",
         requests_artifact_url=f"{artifact_base_url}/{arm}-{cell}-requests.jsonl.gz",
         validation=dict(
             owned_server_exit_zero=True,
