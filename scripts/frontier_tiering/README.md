@@ -5,11 +5,12 @@ campaign preserves the current Frontier model, BF16/auto KV dtype, 256K context,
 APC, MTP2, async scheduling, graph buckets and explicit KV memory budget.
 
 The first attempt stopped before readiness on the host connector's Tensor-only
-cache registration. The next plugin revision adds a plugin-owned Ascend connector
-and a synchronous copy worker for separate attention and recurrent cache views.
+cache registration. Subsequent revisions add a plugin-owned Ascend connector
+a synchronous copy worker for separate attention and recurrent cache views, explicit secondary-tier registration,
+and adaptation to the frozen host file-mapping API.
 `source-lock.json` pins that development revision; this is not a released feature
-or a claimed speedup. Five installed-wheel tests passed in the assigned container,
-including real NPU round trips. Serving qualification remains an independent gate.
+or a claimed speedup. Seven installed-wheel tests passed in the assigned container,
+including real NPU round trips and actual-host segment file store/restore. Serving qualification remains an independent gate.
 
 The scripts use the retained experiment capsule under
 `/home/coder/frontier-mods-qwen35-20260925`. The model, workload, frozen phase4
@@ -18,11 +19,11 @@ Build the plugin wheel from its pin into a dedicated overlay environment; retain
 previous environments unchanged. No shared host installation is altered.
 
 `prepare.py` verifies frozen sources and the wheel test receipt before creating
-an entirely new `phase6/serving-r3` directory. Copy qualify.py to
+an entirely new `phase6/serving-r4` directory. Copy qualify.py to
 `phase6/qualify-managed.py`, and run_campaign.py/transfer_receipt.py to phase6 before
 preparation. The resulting dedicated supervisor owns all controllers and services.
-The pair controller first waits for the separate serving-r2 candidate qualification
-to pass and release devices; any failure stops the campaign. Native and Tiering
+The pair controller runs the candidate first to detect any serving failure before
+spending time on a new control. Tiering and Native
 then run serially, each with 26 retrieval checks, a 60-second prefix-reuse gate and
 C1/C2/C4/C8/C16 windows of 900 seconds. No automatic retry or eager fallback occurs.
 

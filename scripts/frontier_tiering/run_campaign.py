@@ -40,29 +40,10 @@ def main(pair_attempt="matched-curves-r1"):
     active = None
     try:
         verify_parent()
-        gate_path = ROOT.parent / "serving-r2/receipts/tiering-qualify-r1/status.json"
-        deadline = time.monotonic() + 4500
-        while True:
-            gate = json.loads(gate_path.read_text())
-            state["stage"] = "waiting-for-tiering-qualification"
-            write(out / "status.json", state)
-            if gate.get("stage") in {"completed", "failed"} and "release" in gate:
-                if (
-                    not gate["passed"]
-                    or gate["release"]["exit"]
-                    or gate["release"]["owners"]
-                ):
-                    raise RuntimeError("Tiering qualification did not pass and release")
-                break
-            if time.monotonic() >= deadline:
-                raise TimeoutError("Tiering qualification deadline")
-            time.sleep(10)
-        state["stage"] = "measurement"
-
         manifest = json.loads((ROOT / "manifest.json").read_text())
         if manifest.get("software_tests_passed") is not True:
             raise RuntimeError("Runtime software integration tests are incomplete")
-        for arm in ("native", "tiering"):
+        for arm in ("tiering", "native"):
             attempt = f"{arm}-measured-r1"
             program = f"measure-{arm}"
             if (ROOT / "receipts" / attempt).exists() or owners():

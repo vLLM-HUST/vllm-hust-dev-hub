@@ -1,7 +1,7 @@
 {
   "plugin": {
     "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-tiering",
-    "revision": "402cdee77272c58bb79c9f137d2e13cff2eb80c7"
+    "revision": "40d1def033b8f3fb13da04143473ca84011031c3"
   },
   "manager": {
     "repository": "https://github.com/vLLM-HUST/extension-manager",
