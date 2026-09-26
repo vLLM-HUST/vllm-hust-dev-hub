@@ -23,7 +23,7 @@ def main(site):
     if len(points) != 10:
         raise ValueError("Render only the complete ten-point matched pair")
     groups = {}
-    for arm, mods in (("native", []), ("tiering", ["kv-tiering"])):
+    for arm, mods in (("native", []), ("tiering", ["kv-tiering-migration"])):
         rows = sorted(
             (p for p in points if p["configuration"]["mods"] == mods),
             key=lambda p: p["load"]["concurrency"],

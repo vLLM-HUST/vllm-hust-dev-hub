@@ -106,8 +106,9 @@ def build(template, root, arm, cell, evidence_url, artifact_base_url):
     metadata_path = root / f"metadata-{arm}.json"
     if meta != read(metadata_path):
         raise ValueError("Window metadata differs from the qualified launcher")
-    mods = ["kv-tiering"] if arm == "tiering" else []
-    if meta["mods"] != mods:
+    runtime_mods = ["kv-tiering"] if arm == "tiering" else []
+    mods = ["kv-tiering-migration"] if arm == "tiering" else []
+    if meta["mods"] != runtime_mods:
         raise ValueError("MOD metadata disagrees with campaign")
     custody = read(run / "custody.json")
     _, connector = normalized_launch(custody, arm)
@@ -136,7 +137,7 @@ def build(template, root, arm, cell, evidence_url, artifact_base_url):
     cfg["mod_sources"] = (
         [
             {
-                "id": "kv-tiering",
+                "id": "kv-tiering-migration",
                 "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-tiering",
                 "revision": meta["plugin_revision"],
                 "source_capsule": "frontier-managed-tiering-20260926",

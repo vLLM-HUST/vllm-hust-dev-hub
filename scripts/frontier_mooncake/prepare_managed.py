@@ -105,9 +105,33 @@ def main():
         raise RuntimeError("Managed arms differ beyond the connector")
     (ROOT / "manager-plans.json").write_text(json.dumps(plans, indent=2) + "\n")
     controller = ROOT / "qualify.py"
-    controller.write_text(
-        controller.read_text().replace('str(BASE / ".venv/bin/vllm")', repr(manager))
+    source = controller.read_text().replace(
+        'str(BASE / ".venv/bin/vllm")', repr(manager)
     )
+    final_write = '        write(out / "status.json", state)\n\n\nif __name__'
+    if source.count(final_write) != 1:
+        raise RuntimeError("Unexpected qualification finalizer")
+    source = source.replace(
+        final_write,
+        """        server_log = ROOT / "receipts" / f"{program}.log"
+        fatal = []
+        if server_log.exists():
+            content = server_log.read_text(errors="replace")
+            fatal = [text for text in (
+                "malloc():", "free():", "double free or corruption",
+                "Fatal Python error:", "Segmentation fault",
+            ) if text in content]
+        if fatal:
+            state.update(passed=False, stage="failed", shutdown_errors=fatal)
+            (out / "FAILED.txt").write_text("Fatal runtime/shutdown errors: " + str(fatal))
+        write(out / "status.json", state)
+        if fatal:
+            raise RuntimeError("Fatal runtime/shutdown errors: " + str(fatal))
+
+
+if __name__""",
+    )
+    controller.write_text(source)
     # The original qualification controller and all its release gates remain;
     # only the expected supervised executable changes to the manager.
     manifest_path = ROOT / "manifest.json"
