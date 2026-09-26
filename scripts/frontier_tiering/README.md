@@ -19,7 +19,7 @@ Build the plugin wheel from its pin into a dedicated overlay environment; retain
 previous environments unchanged. No shared host installation is altered.
 
 `prepare.py` verifies frozen sources and the wheel test receipt before creating
-an entirely new `phase6/serving-r7` directory. Copy qualify.py to
+an entirely new `phase6/serving-r8` directory. Copy qualify.py to
 `phase6/qualify-managed.py`, and run_campaign.py/transfer_receipt.py to phase6 before
 preparation. The resulting dedicated supervisor owns all controllers and services.
 The pair controller runs the candidate first to detect any serving failure before
@@ -54,3 +54,10 @@ secondary lookup before any performance window. A deterministic regression
 reproduced both HIT and MISS results remaining unconsumed after an early retry.
 serving-r7 uses the corrected plugin (drain completed results on every retry),
 retains core-r6 unchanged, and uses a fresh environment and secondary store.
+
+serving-r7 passed all 26 retrieval probes and prefix reuse (118,784 hit tokens).
+Its partial C1 window was stopped to fix the collection script: the host declares
+counter families before their first labelled sample. An empty declared family is
+zero activity; a missing family remains an error. The corrected serving-r8 uses
+the same runtime/environment, has passed both qualification gates, and is running
+the complete pair. Earlier partial windows are not Frontier points.

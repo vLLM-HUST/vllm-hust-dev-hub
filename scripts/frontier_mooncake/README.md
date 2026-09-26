@@ -114,3 +114,13 @@ save, after save and after forced deletion passed. Both clients and the owned
 master exited zero; device owners were empty. Each client contributed 1 GiB
 with Ascend/P2PHANDSHAKE and no local copy buffer. This proves bounded Store
 operations, not Qwen3.5 hybrid-cache correctness or serving performance.
+
+`prepare_managed.py` prepares a new qualification-only phase7 using the manager's
+explicit AscendStore profile and the Host independent-hybrid-hit capability fix.
+It refuses preparation before the phase6/serving-r8 matched campaign succeeds;
+device ownership is checked again by the qualification controller. Prepare the
+isolated phase7-env/venv with the wheels pinned in managed-source-lock.json only
+after the running performance campaign releases the devices. The script uses
+manager configure/enable/dry-run, verifies matched generated serving arguments,
+and preserves the original phase5c Ascend tracker patch. It has not yet been run
+on hardware. A successful configuration plan is not a correctness result.
