@@ -139,6 +139,7 @@ def build(template, root, arm, cell, evidence_url, artifact_base_url):
                 "id": "kv-tiering",
                 "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-tiering",
                 "revision": meta["plugin_revision"],
+                "source_capsule": "frontier-managed-tiering-20260926",
                 "scope": "Experimental synchronous Ascend tiering adapter",
             }
         ]
@@ -297,6 +298,14 @@ def main(args):
         }
         (archive / f"{arm}-qualification.json").write_text(
             json.dumps(gates, indent=2) + "\n"
+        )
+        retrieval = {
+            p.stem: read(p)
+            for p in sorted((run / "retrieval").glob("*.json"))
+            if p.name != "summary.json"
+        }
+        (archive / f"{arm}-retrieval.json.gz").write_bytes(
+            gzip.compress(json.dumps(retrieval).encode(), mtime=0)
         )
         for c in (1, 2, 4, 8, 16):
             raw = (run / f"c{c}/requests.jsonl").read_bytes()
