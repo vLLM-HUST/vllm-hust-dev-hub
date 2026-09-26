@@ -139,6 +139,7 @@ exec {stage}/bin/mooncake_master --rpc_address=127.0.0.1 --rpc_port=33894 --metr
         "    with socket.socket() as sock:\n",
         "    for reserved_port in (33894, 33895, 33896):\n"
         "        with socket.socket() as reserved_socket:\n"
+        "            reserved_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n"
         '            reserved_socket.bind(("127.0.0.1", reserved_port))\n'
         "    with socket.socket() as sock:\n",
         1,

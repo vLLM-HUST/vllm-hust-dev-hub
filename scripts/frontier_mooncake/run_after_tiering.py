@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 
 BASE = Path("/home/coder/frontier-mods-qwen35-20260925")
-QUEUE = BASE / "phase7-queue"
+QUEUE = Path(__file__).resolve().parent
 ROOT = BASE / "phase7"
 VENV = BASE / "phase7-env/venv"
 CTL = [
