@@ -105,7 +105,7 @@ def main(site):
     lines += ["", "原始证据：", ""]
     for arm in ("native", "tiering"):
         lines.append(
-            f"- {arm}: [运行清单]({ARTIFACTS}/metadata-{arm}.json)、[检索与释放回执]({ARTIFACTS}/{arm}-qualification.json)、[检索原始响应]({ARTIFACTS}/{arm}-retrieval.json.gz)"
+            f"- {arm}: [运行清单]({ARTIFACTS}/metadata-{arm}.json.gz)、[检索与释放回执]({ARTIFACTS}/{arm}-qualification.json)、[检索原始响应]({ARTIFACTS}/{arm}-retrieval.json.gz)"
         )
         for c in (1, 2, 4, 8, 16):
             lines.append(

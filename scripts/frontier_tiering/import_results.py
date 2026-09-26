@@ -80,7 +80,9 @@ def compact_metadata(metadata, url, raw):
     result["runtime_source_file_count"] = len(files)
     result["full_metadata"] = {
         "url": url,
-        "sha256": hashlib.sha256(raw).hexdigest(),
+        "sha256": hashlib.sha256(gzip.compress(raw, mtime=0)).hexdigest(),
+        "content_sha256": hashlib.sha256(raw).hexdigest(),
+        "encoding": "gzip",
     }
     return result
 
@@ -160,7 +162,7 @@ def build(template, root, arm, cell, evidence_url, artifact_base_url):
     params.update(
         runtime_receipt=compact_metadata(
             meta,
-            f"{artifact_base_url}/metadata-{arm}.json",
+            f"{artifact_base_url}/metadata-{arm}.json.gz",
             metadata_path.read_bytes(),
         ),
         server_command=" ".join(custody["serving_child"]["argv"]),
@@ -287,8 +289,8 @@ def main(args):
     archive = args.site / "reports/frontier-managed-tiering-20260926"
     archive.mkdir(parents=True, exist_ok=False)
     for arm in ("native", "tiering"):
-        (archive / f"metadata-{arm}.json").write_bytes(
-            (root / f"metadata-{arm}.json").read_bytes()
+        (archive / f"metadata-{arm}.json.gz").write_bytes(
+            gzip.compress((root / f"metadata-{arm}.json").read_bytes(), mtime=0)
         )
         run = root / "receipts" / f"{arm}-measured-r1"
         gates = {
