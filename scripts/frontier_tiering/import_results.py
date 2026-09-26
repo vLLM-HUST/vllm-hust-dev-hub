@@ -227,7 +227,7 @@ def build(template, root, arm, cell, evidence_url, artifact_base_url):
         requests_artifact_encoding="gzip",
         requests_artifact_url=f"{artifact_base_url}/{arm}-{cell}-requests.jsonl.gz",
         validation=dict(
-            owned_server_exit_zero=True,
+            owned_server_stop_command_exit_zero=True,
             selected_devices_released=True,
             exact_token_budgets=True,
             prefix_cache_observed=True,
