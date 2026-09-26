@@ -7,7 +7,7 @@ import socket
 from pathlib import Path
 
 BASE = Path("/home/coder/frontier-mods-qwen35-20260925")
-ROOT = BASE / "phase6/serving-r2"
+ROOT = BASE / "phase6/serving-r3"
 OLD = BASE / "phase4"
 VENV = BASE / "phase6/.venv-r2"
 
@@ -34,8 +34,10 @@ def main():
     (ROOT / "manager-tiering.json").write_text(
         (BASE / "phase6/manager-tiering.json")
         .read_text()
-        .replace("tiering-storage-r1", "tiering-storage-r2")
+        .replace("tiering-storage-r1", "tiering-storage-r3")
     )
+    for name in ["run_campaign.py", "transfer_receipt.py"]:
+        (ROOT / name).write_bytes((BASE / "phase6" / name).read_bytes())
     package_root = VENV / "lib/python3.12/site-packages"
     for module in ["vllm_hust_ext", "vllm_hust_kv_tiering", "vllm_ascend_split_batch"]:
         for p in (package_root / module).rglob("*"):
@@ -67,7 +69,7 @@ def main():
         metadata["packages"].pop("vllm-hust-bidkv", None)
         for name in ["vllm-hust-ext", "vllm-hust-kv-tiering", "platformdirs"]:
             metadata["packages"][name] = importlib.metadata.version(name)
-        metadata["mods"] = [] if arm == "native" else ["kv-tiering-ascend-torch-sync"]
+        metadata["mods"] = [] if arm == "native" else ["kv-tiering"]
         metadata["comparison"] = (
             "Manager-launched TP2; identical Frontier options; synchronous Ascend tiering adapter"
         )
@@ -123,6 +125,32 @@ startretries=0
 stopwaitsecs=180
 redirect_stderr=true
 stdout_logfile={ROOT}/receipts/qualify-{arm}.log
+stdout_logfile_maxbytes=100MB
+"""
+        config += f"""
+[program:measure-{arm}]
+command={VENV}/bin/python {ROOT}/qualify.py --attempt {arm}-measured-r1 --program {arm} --measure --metadata metadata-{arm}.json
+directory={ROOT}
+autostart=false
+autorestart=false
+startsecs=1
+startretries=0
+stopwaitsecs=180
+redirect_stderr=true
+stdout_logfile={ROOT}/receipts/measure-{arm}.log
+stdout_logfile_maxbytes=100MB
+"""
+    config += f"""
+[program:campaign]
+command={VENV}/bin/python {ROOT}/run_campaign.py
+directory={ROOT}
+autostart=false
+autorestart=false
+startsecs=1
+startretries=0
+stopwaitsecs=360
+redirect_stderr=true
+stdout_logfile={ROOT}/receipts/campaign.log
 stdout_logfile_maxbytes=100MB
 """
     (ROOT / "supervisord.conf").write_text(config)

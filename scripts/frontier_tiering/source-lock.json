@@ -1,0 +1,11 @@
+{
+  "plugin": {
+    "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-tiering",
+    "revision": "402cdee77272c58bb79c9f137d2e13cff2eb80c7"
+  },
+  "manager": {
+    "repository": "https://github.com/vLLM-HUST/extension-manager",
+    "revision": "cf1ea71e3e2cb81ab06267ef05eddb3e580ea20b"
+  },
+  "runtime": "Same frozen phase4 core/Ascend source files; validated against its manifest before preparing every attempt"
+}

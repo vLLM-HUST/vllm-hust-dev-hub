@@ -12,7 +12,7 @@ import urllib.request
 from pathlib import Path
 
 BASE = Path("/home/coder/frontier-mods-qwen35-20260925")
-ROOT = BASE / "phase6/serving-r2"
+ROOT = Path(__file__).resolve().parent
 PYTHON = BASE / "phase6/.venv-r2/bin/python"
 CTL = [
     "/usr/local/python3.12.13/bin/supervisorctl",
@@ -70,6 +70,31 @@ def server_command(pid, program):
         if time.monotonic() >= deadline:
             raise TimeoutError("Owned launcher did not exec within 30 seconds")
         time.sleep(0.1)
+
+
+def launched_arguments(manager_pid, program):
+    """Capture the manager's real child argv before vLLM changes its title."""
+    deadline = time.monotonic() + 45
+    while time.monotonic() < deadline:
+        children = Path(f"/proc/{manager_pid}/task/{manager_pid}/children")
+        for pid in children.read_text().split():
+            try:
+                argv = [
+                    v.decode()
+                    for v in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+                    if v
+                ]
+            except FileNotFoundError:
+                continue
+            if "vllm.entrypoints.cli.main" not in argv or "serve" not in argv:
+                continue
+            if ("--kv-transfer-config" in argv) != (program == "tiering"):
+                raise RuntimeError(
+                    "Manager launched unexpected connector configuration"
+                )
+            return dict(pid=int(pid), argv=argv)
+        time.sleep(0.1)
+    raise TimeoutError("Could not capture manager's serving child arguments")
 
 
 def preflight():
@@ -132,6 +157,7 @@ def main(args):
         if pid <= 1:
             raise RuntimeError("Missing supervised server PID")
         command_line = server_command(pid, program)
+        child_launch = launched_arguments(pid, program)
         write(
             out / "custody.json",
             dict(
@@ -140,6 +166,7 @@ def main(args):
                 controller_pid=os.getpid(),
                 controller_parent=os.getppid(),
                 command=command_line,
+                serving_child=child_launch,
                 kind=state["kind"],
                 pod_npu_quota=4,
                 participating_deployment_chips=2,
@@ -258,15 +285,13 @@ def main(args):
                     )
                     if delta <= 0:
                         raise RuntimeError("No measured prefix-cache reuse")
-                elif program in {"bidkv", "dla"}:
-                    from policy_receipt import receipt
+                elif program == "tiering":
+                    from transfer_receipt import receipt
 
                     write(
-                        out / f"{name}-policy-effectiveness.json",
+                        out / f"{name}-transfer-effectiveness.json",
                         receipt(
-                            out / f"{name}-before.prom",
-                            out / f"{name}-after.prom",
-                            program=program,
+                            out / f"{name}-before.prom", out / f"{name}-after.prom"
                         ),
                     )
         state.update(passed=True, stage="completed")
