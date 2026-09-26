@@ -9,7 +9,7 @@ cache registration. Subsequent revisions add a plugin-owned Ascend connector
 a synchronous copy worker for separate attention and recurrent cache views, explicit secondary-tier registration,
 and adaptation to the frozen host file-mapping API.
 `source-lock.json` pins that development revision; this is not a released feature
-or a claimed speedup. Eight installed-wheel tests passed in the assigned container,
+or a claimed speedup. Ten installed-wheel tests passed in the assigned container,
 including real NPU round trips and actual-host segment file store/restore. Serving qualification remains an independent gate.
 
 The scripts use the retained experiment capsule under
@@ -61,3 +61,21 @@ counter families before their first labelled sample. An empty declared family is
 zero activity; a missing family remains an error. The corrected serving-r8 uses
 the same runtime/environment, has passed both qualification gates, and is running
 the complete pair. Earlier partial windows are not Frontier points.
+
+After both arms finish and release their devices, copy the complete serving-r8
+capsule locally and import with:
+
+```sh
+python3 scripts/frontier_tiering/import_results.py \
+  --artifacts /path/to/serving-r8 \
+  --site /path/to/website \
+  --evidence-url https://github.com/vLLM-HUST/vllm-hust-website/blob/main/docs/FRONTIER-KV-TIERING-20260926.md \
+  --artifact-base-url https://vllm-hust.sage.org.ai/reports/frontier-managed-tiering-20260926
+python3 scripts/frontier_tiering/render_report.py --site /path/to/website
+```
+
+The importer checks full matching configuration, 26 retrieval checks, prefix
+reuse, all ten 900-second windows, raw streamed token counts and release receipts.
+It archives compressed raw requests and full source metadata beside the site.
+The renderer accepts only the complete pair. Review the rendered figure and the
+interactive Frontier before publication; partial windows are never imported.

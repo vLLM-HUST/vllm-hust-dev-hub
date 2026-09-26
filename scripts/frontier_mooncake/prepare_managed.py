@@ -43,6 +43,7 @@ def main():
     profile = {
         "connector": "AscendStoreConnector",
         "kv_role": "kv_both",
+        "kv_load_failure_policy": "fail",
         "device_backend": "ascend",
         "transport_protocol": "ascend",
         "health_url": "http://127.0.0.1:33895/metrics",
@@ -100,6 +101,9 @@ def main():
         path.write_text("\n".join(lines) + "\n")
     candidate = plans["mooncake"].copy()
     index = candidate.index("--kv-transfer-config")
+    connector = json.loads(candidate[index + 1])
+    if connector.get("kv_load_failure_policy") != "fail":
+        raise RuntimeError("Managed connector changed the qualified failure policy")
     del candidate[index : index + 2]
     if candidate != plans["native"]:
         raise RuntimeError("Managed arms differ beyond the connector")

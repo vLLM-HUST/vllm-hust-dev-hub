@@ -1,11 +1,11 @@
 {
-  "manager_revision": "bcc11776604ce6a83bc44d7ee260d757e39efbde",
+  "manager_revision": "eed3b146272558719c3cf8da80cdb397cc063b49",
   "manager_pr": "https://github.com/vLLM-HUST/extension-manager/pull/8",
   "core_patch_revision": "49f082797535ef2f730639e008588a5912a20d2c",
   "ascend_tracker_revision": "03766ac696fde5ab1980d80ca0b8543d3580c989",
   "wheels": {
     "vllm_hust_mooncake_provider-0.2.0.dev0-py3-none-any.whl": "d881f3b96277d69334d0861caa6dd2383894bde891b3ce9546f052e9a8b096f5",
-    "vllm_hust_ext-0.2.0.dev0-py3-none-any.whl": "4c69f81303dff8c89de6b3b71f443d2be1a544a66f53f6d7f52384f22e8f49f9"
+    "vllm_hust_ext-0.2.0.dev0-py3-none-any.whl": "7f4040fbe8adf9e9b32f9785935c7a285294a69bf66b64efddb0dc0e0552fab5"
   },
   "qualification_status": "not-run"
 }
