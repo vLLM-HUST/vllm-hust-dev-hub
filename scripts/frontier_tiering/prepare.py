@@ -7,9 +7,9 @@ import socket
 from pathlib import Path
 
 BASE = Path("/home/coder/frontier-mods-qwen35-20260925")
-ROOT = BASE / "phase6/serving-r4"
+ROOT = BASE / "phase6/serving-r5"
 OLD = BASE / "phase4"
-VENV = BASE / "phase6/.venv-r4"
+VENV = BASE / "phase6/.venv-r5"
 
 
 def sha(path):
@@ -19,8 +19,8 @@ def sha(path):
 def main():
     if socket.gethostname() != "coder-admin-shuhao-evaluation-664b765847-wfh7z":
         raise RuntimeError("wrong container")
-    test_log = (BASE / "phase6/wheel-tests-r4b.log").read_text()
-    if "7 passed" not in test_log or "failed" in test_log:
+    test_log = (BASE / "phase6/wheel-tests-r5-full.log").read_text()
+    if "8 passed" not in test_log or "failed" in test_log:
         raise RuntimeError("Installed-wheel tests must pass before preparation")
     ROOT.mkdir(exist_ok=False)
     (ROOT / "receipts").mkdir()
@@ -34,7 +34,7 @@ def main():
     (ROOT / "manager-tiering.json").write_text(
         (BASE / "phase6/manager-tiering.json")
         .read_text()
-        .replace("tiering-storage-r1", "tiering-storage-r4")
+        .replace("tiering-storage-r1", "tiering-storage-r5")
     )
     for name in ["run_campaign.py", "transfer_receipt.py"]:
         (ROOT / name).write_bytes((BASE / "phase6" / name).read_bytes())
@@ -64,6 +64,10 @@ def main():
             f'export VLLM_HUST_EXT_CONFIG="{ROOT}/manager-{arm}.json"\nexec ',
             1,
         )
+        if arm == "tiering":
+            launcher = launcher.replace(
+                "exec ", "export HUST_TIERING_DIAGNOSTICS=1\nexec ", 1
+            )
         (ROOT / f"launch-{arm}.sh").write_text(launcher)
         metadata = json.loads((OLD / "metadata-native.json").read_text())
         metadata["packages"].pop("vllm-hust-bidkv", None)
@@ -79,7 +83,7 @@ def main():
             "state_sha256": sha(ROOT / f"manager-{arm}.json"),
         }
         metadata["plugin_revision"] = (
-            (BASE / "phase6/plugin-revision-r4.txt").read_text().strip()
+            (BASE / "phase6/plugin-revision-r5.txt").read_text().strip()
         )
         metadata["launch_script_sha256"] = sha(ROOT / f"launch-{arm}.sh")
         metadata["runtime_source_files"] = hashes.copy()
@@ -161,7 +165,7 @@ stdout_logfile_maxbytes=100MB
         json.dumps(
             {
                 "software_tests_passed": True,
-                "software_receipt": str(BASE / "phase6/wheel-tests-r4b.log"),
+                "software_receipt": str(BASE / "phase6/wheel-tests-r5-full.log"),
                 "sha256": hashes,
             },
             indent=2,

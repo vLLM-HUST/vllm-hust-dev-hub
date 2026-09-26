@@ -13,7 +13,7 @@ from pathlib import Path
 
 BASE = Path("/home/coder/frontier-mods-qwen35-20260925")
 ROOT = Path(__file__).resolve().parent
-PYTHON = BASE / "phase6/.venv-r4/bin/python"
+PYTHON = BASE / "phase6/.venv-r5/bin/python"
 CTL = [
     "/usr/local/python3.12.13/bin/supervisorctl",
     "-c",
@@ -61,7 +61,7 @@ def server_command(pid, program):
         argv = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
         tokens = [v.decode() for v in argv if v]
         if (
-            str(BASE / "phase6/.venv-r4/bin/vllm-hust-ext") in tokens
+            str(BASE / "phase6/.venv-r5/bin/vllm-hust-ext") in tokens
             and "run" in tokens
         ):
             return " ".join(tokens)
@@ -138,6 +138,7 @@ def main(args):
             if (
                 "debug_worker" in launcher
                 or "export FRONTIER_PP_CALIBRATION_DIR=" in launcher
+                or "export HUST_TIERING_DIAGNOSTICS=1" in launcher
             ):
                 raise ValueError(
                     "Diagnostic/profiling launchers cannot measure performance"
@@ -190,6 +191,7 @@ def main(args):
             except OSError:
                 pass
             time.sleep(min(2, max(0, deadline - time.monotonic())))
+        capture_metrics(out / "retrieval-before.prom")
         state["stage"] = "retrieval"
         write(out / "status.json", state)
         command = [
@@ -209,6 +211,7 @@ def main(args):
             child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT)
             code = child.wait(timeout=2400)
             child = None
+        capture_metrics(out / "retrieval-after.prom")
         gate = json.loads((out / "retrieval/summary.json").read_text())
         if code or not gate["passed"] or gate["completed_requests"] != 26:
             raise RuntimeError("Full retrieval gate failed")

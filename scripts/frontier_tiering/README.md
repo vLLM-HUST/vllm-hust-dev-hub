@@ -9,7 +9,7 @@ cache registration. Subsequent revisions add a plugin-owned Ascend connector
 a synchronous copy worker for separate attention and recurrent cache views, explicit secondary-tier registration,
 and adaptation to the frozen host file-mapping API.
 `source-lock.json` pins that development revision; this is not a released feature
-or a claimed speedup. Seven installed-wheel tests passed in the assigned container,
+or a claimed speedup. Eight installed-wheel tests passed in the assigned container,
 including real NPU round trips and actual-host segment file store/restore. Serving qualification remains an independent gate.
 
 The scripts use the retained experiment capsule under
@@ -19,7 +19,7 @@ Build the plugin wheel from its pin into a dedicated overlay environment; retain
 previous environments unchanged. No shared host installation is altered.
 
 `prepare.py` verifies frozen sources and the wheel test receipt before creating
-an entirely new `phase6/serving-r4` directory. Copy qualify.py to
+an entirely new `phase6/serving-r5` directory. Copy qualify.py to
 `phase6/qualify-managed.py`, and run_campaign.py/transfer_receipt.py to phase6 before
 preparation. The resulting dedicated supervisor owns all controllers and services.
 The pair controller runs the candidate first to detect any serving failure before
@@ -34,3 +34,10 @@ activity. Publish only completed, released, qualified real observations. Contain
 placement is provenance, not a separate MOD.
 
 Software controller checks: `python3 -m pytest scripts/frontier_tiering -q`.
+
+The serving-r4 candidate passed startup but failed warm-8192 marker retrieval
+(48 token-ID-zero outputs); the matching Native passed all 26 probes and released
+both devices. No performance window ran. The current serving-r5 launcher adds
+opt-in transfer diagnostics and is qualification-only; measurement mode rejects
+this launcher. Before a future performance attempt, remove the diagnostic flag
+in a new immutable capsule after fixing and qualifying the failure.
