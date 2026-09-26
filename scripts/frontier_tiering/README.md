@@ -19,7 +19,7 @@ Build the plugin wheel from its pin into a dedicated overlay environment; retain
 previous environments unchanged. No shared host installation is altered.
 
 `prepare.py` verifies frozen sources and the wheel test receipt before creating
-an entirely new `phase6/serving-r6` directory. Copy qualify.py to
+an entirely new `phase6/serving-r7` directory. Copy qualify.py to
 `phase6/qualify-managed.py`, and run_campaign.py/transfer_receipt.py to phase6 before
 preparation. The resulting dedicated supervisor owns all controllers and services.
 The pair controller runs the candidate first to detect any serving failure before
@@ -48,3 +48,9 @@ against either its original hash or the explicit patch hashes. Copy
 core-patch-r6.json and the patched core-r6 tree before running prepare.py.
 Diagnostics are disabled for r6. Qualification still gates all performance windows;
 starting the campaign does not establish either correctness or performance.
+
+serving-r6 passed the formerly failing warm-8192 probe but stalled on an async
+secondary lookup before any performance window. A deterministic regression
+reproduced both HIT and MISS results remaining unconsumed after an early retry.
+serving-r7 uses the corrected plugin (drain completed results on every retry),
+retains core-r6 unchanged, and uses a fresh environment and secondary store.

@@ -13,7 +13,7 @@ from pathlib import Path
 
 BASE = Path("/home/coder/frontier-mods-qwen35-20260925")
 ROOT = Path(__file__).resolve().parent
-PYTHON = BASE / "phase6/.venv-r5/bin/python"
+PYTHON = BASE / "phase6/.venv-r7/bin/python"
 CTL = [
     "/usr/local/python3.12.13/bin/supervisorctl",
     "-c",
@@ -61,7 +61,7 @@ def server_command(pid, program):
         argv = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
         tokens = [v.decode() for v in argv if v]
         if (
-            str(BASE / "phase6/.venv-r5/bin/vllm-hust-ext") in tokens
+            str(BASE / "phase6/.venv-r7/bin/vllm-hust-ext") in tokens
             and "run" in tokens
         ):
             return " ".join(tokens)
