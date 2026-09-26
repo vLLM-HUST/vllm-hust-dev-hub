@@ -124,3 +124,17 @@ after the running performance campaign releases the devices. The script uses
 manager configure/enable/dry-run, verifies matched generated serving arguments,
 and preserves the original phase5c Ascend tracker patch. It has not yet been run
 on hardware. A successful configuration plan is not a correctness result.
+
+`run_after_tiering.py` is a separately supervised, one-shot queue. It waits for
+the complete r8 pair and both release receipts, then creates an isolated copy of
+the baseline environment, installs only the hash-pinned manager/provider wheels,
+and prepares phase7. It runs Mooncake qualification first; only a passing and
+released candidate permits Native qualification. Any failure stops the queue.
+No performance measurement is enabled by this queue.
+
+Preparation starts a bounded, owned CPU-only master to satisfy the manager's
+real service-health check during dry-run, then stops it before qualification.
+Actual serving-child arguments must exactly match the recorded manager plan.
+Fatal heap/shutdown errors fail qualification even if request checks passed.
+The queue and experiment supervisors use no automatic restarts; existing capsules
+or environments are rejected rather than overwritten.

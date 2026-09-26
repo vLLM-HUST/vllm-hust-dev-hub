@@ -9,6 +9,10 @@ import json
 import os
 import shlex
 import subprocess
+import socket
+import time
+import urllib.request
+from contextlib import contextmanager
 from pathlib import Path
 
 from prepare_serving import BASE, prepare
@@ -20,6 +24,52 @@ CORE = BASE / "phase6/core-r6"
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+@contextmanager
+def plan_master():
+    """Bounded owned CPU-only master for the manager's real health gate."""
+    for port in (33894, 33895, 33896):
+        with socket.socket() as sock:
+            sock.bind(("127.0.0.1", port))
+    with (ROOT / "receipts/manager-plan-master.log").open("w") as log:
+        process = subprocess.Popen(
+            ["/bin/bash", str(ROOT / "launch-master.sh")],
+            stdout=log,
+            stderr=subprocess.STDOUT,
+        )
+        state = {"pid": process.pid, "kind": "configuration-health-check"}
+        try:
+            deadline = time.monotonic() + 30
+            while time.monotonic() < deadline:
+                if process.poll() is not None:
+                    raise RuntimeError("Plan master exited before readiness")
+                try:
+                    with urllib.request.urlopen(
+                        "http://127.0.0.1:33895/metrics",
+                        timeout=1,
+                    ) as response:
+                        if response.status == 200:
+                            break
+                except OSError:
+                    time.sleep(0.2)
+            else:
+                raise TimeoutError("Plan master readiness deadline")
+            yield
+        finally:
+            if process.poll() is None:
+                process.terminate()
+            try:
+                state["exit"] = process.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                state["exit"] = process.wait(timeout=5)
+                state["forced_kill"] = True
+            (ROOT / "receipts/manager-plan-master.json").write_text(
+                json.dumps(state, indent=2) + "\n"
+            )
+            if state.get("forced_kill"):
+                raise RuntimeError("Plan master required forced shutdown")
 
 
 def main():
@@ -69,36 +119,37 @@ def main():
         [manager, "extension", "enable", bundle], env=environment, check=True
     )
     plans = {}
-    for arm in ("native", "mooncake"):
-        path = ROOT / f"launch-{arm}.sh"
-        launcher = path.read_text().replace(str(BASE / "phase4/core"), str(CORE))
-        launcher = launcher.replace(str(BASE / ".venv/bin"), str(VENV / "bin"))
-        lines = launcher.splitlines()
-        command = shlex.split(lines[-1])
-        if command[:2] != ["exec", str(VENV / "bin/vllm")]:
-            raise RuntimeError("Unexpected original serving launcher")
-        if arm == "mooncake":
-            index = command.index("--kv-transfer-config")
-            del command[index : index + 2]
-        command = [
-            str(VENV / "bin/python"),
-            "-m",
-            "vllm.entrypoints.cli.main",
-        ] + command[2:]
-        environment["VLLM_HUST_EXT_CONFIG"] = str(ROOT / f"manager-{arm}.json")
-        plan = json.loads(
-            subprocess.check_output(
-                [manager, "run", "--dry-run", "--", *command],
-                env=environment,
-                text=True,
+    with plan_master():
+        for arm in ("native", "mooncake"):
+            path = ROOT / f"launch-{arm}.sh"
+            launcher = path.read_text().replace(str(BASE / "phase4/core"), str(CORE))
+            launcher = launcher.replace(str(BASE / ".venv/bin"), str(VENV / "bin"))
+            lines = launcher.splitlines()
+            command = shlex.split(lines[-1])
+            if command[:2] != ["exec", str(VENV / "bin/vllm")]:
+                raise RuntimeError("Unexpected original serving launcher")
+            if arm == "mooncake":
+                index = command.index("--kv-transfer-config")
+                del command[index : index + 2]
+            command = [
+                str(VENV / "bin/python"),
+                "-m",
+                "vllm.entrypoints.cli.main",
+            ] + command[2:]
+            environment["VLLM_HUST_EXT_CONFIG"] = str(ROOT / f"manager-{arm}.json")
+            plan = json.loads(
+                subprocess.check_output(
+                    [manager, "run", "--dry-run", "--", *command],
+                    env=environment,
+                    text=True,
+                )
             )
-        )
-        plans[arm] = plan["command"]
-        lines[-1:] = [
-            f'export VLLM_HUST_EXT_CONFIG="{environment["VLLM_HUST_EXT_CONFIG"]}"',
-            "exec " + shlex.join([manager, "run", "--", *command]),
-        ]
-        path.write_text("\n".join(lines) + "\n")
+            plans[arm] = plan["command"]
+            lines[-1:] = [
+                f'export VLLM_HUST_EXT_CONFIG="{environment["VLLM_HUST_EXT_CONFIG"]}"',
+                "exec " + shlex.join([manager, "run", "--", *command]),
+            ]
+            path.write_text("\n".join(lines) + "\n")
     candidate = plans["mooncake"].copy()
     index = candidate.index("--kv-transfer-config")
     connector = json.loads(candidate[index + 1])
@@ -111,6 +162,22 @@ def main():
     controller = ROOT / "qualify.py"
     source = controller.read_text().replace(
         'str(BASE / ".venv/bin/vllm")', repr(manager)
+    )
+    capture = Path(__file__).with_name("managed_custody.py")
+    (ROOT / "managed_custody.py").write_bytes(capture.read_bytes())
+    source = "from managed_custody import launched_arguments\n" + source
+    before = "        command_line = server_command(pid, program)\n"
+    if (
+        source.count(before) != 1
+        or source.count("                command=command_line,") != 1
+    ):
+        raise RuntimeError("Unexpected controller custody shape")
+    source = source.replace(
+        before,
+        before + "        serving_child = launched_arguments(pid, program, ROOT)\n",
+    ).replace(
+        "                command=command_line,",
+        "                command=command_line,\n                serving_child=serving_child,",
     )
     final_write = '        write(out / "status.json", state)\n\n\nif __name__'
     if source.count(final_write) != 1:
