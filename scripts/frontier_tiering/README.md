@@ -79,3 +79,12 @@ reuse, all ten 900-second windows, raw streamed token counts and release receipt
 It archives compressed raw requests and full source metadata beside the site.
 The renderer accepts only the complete pair. Review the rendered figure and the
 interactive Frontier before publication; partial windows are never imported.
+
+`collect_when_complete.py` can run under a local `Restart=no` user service with a
+frozen source snapshot and an output manifest. It waits for the pair, downloads
+only evidence (not the secondary cache), verifies all import gates, writes the
+website artifacts and renders the measured plot. The service stops at
+`ready-for-visual-review`; it does not commit or publish automatically. Its
+manifest pins the collector source and the two website input JSON files, so
+concurrent changes are rejected rather than overwritten. Downloaded request
+archives retain both compressed-artifact and uncompressed-content SHA256 values.
