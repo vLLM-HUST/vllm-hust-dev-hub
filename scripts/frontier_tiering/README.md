@@ -88,3 +88,11 @@ website artifacts and renders the measured plot. The service stops at
 manifest pins the collector source and the two website input JSON files, so
 concurrent changes are rejected rather than overwritten. Downloaded request
 archives retain both compressed-artifact and uncompressed-content SHA256 values.
+
+Before publishing, independently recompute the plotted P90 decode rate and P95
+TTFT with `verify_latency_metrics.py`. It derives each request's rate from its
+first/last streamed token timestamps, excludes drained requests from latency
+percentiles, uses the standard-library inclusive percentile calculation, and
+also checks window token totals and mean in-flight concurrency. Pass the ten
+`receipts/{native,tiering}-measured-r1/c{1,2,4,8,16}` directories and retain its
+JSON output beside the published evidence.
