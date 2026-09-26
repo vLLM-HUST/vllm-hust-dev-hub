@@ -86,8 +86,8 @@ def parse_npu_smi(text):
         if match:
             current = int(match.group(1))
             continue
-        if current in (0, 1) and len(cells) >= 5:
-            memory = re.fullmatch(r"(\d+)\s*/\s*(\d+)", cells[-1])
+        if current in (0, 1) and len(cells) >= 3:
+            memory = re.search(r"(?:^|\s)(\d+)\s*/\s*(\d+)$", cells[-1])
             if memory:
                 used, total = map(int, memory.groups())
                 if current in devices or total <= 0 or used > total:

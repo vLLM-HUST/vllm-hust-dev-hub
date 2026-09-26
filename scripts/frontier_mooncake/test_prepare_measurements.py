@@ -244,3 +244,18 @@ def test_software_source_drift_blocks_capsule(tmp_path, monkeypatch):
                         release_addendum=tmp_path / "release-addendum.json",
                         software_receipt=tmp_path / "software.json")
     assert not (tmp_path / "phase8").exists()
+
+
+def test_real_driver_combined_hbm_columns():
+    raw = """| NPU Name | Health | HBM-Usage(MB) |
+| 0     910B2               | OK            | 102.9                45                      0    / 0                |
+| 0                         | 0000:C1:00.0  | 0                    0    / 0                63528/ 65536            |
+| 1     910B2               | OK            | 102.4                43                      0    / 0                |
+| 0                         | 0000:C2:00.0  | 0                    0    / 0                63522/ 65536            |
+| NPU Chip | Process id | Process name | Process memory(MB) |
+| 0       0                 | 364592        | VLLMWorker_TP      | 60143                 | 364592                  |
+| 1       0                 | 364593        | VLLMWorker_TP      | 60143                 | 364593                  |
+"""
+    result = support.parse_npu_smi(raw)
+    assert result["devices"] == {0: {"used_mb": 63528, "total_mb": 65536}, 1: {"used_mb": 63522, "total_mb": 65536}}
+    assert [p["pid"] for p in result["processes"]] == [364592, 364593]
