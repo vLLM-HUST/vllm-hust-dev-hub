@@ -19,7 +19,7 @@ Build the plugin wheel from its pin into a dedicated overlay environment; retain
 previous environments unchanged. No shared host installation is altered.
 
 `prepare.py` verifies frozen sources and the wheel test receipt before creating
-an entirely new `phase6/serving-r5` directory. Copy qualify.py to
+an entirely new `phase6/serving-r6` directory. Copy qualify.py to
 `phase6/qualify-managed.py`, and run_campaign.py/transfer_receipt.py to phase6 before
 preparation. The resulting dedicated supervisor owns all controllers and services.
 The pair controller runs the candidate first to detect any serving failure before
@@ -35,9 +35,16 @@ placement is provenance, not a separate MOD.
 
 Software controller checks: `python3 -m pytest scripts/frontier_tiering -q`.
 
-The serving-r4 candidate passed startup but failed warm-8192 marker retrieval
-(48 token-ID-zero outputs); the matching Native passed all 26 probes and released
-both devices. No performance window ran. The current serving-r5 launcher adds
-opt-in transfer diagnostics and is qualification-only; measurement mode rejects
-this launcher. Before a future performance attempt, remove the diagnostic flag
-in a new immutable capsule after fixing and qualifying the failure.
+The serving-r4 and r5 candidates failed warm-8192 marker retrieval
+(48 token-ID-zero outputs); the matching r4 Native passed all 26 probes. No
+performance window ran. r5 counters recorded stores but no external restores.
+
+serving-r6 applies the three-file Host fix pinned in source-lock.json to a fresh
+copy of the runtime, shared by both arms. Independent hybrid-group cache hits now
+require an explicit connector capability: NIXL restores missing recurrent state,
+whereas Tiering must start from the ordinary all-group local cache boundary.
+The original capsule stays immutable, and preparation verifies every copied file
+against either its original hash or the explicit patch hashes. Copy
+core-patch-r6.json and the patched core-r6 tree before running prepare.py.
+Diagnostics are disabled for r6. Qualification still gates all performance windows;
+starting the campaign does not establish either correctness or performance.

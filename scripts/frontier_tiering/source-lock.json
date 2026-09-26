@@ -7,5 +7,14 @@
     "repository": "https://github.com/vLLM-HUST/extension-manager",
     "revision": "cf1ea71e3e2cb81ab06267ef05eddb3e580ea20b"
   },
-  "runtime": "Same frozen phase4 core/Ascend source files; validated against its manifest before preparing every attempt"
+  "runtime": "Frozen phase4 capsule plus explicit three-file hybrid prefix capability fix, identical in candidate and Native; original capsule preserved.",
+  "runtime_patch": {
+    "base_revision": "d0f22d2bda562156e4dbf433ce645e1769b4f804",
+    "revision": "49f082797535ef2f730639e008588a5912a20d2c",
+    "files": {
+      "vllm/distributed/kv_transfer/kv_connector/v1/base.py": "19cfc3672c5d1f0fe643acaeb208b9903095f95c5e55ffc59c6d0d0f0dbc20de",
+      "vllm/distributed/kv_transfer/kv_connector/v1/nixl/connector.py": "c27af747f64af26ba232905993c518fa965cce6fbdca7954b18eec1d19fe78f5",
+      "vllm/v1/core/sched/scheduler.py": "b703ab9f0a9e063a25459ea6dfcfb879f315dc497bb66d78350626ce276620b3"
+    }
+  }
 }
