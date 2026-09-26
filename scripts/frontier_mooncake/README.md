@@ -1,11 +1,17 @@
 # Qwen3.5 Mooncake qualification prerequisites
 
-Status: fixed-source build, imports, Ascend initialization and bounded real
-transfers have passed. Cross-client multi-buffer Store operations also passed; Qwen3.5 serving
-qualification remains pending; no performance observations exist.
-The Native/BidKV/DLA campaign has completed and released its devices.
-All probes below ran after that release. No Mooncake-backed vLLM service
-has been started.
+Status: the fixed-source build, imports, four real transfer paths and cross-client
+multi-buffer Store operations passed. Three full-model qualifications failed:
+the 1 GiB/rank candidate failed warm-131072; the 16 GiB/rank candidate and the
+Ascend tracker-fix candidate both failed warm-262080. Their matched Native
+controls passed all 26 checks. Heap-corruption logs persisted at shutdown.
+None of those candidates produced performance observations.
+
+The manager-launched phase7 qualification is queued behind the complete
+phase6/serving-r8 Tiering/Native pair. It adds the explicit Host hybrid-prefix
+capability fix to both arms and preserves the Ascend tracker fix. Its hardware
+qualification is still pending. The paragraphs below retain the prerequisite
+investigation history; later evidence supersedes earlier provisional blockers.
 
 Use the assigned SSH31769 container after the previous campaign releases devices.
 Keep the compiled SWE workload, BF16, 262144 context, APC, Mamba align, actual MTP2,
