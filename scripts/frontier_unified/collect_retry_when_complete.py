@@ -38,6 +38,17 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def collector_sources() -> list[Path]:
+    sources = [path for path in HERE.glob("*.py")]
+    # frontier_tiering.import_results imports the shared Frontier importer from
+    # frontier_dla at module load time. Freeze that transitive dependency too;
+    # otherwise a standalone collector snapshot cannot even start its audit.
+    sources.extend((HERE.parent / "frontier_dla").glob("*.py"))
+    sources.extend((HERE.parent / "frontier_mooncake").glob("*.py"))
+    sources.extend((HERE.parent / "frontier_tiering").glob("*.py"))
+    return sources
+
+
 def main(output: str) -> None:
     output = Path(output).resolve()
     output.mkdir(exist_ok=False, parents=True)
@@ -47,9 +58,7 @@ def main(output: str) -> None:
         "remote": REMOTE,
         "baseline_series_count": 1,
     }
-    sources = [path for path in HERE.glob("*.py")]
-    sources.extend((HERE.parent / "frontier_mooncake").glob("*.py"))
-    sources.extend((HERE.parent / "frontier_tiering").glob("*.py"))
+    sources = collector_sources()
     frozen = {str(path): digest(path) for path in sources}
     write(output / "collector-source-lock.json", frozen)
     deadline = time.monotonic() + 24 * 3600

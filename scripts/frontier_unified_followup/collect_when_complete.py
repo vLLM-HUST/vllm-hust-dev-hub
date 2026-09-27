@@ -18,7 +18,7 @@ NATIVE_COLLECTION = Path(
 )
 RETRY_COLLECTION = Path(
     "/home/shuhao/vllm-hust-dev-hub/.planning/"
-    "unified-native-retry-20260927/collection-r1"
+    "unified-native-retry-20260927/collection-r2"
 )
 SSH = [
     "ssh",
