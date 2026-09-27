@@ -1,0 +1,77 @@
+{
+  "schema_version": "frontier-pipeline-ecpa-receipt/v1",
+  "evidence_kind": "real-online-smoke",
+  "performance_claim": false,
+  "date": "2026-09-27",
+  "model": "Qwen3.5-35B-A3B",
+  "hardware": {
+    "accelerator": "Ascend 910B2",
+    "participating_devices": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "configuration": {
+    "tensor_parallel_size": 2,
+    "pipeline_parallel_size": 2,
+    "prefix_caching": true,
+    "mtp_draft_tokens": 2,
+    "async_scheduling": true,
+    "mamba_cache_mode": "align",
+    "graph_mode": "FULL_AND_PIECEWISE"
+  },
+  "sources": {
+    "pipeline_repository": "https://github.com/vLLM-HUST/vllm-hust-pipeline-microbatch",
+    "pipeline_commit": "a15a22961a0e4858da74a0ab806575c82cb254e6",
+    "pipeline_policy_sha256": "194da88d7363a00daba25a3b3accc6aee89a96c14de56e1c7d7083d842822ebf",
+    "extension_manager_repository": "https://github.com/vLLM-HUST/extension-manager",
+    "extension_manager_commit": "5b6f7af447fd118ce0d5148d86cd4028f8c9ae59"
+  },
+  "ecpa": {
+    "bundle_id": "org.vllm-hust.pipeline-frontier-adapter",
+    "states": [
+      "installed",
+      "discovered",
+      "compatible",
+      "configured",
+      "enabled"
+    ],
+    "host_version": "0.25.1+frontier.bidkv.empty",
+    "host_api": "1.0",
+    "batch_admission_protocol": "1.1",
+    "rendered_command_sha256": "f5633e0b79463a8d32116f17cce27d2b8bccba4be8127ea42060f140306d725c",
+    "enabled_bundles": "org.vllm-hust.pipeline-frontier-adapter"
+  },
+  "probe": {
+    "http_success": true,
+    "model": "frontier-qwen35-pp2",
+    "completion_tokens": 8,
+    "finish_reason": "length",
+    "policy_enabled": 1.0,
+    "policy_events": {
+      "calls": 10.0,
+      "admissions": 5.0,
+      "abstentions": 5.0,
+      "completions": 5.0,
+      "aborts": 0.0,
+      "failures": 0.0,
+      "invalid_admissions": 0.0,
+      "builtin_fallbacks": 0.0
+    }
+  },
+  "release": {
+    "devices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "owners_after": {},
+    "released": true,
+    "evidence_kind": "real-online-smoke",
+    "performance_claim": false
+  },
+  "interpretation": "ECPA started the already measured Pipeline configuration and the policy executed without lifecycle errors. This smoke does not add or replace a performance point."
+}
