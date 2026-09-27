@@ -32,6 +32,7 @@ def main() -> None:
     state = {"passed": False, "stage": "waiting-for-candidate-retry"}
     write(status_path, state)
     deadline = time.monotonic() + 24 * 3600
+    released_since = None
     while time.monotonic() < deadline:
         retry = json.loads(RETRY_STATUS.read_text())
         if retry.get("error"):
@@ -45,9 +46,17 @@ def main() -> None:
             sys.path.insert(0, str(FOLLOWUP))
             from qualify import owners
 
-            if owners():
-                raise RuntimeError("Candidate retry passed without releasing devices")
-            break
+            current_owners = owners()
+            if current_owners:
+                released_since = None
+                state.update(stage="waiting-for-device-release", owners=current_owners)
+                write(status_path, state)
+            elif released_since is None:
+                released_since = time.monotonic()
+                state.update(stage="waiting-for-release-stability", owners=[])
+                write(status_path, state)
+            elif time.monotonic() - released_since >= 120:
+                break
         time.sleep(30)
     else:
         raise TimeoutError("Candidate retry did not finish within 24 hours")
