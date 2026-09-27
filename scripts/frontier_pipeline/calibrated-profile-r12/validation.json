@@ -1,0 +1,81 @@
+{
+  "passed": true,
+  "kind": "measured-calibration-not-performance",
+  "method": "Nonnegative least squares, chronological 70/30 holdout; median APE<=35%, p90<=75%, minimum40 decode rows per rank",
+  "identifiability": "Fixed per-stage layer counts make the six-column model collinear; p0,p2,p4 structurally zero, fit request/context/intercept terms",
+  "scope": "Observed execute+sample NPU event intervals include communication and synchronization gaps; profiling disabled in performance windows",
+  "ranks": [
+    {
+      "pp_rank": 0,
+      "tp_rank": 0,
+      "rows": 2420,
+      "holdout_rows": 726,
+      "median_ape": 0.03588762095162034,
+      "p90_ape": 0.0731095241309526,
+      "passed": true,
+      "sha256": "e28aff064848209e15f9a65f7227bae028588e65c9b26213b9f0aa37bd708cf2",
+      "request_range": [
+        1.0,
+        10.0
+      ],
+      "context_sum_range": [
+        1025.0,
+        262084.0
+      ]
+    },
+    {
+      "pp_rank": 0,
+      "tp_rank": 1,
+      "rows": 2420,
+      "holdout_rows": 726,
+      "median_ape": 0.03561428355786947,
+      "p90_ape": 0.0731395664458094,
+      "passed": true,
+      "sha256": "d307edfef63b20e8640f71cfe3b9deffd3d04a8350003ec9f82b3493135fca57",
+      "request_range": [
+        1.0,
+        10.0
+      ],
+      "context_sum_range": [
+        1025.0,
+        262084.0
+      ]
+    },
+    {
+      "pp_rank": 1,
+      "tp_rank": 0,
+      "rows": 2420,
+      "holdout_rows": 726,
+      "median_ape": 0.03399129607929348,
+      "p90_ape": 0.08005017345567796,
+      "passed": true,
+      "sha256": "68b29d653a0a8b429720fd8fe6366e4a6714bb23396d0d5598cb729c4dc7138f",
+      "request_range": [
+        1.0,
+        10.0
+      ],
+      "context_sum_range": [
+        1025.0,
+        262084.0
+      ]
+    },
+    {
+      "pp_rank": 1,
+      "tp_rank": 1,
+      "rows": 2420,
+      "holdout_rows": 726,
+      "median_ape": 0.034278038246449566,
+      "p90_ape": 0.078944821800909,
+      "passed": true,
+      "sha256": "7bb92835c7034c64ff4a23aa916c8e51c360acc93d945a49e285265dd8a083fe",
+      "request_range": [
+        1.0,
+        10.0
+      ],
+      "context_sum_range": [
+        1025.0,
+        262084.0
+      ]
+    }
+  ]
+}

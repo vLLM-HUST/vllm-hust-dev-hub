@@ -1,0 +1,1697 @@
+{
+  "status": "coverage-audited-with-unqualified-components",
+  "catalog_components": 46,
+  "catalog_repository": "https://github.com/vLLM-HUST/vllm-hust-website",
+  "components": [
+    {
+      "id": "vllm-hust-runtime",
+      "name": "vLLM-HUST Runtime",
+      "artifact_type": "runtime_core",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust",
+      "local_path": "/home/shuhao/vllm-hust",
+      "source_revision": "48b27166f36ecd093af6a3328e92651d23feb48e",
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-hust-extension-manager",
+      "name": "vLLM-HUST Extension Manager",
+      "artifact_type": "tool",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/extension-manager",
+      "local_path": "/home/shuhao/extension-manager",
+      "source_revision": "cf1ea71e3e2cb81ab06267ef05eddb3e580ea20b",
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-production-stack",
+      "name": "vLLM Production Stack HUST",
+      "artifact_type": "external_system",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/production-stack-hust",
+      "local_path": "/home/shuhao/production-stack-hust",
+      "source_revision": "07497fb11504ac23bc9aca9f2c6ddf4319255ef1",
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-ascend-hust",
+      "name": "vLLM Ascend HUST",
+      "artifact_type": "platform_profile",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust",
+      "local_path": "/home/shuhao/vllm-ascend-hust",
+      "source_revision": "1a529de2084eb0d9d85e2d4111903bb359f1ea9a",
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-metal-hust",
+      "name": "vLLM Metal HUST",
+      "artifact_type": "platform_profile",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-metal-hust",
+      "local_path": "/home/shuhao/vllm-metal-hust",
+      "source_revision": "5c1cd1cd9c7793b0d75d184c7e2e9e8476e212b0",
+      "status": "infrastructure"
+    },
+    {
+      "id": "triton-ascend-hust",
+      "name": "Triton Ascend HUST",
+      "artifact_type": "external_system",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/triton-ascend-hust",
+      "local_path": "/home/shuhao/triton-ascend-hust",
+      "source_revision": "9a5812b47819af63560009a40e5fd519922bb36f",
+      "status": "infrastructure"
+    },
+    {
+      "id": "sglang-hust",
+      "name": "SGLang HUST",
+      "artifact_type": "runtime_core",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/sglang-hust",
+      "local_path": "/home/shuhao/sglang-hust",
+      "source_revision": "7176db7d9477de35d159f4a2412dc146fd039865",
+      "status": "infrastructure"
+    },
+    {
+      "id": "mooncake",
+      "name": "Mooncake HUST",
+      "artifact_type": "external_system",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/mooncake-hust",
+      "local_path": "/home/shuhao/mooncake-hust",
+      "source_revision": "8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca",
+      "status": "real-hybrid-retrieval-failed",
+      "readiness_evidence": {
+        "installed_distribution": "mooncake-transfer-engine-npu==0.3.11.post1",
+        "master_executable_present": true,
+        "hccn_config_present": false,
+        "ascend_connector": "AscendStoreConnector",
+        "supports_hma": true,
+        "mamba_cache_mode_required": "align",
+        "cuda_event_compatibility": "Frozen NPUModelRunner wrapper retains torch.cuda.Event = torch.npu.Event",
+        "runtime_qualification": "Not run; serial Native/BidKV/DLA campaign is active",
+        "installed_source_revision_verified": false,
+        "installed_direct_url_present": false,
+        "catalog_source_package_version": "0.3.12.post1",
+        "catalog_upstream_revision": "6cc1a100404ea40a13940b49616a9127c5662b1d",
+        "fork_diff_paths": [
+          ".github/workflows/sync-upstream.yml",
+          "HUST_FORK.md"
+        ]
+      },
+      "next_action": "Fix hybrid cache correctness and teardown before any performance run. 16 GiB/rank eliminated observed capacity errors but warm-262080 still failed; matched Native passed all 26. Failing request reported no external load, so do not attribute specifically to external reads without further diagnosis.",
+      "ascend_source_witnesses": [
+        {
+          "path": "vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/ascend_store_connector.py",
+          "line": 76,
+          "text": "AscendStoreConnector derives SupportsHMA."
+        },
+        {
+          "path": "vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/pool_scheduler.py",
+          "line": 84,
+          "text": "Hybrid Mamba cache requires align mode, matching current benchmark."
+        },
+        {
+          "path": "vllm_ascend/worker/model_runner_v1.py",
+          "line": 4892,
+          "text": "Common frozen worker keeps CUDA compatibility event backed by real NPU event."
+        }
+      ],
+      "installed_binary_precheck": {
+        "version": "0.3.11.post1",
+        "engine_only_exit": -6,
+        "torch_npu_first_exit": -6,
+        "stderr": "corrupted size vs. prev_size",
+        "owners_before": [],
+        "owners_after": [],
+        "scope": "Import-only subprocess abort on exit; no engine initialized, not performance",
+        "artifact": "mooncake-import-diagnostics.json"
+      },
+      "pinned_build_validation": {
+        "source_revision": "8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca",
+        "build_exit": 0,
+        "private_staging": true,
+        "imports_exit": [
+          0,
+          0,
+          0
+        ],
+        "ascend_initialize_return": 0,
+        "transfer_cases_passed": [
+          "host-host",
+          "host-device",
+          "device-host",
+          "device-device"
+        ],
+        "bytes_per_transfer": 2097152,
+        "worker_exits": [
+          0,
+          0
+        ],
+        "owners_after": [],
+        "hccn_conf_present": false,
+        "scope": "Pinned build, imports, real four-path transfers and raw multi-buffer Store passed. Actual Qwen3.5 serving retrieval failed; no qualified performance measurement.",
+        "store_probe": {
+          "passed": true,
+          "buffer_sizes": [
+            2097152,
+            1048576
+          ],
+          "cross_client_read_bytes": 3145728,
+          "client_exits": [
+            0,
+            0
+          ],
+          "master_exit": 0,
+          "owners_after": [],
+          "scope": "Raw NPU multi-buffer Store operations; Qwen3.5 hybrid serving not yet qualified"
+        }
+      },
+      "serving_qualification": {
+        "attempt": "phase5/mooncake-retrieval-r1",
+        "passed": false,
+        "completed_requests": 8,
+        "expected_requests": 26,
+        "failed_label": "warm-131072",
+        "cold_131072_passed": true,
+        "warm_text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+        "warm_finish_reason": "length",
+        "warm_cached_tokens": 126976,
+        "store_segment_bytes_per_rank": 1073741824,
+        "observed_errors": [
+          "Store BatchPut insufficient space (-200)",
+          "malloc(): unsorted double linked list corrupted during shutdown"
+        ],
+        "supervised_api_exit": 0,
+        "controller_exit": 1,
+        "owners_after": [],
+        "archive": "serving-r1-failed-evidence.tar.gz",
+        "archive_sha256": "2a71073a8a55b29008291f8804c246daa3bce3f0f37e13e0f583b494c5175476",
+        "scope": "Correctness qualification failed; observed errors are not a proven root cause. Supervisor API exit 0 does not establish clean worker teardown."
+      },
+      "capacity_control_qualification": {
+        "attempt": "phase5b/mooncake-retrieval-r1",
+        "passed": false,
+        "store_segment_bytes_per_rank": 17179869184,
+        "native_passed_requests": 26,
+        "candidate_completed_requests": 10,
+        "candidate_expected_requests": 26,
+        "candidate_failed_label": "warm-262080",
+        "cold_262080_passed": true,
+        "warm_131072_passed": true,
+        "warm_262080_text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+        "warm_262080_cached_tokens": 258048,
+        "failing_request_external_need_to_load": 0,
+        "logged_put_failures": 0,
+        "logged_get_failures": 0,
+        "shutdown_observations": [
+          "Two workers required SIGKILL after SIGTERM",
+          "malloc(): unsorted double linked list corrupted"
+        ],
+        "owners_after": [],
+        "source_hash_mismatches": [],
+        "archive": "serving-capacity-control-evidence.tar.gz",
+        "archive_sha256": "637405d49011869855793b8aa200c864ff736716e32e332bd704041f708cbfab",
+        "scope": "Qualification only; no performance curve. Capacity alone is not a sufficient fix; root cause undetermined."
+      },
+      "tracker_fix_candidate": {
+        "revision": "03766ac696fde5ab1980d80ca0b8543d3580c989",
+        "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust",
+        "base": "66350e7b7d8ec68ad68a14fb841678054f2c0f98",
+        "finding": "Running cached request omitted num_computed_tokens when updating Mamba tracker, preventing expired-prefix clearing. Pass request.num_computed_tokens before scheduler advances it.",
+        "regression": "Original failed expired-block assertion; fixed scheduler file 68 tests passed.",
+        "related_tests": {
+          "passed": 330,
+          "skipped": 10,
+          "failed": 1,
+          "failure": "test_as_cache_tuple_list: mock torch missing ones; reproduced unchanged base"
+        },
+        "format_ci": "passed with architecture-correct existing lint tools",
+        "hardware_retest": {
+          "attempt": "phase5c/mooncake-retrieval-r1",
+          "passed": false,
+          "native_passed_requests": 26,
+          "candidate_completed_requests": 10,
+          "candidate_expected_requests": 26,
+          "failed_label": "warm-262080",
+          "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+          "external_need_to_load": 0,
+          "logged_put_failures": 0,
+          "logged_get_failures": 0,
+          "heap_corruption_on_exit": true,
+          "sigkill_logged": false,
+          "owners_after": [],
+          "source_hash_mismatches": [],
+          "archive": "serving-tracker-fix-evidence.tar.gz",
+          "archive_sha256": "557cbf246b158b037f27896e276657dd4c32a7f0ff6dd11cb722fd021c7647f4",
+          "scope": "Real model qualification failed again; tracker fix is insufficient. No performance run."
+        },
+        "scope": "Concrete tracker bug fixed; not proven cause or fix of previous model output/heap corruption."
+      }
+    },
+    {
+      "id": "mooncake-vllm-connectors",
+      "name": "Mooncake vLLM Connectors",
+      "artifact_type": "bridge",
+      "public": true,
+      "repository": "https://github.com/vllm-project/vllm",
+      "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/core-dla",
+      "source_revision": "d0f22d2bda562156e4dbf433ce645e1769b4f804",
+      "status": "real-hybrid-retrieval-failed",
+      "source_repository": "https://github.com/vLLM-HUST/vllm-hust",
+      "source_witnesses": [
+        {
+          "path": "vllm/distributed/kv_transfer/kv_connector/v1/mooncake/store/connector.py",
+          "line": 87,
+          "text": "MooncakeStoreConnector supports HMA."
+        },
+        {
+          "path": "vllm/distributed/kv_transfer/kv_connector/v1/mooncake/store/worker.py",
+          "line": 1360,
+          "text": "Save path instantiates torch.cuda.Event; must validate Ascend event adaptation before qualification."
+        }
+      ],
+      "next_action": "Fix hybrid cache correctness and teardown before any performance run. 16 GiB/rank eliminated observed capacity errors but warm-262080 still failed; matched Native passed all 26. Failing request reported no external load, so do not attribute specifically to external reads without further diagnosis.",
+      "readiness_evidence": {
+        "installed_distribution": "mooncake-transfer-engine-npu==0.3.11.post1",
+        "master_executable_present": true,
+        "hccn_config_present": false,
+        "ascend_connector": "AscendStoreConnector",
+        "supports_hma": true,
+        "mamba_cache_mode_required": "align",
+        "cuda_event_compatibility": "Frozen NPUModelRunner wrapper retains torch.cuda.Event = torch.npu.Event",
+        "runtime_qualification": "Not run; serial Native/BidKV/DLA campaign is active",
+        "installed_source_revision_verified": false,
+        "installed_direct_url_present": false,
+        "catalog_source_package_version": "0.3.12.post1",
+        "catalog_upstream_revision": "6cc1a100404ea40a13940b49616a9127c5662b1d",
+        "fork_diff_paths": [
+          ".github/workflows/sync-upstream.yml",
+          "HUST_FORK.md"
+        ]
+      },
+      "ascend_source_witnesses": [
+        {
+          "path": "vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/ascend_store_connector.py",
+          "line": 76,
+          "text": "AscendStoreConnector derives SupportsHMA."
+        },
+        {
+          "path": "vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/pool_scheduler.py",
+          "line": 84,
+          "text": "Hybrid Mamba cache requires align mode, matching current benchmark."
+        },
+        {
+          "path": "vllm_ascend/worker/model_runner_v1.py",
+          "line": 4892,
+          "text": "Common frozen worker keeps CUDA compatibility event backed by real NPU event."
+        }
+      ],
+      "installed_binary_precheck": {
+        "version": "0.3.11.post1",
+        "engine_only_exit": -6,
+        "torch_npu_first_exit": -6,
+        "stderr": "corrupted size vs. prev_size",
+        "owners_before": [],
+        "owners_after": [],
+        "scope": "Import-only subprocess abort on exit; no engine initialized, not performance",
+        "artifact": "mooncake-import-diagnostics.json"
+      },
+      "pinned_build_validation": {
+        "source_revision": "8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca",
+        "build_exit": 0,
+        "private_staging": true,
+        "imports_exit": [
+          0,
+          0,
+          0
+        ],
+        "ascend_initialize_return": 0,
+        "transfer_cases_passed": [
+          "host-host",
+          "host-device",
+          "device-host",
+          "device-device"
+        ],
+        "bytes_per_transfer": 2097152,
+        "worker_exits": [
+          0,
+          0
+        ],
+        "owners_after": [],
+        "hccn_conf_present": false,
+        "scope": "Pinned build, imports, real four-path transfers and raw multi-buffer Store passed. Actual Qwen3.5 serving retrieval failed; no qualified performance measurement.",
+        "store_probe": {
+          "passed": true,
+          "buffer_sizes": [
+            2097152,
+            1048576
+          ],
+          "cross_client_read_bytes": 3145728,
+          "client_exits": [
+            0,
+            0
+          ],
+          "master_exit": 0,
+          "owners_after": [],
+          "scope": "Raw NPU multi-buffer Store operations; Qwen3.5 hybrid serving not yet qualified"
+        }
+      },
+      "serving_qualification": {
+        "attempt": "phase5/mooncake-retrieval-r1",
+        "passed": false,
+        "completed_requests": 8,
+        "expected_requests": 26,
+        "failed_label": "warm-131072",
+        "cold_131072_passed": true,
+        "warm_text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+        "warm_finish_reason": "length",
+        "warm_cached_tokens": 126976,
+        "store_segment_bytes_per_rank": 1073741824,
+        "observed_errors": [
+          "Store BatchPut insufficient space (-200)",
+          "malloc(): unsorted double linked list corrupted during shutdown"
+        ],
+        "supervised_api_exit": 0,
+        "controller_exit": 1,
+        "owners_after": [],
+        "archive": "serving-r1-failed-evidence.tar.gz",
+        "archive_sha256": "2a71073a8a55b29008291f8804c246daa3bce3f0f37e13e0f583b494c5175476",
+        "scope": "Correctness qualification failed; observed errors are not a proven root cause. Supervisor API exit 0 does not establish clean worker teardown."
+      },
+      "capacity_control_qualification": {
+        "attempt": "phase5b/mooncake-retrieval-r1",
+        "passed": false,
+        "store_segment_bytes_per_rank": 17179869184,
+        "native_passed_requests": 26,
+        "candidate_completed_requests": 10,
+        "candidate_expected_requests": 26,
+        "candidate_failed_label": "warm-262080",
+        "cold_262080_passed": true,
+        "warm_131072_passed": true,
+        "warm_262080_text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+        "warm_262080_cached_tokens": 258048,
+        "failing_request_external_need_to_load": 0,
+        "logged_put_failures": 0,
+        "logged_get_failures": 0,
+        "shutdown_observations": [
+          "Two workers required SIGKILL after SIGTERM",
+          "malloc(): unsorted double linked list corrupted"
+        ],
+        "owners_after": [],
+        "source_hash_mismatches": [],
+        "archive": "serving-capacity-control-evidence.tar.gz",
+        "archive_sha256": "637405d49011869855793b8aa200c864ff736716e32e332bd704041f708cbfab",
+        "scope": "Qualification only; no performance curve. Capacity alone is not a sufficient fix; root cause undetermined."
+      },
+      "tracker_fix_candidate": {
+        "revision": "03766ac696fde5ab1980d80ca0b8543d3580c989",
+        "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust",
+        "base": "66350e7b7d8ec68ad68a14fb841678054f2c0f98",
+        "finding": "Running cached request omitted num_computed_tokens when updating Mamba tracker, preventing expired-prefix clearing. Pass request.num_computed_tokens before scheduler advances it.",
+        "regression": "Original failed expired-block assertion; fixed scheduler file 68 tests passed.",
+        "related_tests": {
+          "passed": 330,
+          "skipped": 10,
+          "failed": 1,
+          "failure": "test_as_cache_tuple_list: mock torch missing ones; reproduced unchanged base"
+        },
+        "format_ci": "passed with architecture-correct existing lint tools",
+        "hardware_retest": {
+          "attempt": "phase5c/mooncake-retrieval-r1",
+          "passed": false,
+          "native_passed_requests": 26,
+          "candidate_completed_requests": 10,
+          "candidate_expected_requests": 26,
+          "failed_label": "warm-262080",
+          "text": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+          "external_need_to_load": 0,
+          "logged_put_failures": 0,
+          "logged_get_failures": 0,
+          "heap_corruption_on_exit": true,
+          "sigkill_logged": false,
+          "owners_after": [],
+          "source_hash_mismatches": [],
+          "archive": "serving-tracker-fix-evidence.tar.gz",
+          "archive_sha256": "557cbf246b158b037f27896e276657dd4c32a7f0ff6dd11cb722fd021c7647f4",
+          "scope": "Real model qualification failed again; tracker fix is insufficient. No performance run."
+        },
+        "scope": "Concrete tracker bug fixed; not proven cause or fix of previous model output/heap corruption."
+      }
+    },
+    {
+      "id": "pegaflow",
+      "name": "PegaFlow",
+      "artifact_type": "external_system",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/pegaflow-hust",
+      "local_path": "/home/shuhao/pegaflow-hust",
+      "source_revision": "a3c574b8526969b70654715d86976474a4cc1b58",
+      "status": "hybrid-NPU-transport-integration-missing",
+      "source_witnesses": [
+        {
+          "path": "python/pegaflow/connector/__init__.py",
+          "line": 39,
+          "text": "PegaKVConnector derives KVConnectorBase_V1 without SupportsHMA."
+        },
+        {
+          "path": "python/pegaflow/connector/scheduler.py",
+          "line": 289,
+          "text": "Ordinary store connector extracts only blocks.get_block_ids()[0]; other HMA cache-group addresses require integration."
+        },
+        {
+          "path": "python/pegaflow/nixl_connector/connector.py",
+          "line": 81,
+          "text": "NixlBaseConnector separately supports HMA; do not generalize the ordinary store-connector restriction to all PegaFlow paths."
+        }
+      ],
+      "next_action": "Ordinary connector needs hybrid-group integration. NIXL HMA path additionally requires real NPU device/memory/transport support: current map excludes npu and common NPUPlatform inherits an empty extension. Do not bypass the guard or substitute a CUDA alias; qualify actual transfers before measuring.",
+      "nixl_readiness_evidence": {
+        "kind": "pinned-source-analysis-not-runtime-test",
+        "supports_hma": true,
+        "builtin_device_types": [
+          "cuda",
+          "tpu",
+          "xpu",
+          "cpu"
+        ],
+        "ascend_device_type": "npu",
+        "ascend_overrides_get_nixl_supported_devices": false,
+        "base_platform_device_extension": {},
+        "rejection_witness": "python/pegaflow/nixl_connector/base_worker.py:334",
+        "device_map_witness": "python/pegaflow/nixl_connector/utils.py:18-31",
+        "base_platform_witness": "vllm/platforms/interface.py:1221",
+        "scope": "Current pinned connector and common Ascend capsule; does not rule out a future NPU transport implementation."
+      }
+    },
+    {
+      "id": "pegaflow-vllm-connectors",
+      "name": "PegaFlow vLLM Connectors",
+      "artifact_type": "bridge",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/pegaflow-hust",
+      "local_path": "/home/shuhao/pegaflow-hust",
+      "source_revision": "a3c574b8526969b70654715d86976474a4cc1b58",
+      "status": "hybrid-NPU-transport-integration-missing",
+      "source_witnesses": [
+        {
+          "path": "python/pegaflow/connector/__init__.py",
+          "line": 39,
+          "text": "PegaKVConnector derives KVConnectorBase_V1 without SupportsHMA."
+        },
+        {
+          "path": "python/pegaflow/connector/scheduler.py",
+          "line": 289,
+          "text": "Ordinary store connector extracts only blocks.get_block_ids()[0]; other HMA cache-group addresses require integration."
+        },
+        {
+          "path": "python/pegaflow/nixl_connector/connector.py",
+          "line": 81,
+          "text": "NixlBaseConnector separately supports HMA; do not generalize the ordinary store-connector restriction to all PegaFlow paths."
+        }
+      ],
+      "next_action": "Ordinary connector needs hybrid-group integration. NIXL HMA path additionally requires real NPU device/memory/transport support: current map excludes npu and common NPUPlatform inherits an empty extension. Do not bypass the guard or substitute a CUDA alias; qualify actual transfers before measuring.",
+      "nixl_readiness_evidence": {
+        "kind": "pinned-source-analysis-not-runtime-test",
+        "supports_hma": true,
+        "builtin_device_types": [
+          "cuda",
+          "tpu",
+          "xpu",
+          "cpu"
+        ],
+        "ascend_device_type": "npu",
+        "ascend_overrides_get_nixl_supported_devices": false,
+        "base_platform_device_extension": {},
+        "rejection_witness": "python/pegaflow/nixl_connector/base_worker.py:334",
+        "device_map_witness": "python/pegaflow/nixl_connector/utils.py:18-31",
+        "base_platform_witness": "vllm/platforms/interface.py:1221",
+        "scope": "Current pinned connector and common Ascend capsule; does not rule out a future NPU transport implementation."
+      }
+    },
+    {
+      "id": "bidkv",
+      "name": "BidKV",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-bidkv",
+      "local_path": "/home/shuhao/bidkv",
+      "source_revision": "a0cba97d9abdc99908e46616db622f0e0099127f",
+      "status": "five-point-matched-curves-published",
+      "installed_source_validation": "All65Pythonfiles match pinned Git src/bidkv tree in assigned container",
+      "measurement_scope": "All five C1/C2/C4/C8/C16 900s cells completed with matched fresh Native control; all 15 campaign cells qualified, raw-stream validated and released. Published in website PR283. No changed admission/preemption decisions observed.",
+      "campaign_archive_sha256": "192c3ce54b94aa70d28758ef09e523273afb574e099a4aa9a9c915a8ea3896f2",
+      "publication_pr": "https://github.com/vLLM-HUST/vllm-hust-website/pull/283"
+    },
+    {
+      "id": "diffspec",
+      "name": "DiffSpec",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec",
+      "local_path": "/home/shuhao/vllm-ascend-hust-diffspec",
+      "source_revision": "42e5909fc6fe276ba0defe1901257a523653aefb",
+      "status": "EAGLE3-TP4-APCoff-asyncoff-contract",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 122,
+          "text": "- Prefix caching, async scheduling, quantization, MLA, and M-RoPE disabled"
+        }
+      ]
+    },
+    {
+      "id": "vspec",
+      "name": "vSpec",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-vSpec",
+      "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/vspec",
+      "source_revision": "d4c4f659495826e64802eedb195de52019282b47",
+      "status": "eagle3-attribute-ABI-pass-draft-download-blocked",
+      "runtime_abi_probe": {
+        "scope": "Actual imports and attribute checks only; no patch activation, draft loading, graph or model correctness qualification",
+        "exit": 0,
+        "probe_sha256": "4841a98906d7a94f39f00c2a9c66825fd247e726234d2ed367cdbd47a919dfe0",
+        "checks": [
+          {
+            "detail": "available",
+            "name": "vllm.v1.outputs.SamplerOutput",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.compilation.acl_graph.ACLGraphWrapper",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.sample.rejection_sampler.AscendRejectionSampler.forward",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.eagle_proposer.AscendEagleProposer.propose",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.llm_base_proposer.AscendSpecDecodeBaseProposer._get_model",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.llm_base_proposer.AscendSpecDecodeBaseProposer._maybe_share_lm_head",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.llm_base_proposer.AscendSpecDecodeBaseProposer.dummy_run",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.llm_base_proposer.AscendSpecDecodeBaseProposer.load_model",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.llm_base_proposer.AscendSpecDecodeBaseProposer._propose",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.spec_decode.llm_base_proposer.AscendSpecDecodeBaseProposer._update_full_graph_params",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.worker.model_runner_v1.NPUModelRunner.load_model",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.worker.model_runner_v1.NPUModelRunner._sample",
+            "ok": true
+          },
+          {
+            "detail": "available",
+            "name": "vllm_ascend.worker.model_runner_v1.NPUModelRunner._update_full_graph_params_if_needed",
+            "ok": true
+          }
+        ],
+        "stdout_sha256": "ec29c2cf081c4ec49fc092ecc3349d7747f19c7dbe9e6924ea942b3efbe13d38",
+        "environment": "Same phase4 launcher environment in assigned SSH31769 container",
+        "source_revision_proven_by_probe": false,
+        "provenance_note": "ABI checker reports null Git revisions for staged runtime; phase4 manifest provides source provenance separately."
+      },
+      "draft_access": {
+        "repository": "jiapingW/Qwen3.5-35B-A3B-Eagle3-Specforge",
+        "full_revision": null,
+        "weights_downloaded": false,
+        "last_resolve_attempt": "curl HEAD-follow-redirect config.json: TLS unexpected EOF, exit35",
+        "scope": "Network access failure; not proof model unavailable or incompatible"
+      }
+    },
+    {
+      "id": "latchmoe",
+      "name": "LatchMoE",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE",
+      "local_path": "/home/shuhao/vllm-ascend-hust-LatchMoE",
+      "source_revision": "9b2d4acdbfbe6463a22dd0bb8e6ca5bfda47e2c1",
+      "status": "APC-guard-rejects",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 29,
+          "text": "LatchMoE currently does **not** support vLLM prefix-cache reuse. The supported"
+        },
+        {
+          "path": "README.md",
+          "line": 34,
+          "text": "automatically and rejects an explicit `--enable-prefix-caching` request."
+        }
+      ]
+    },
+    {
+      "id": "ascend-adaptive-quantized-kv",
+      "name": "Adaptive Quantized KV",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-adaptive-quantized-kv-hust",
+      "local_path": "/home/shuhao/vllm-ascend-adaptive-quantized-kv-hust",
+      "source_revision": "ddd306fce8d885b9b9cfeb8c947ed576c5269e66",
+      "status": "import-only-no-runtime-entrypoint",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 90,
+          "text": "- While the manifest remains `import_only`, `vllm-hust-ext extension enable`"
+        },
+        {
+          "path": "README.md",
+          "line": 91,
+          "text": "refuses it. Runtime activation requires both an accepted host contract and a"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_ascend_adaptive_quantized_kv/vllm-hust-extension-v0.2.json",
+          "sha256": "c70dec2db8fc1bdf50582acc39c5b474c1edd8d3a4c9a16e5f4e09d932befd5f",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_adaptive_quantized_kv.observer",
+              "object": "ContinuingPrefillObserver",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ],
+      "implementation_scope": "ContinuingPrefillObserver in observer.py only evaluates/requires host contract receipt; its docstring explicitly calls it a component placeholder. No KV quantization execution occurs in this object."
+    },
+    {
+      "id": "ascend-quant-toolkit",
+      "name": "Ascend Quant Toolkit",
+      "artifact_type": "tool",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-quant-hust",
+      "local_path": "/home/shuhao/vllm-ascend-quant-hust",
+      "source_revision": "f161daab91b2b558bc8ee65d2b1bc76cd78e00b6",
+      "status": "import-only-no-runtime-entrypoint",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 15,
+          "text": "extension remains `import_only` until vLLM Ascend exposes the versioned loader"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "runtime-extension/src/vllm_ascend_quant_ext/vllm-hust-extension-v0.2.json",
+          "sha256": "7eb745436d4f7a59ce91a15fb01b4ccb8ecf26e622097fbb0f48f5bf85bb4ec6",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_quant_ext.artifact",
+              "object": "ArtifactContractValidator",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source inspection",
+        "source_path": "runtime-extension/src/vllm_ascend_quant_ext/artifact.py",
+        "class": "ArtifactContractValidator",
+        "responsibility": "Validate metadata only; does not load models or devices. Toolkit scripts are offline checkpoint quantization, not a BF16 online optimization switch.",
+        "required_host_integration": [
+          "quantized-artifact loading",
+          "quantized operator selection"
+        ]
+      }
+    },
+    {
+      "id": "ascend-quant-runtime-descriptor",
+      "name": "Ascend Quant Runtime Descriptor",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-quant-hust/tree/main/runtime-extension",
+      "local_path": "/home/shuhao/vllm-ascend-quant-hust",
+      "source_revision": "f161daab91b2b558bc8ee65d2b1bc76cd78e00b6",
+      "status": "import-only-no-runtime-entrypoint",
+      "manifest_evidence": [
+        {
+          "path": "runtime-extension/src/vllm_ascend_quant_ext/vllm-hust-extension-v0.2.json",
+          "sha256": "7eb745436d4f7a59ce91a15fb01b4ccb8ecf26e622097fbb0f48f5bf85bb4ec6",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_quant_ext.artifact",
+              "object": "ArtifactContractValidator",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source inspection",
+        "source_path": "runtime-extension/src/vllm_ascend_quant_ext/artifact.py",
+        "class": "ArtifactContractValidator",
+        "responsibility": "Validate metadata only; does not load models or devices. Toolkit scripts are offline checkpoint quantization, not a BF16 online optimization switch.",
+        "required_host_integration": [
+          "quantized-artifact loading",
+          "quantized operator selection"
+        ]
+      }
+    },
+    {
+      "id": "kvcompress-ascend",
+      "name": "Ascend KV Compression",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-kvcompress-hust",
+      "local_path": "/home/shuhao/vllm-ascend-kvcompress-hust",
+      "source_revision": "7c0d21144d99096736138812f727d6f59a93028a",
+      "status": "hybrid-MTP-APC-async-TP-guards-reject",
+      "source_witnesses": [
+        {
+          "path": "src/vllm_ascend_kvcompress/provider.py",
+          "line": 318,
+          "text": "        reasons.append(\"prefix caching must be disabled\")"
+        },
+        {
+          "path": "src/vllm_ascend_kvcompress/provider.py",
+          "line": 333,
+          "text": "    if bool(getattr(vllm_config.scheduler_config, \"async_scheduling\", False)):"
+        }
+      ]
+    },
+    {
+      "id": "prefix-router-migration",
+      "name": "Prefix Router",
+      "artifact_type": "external_system",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-prefix-router",
+      "local_path": "/home/shuhao/vllm-hust-prefix-router",
+      "source_revision": "4e007c4fc1bd376a6dccfefbc1fd851019c8ceb6",
+      "status": "no-runnable-release",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "**Status: migration scaffold. This repository does not yet contain an"
+        }
+      ]
+    },
+    {
+      "id": "kv-tiering-migration",
+      "name": "KV Tiering",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-tiering",
+      "local_path": "/home/shuhao/vllm-hust-kv-tiering",
+      "source_revision": "3a73c7e1628801ea5d4f585bcc9d06260161a78c",
+      "status": "documentation-only-no-runtime",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "**Status: migration scaffold. This repository does not yet contain an"
+        }
+      ],
+      "tracked_tree": [
+        ".github/CODEOWNERS",
+        "MAINTAINERS.md",
+        "PROVENANCE.md",
+        "README.md"
+      ]
+    },
+    {
+      "id": "knorm-migration",
+      "name": "KNorm",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-knorm",
+      "local_path": "/home/shuhao/vllm-hust-knorm",
+      "source_revision": "e0e872abfc9fa88659b3e83c1c8b8b2b3de88fc0",
+      "status": "documentation-only-no-runtime",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "**Status: migration scaffold. This repository does not yet contain an"
+        }
+      ],
+      "tracked_tree": [
+        ".github/CODEOWNERS",
+        "MAINTAINERS.md",
+        "PROVENANCE.md",
+        "README.md"
+      ]
+    },
+    {
+      "id": "pyramidkv-ascend-migration",
+      "name": "PyramidKV Ascend",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-pyramidkv-hust",
+      "local_path": "/home/shuhao/vllm-ascend-pyramidkv-hust",
+      "source_revision": "77b0862c1e5be8c883fda934cdb383c57cf7ad0d",
+      "status": "import-only-no-runtime-entrypoint",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "**Status: installable migration baseline, not a runnable alpha.**"
+        },
+        {
+          "path": "README.md",
+          "line": 9,
+          "text": "Manifest 0.2 carrier is deliberately marked `import_only`. Extension Manager"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_ascend_pyramidkv/vllm-hust-extension-v0.2.json",
+          "sha256": "83f058a61a01e315428c9aacc85446c24283fb56ebc48fbbaa11c1bf8c4ad4d7",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_pyramidkv",
+              "object": "PyramidKVContractProposal",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source inspection, not an NPU runtime qualification",
+        "source_path": "src/vllm_ascend_pyramidkv/provider.py",
+        "source_sha256": "949e6a2f612618e19b35372402ce140bb0f3fced8a3401e3a4854df6ba210c16",
+        "supported_architectures": [
+          "LlamaForCausalLM",
+          "Qwen2ForCausalLM"
+        ],
+        "requires_full_attention_only": true,
+        "requires_single_kv_group": true,
+        "speculative_decoding_supported": false,
+        "tensor_parallel_size": 1,
+        "pipeline_parallel_size": 1,
+        "supported_graph_modes": [
+          "PIECEWISE",
+          "FULL_DECODE_ONLY"
+        ],
+        "eager_supported": true,
+        "source_lines": {
+          "execution_modes": 1507,
+          "model_profile": 1536,
+          "kv_groups": 1577,
+          "full_attention": 1581,
+          "speculative_decoding": 1605,
+          "tensor_parallel": 1613
+        },
+        "interpretation": "Current Qwen3.5 hybrid/MTP2/TP2/FULL_AND_PIECEWISE protocol is rejected by independent compatibility checks, beyond missing host activation."
+      }
+    },
+    {
+      "id": "slicegpt-migration",
+      "name": "SliceGPT",
+      "artifact_type": "tool",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-slicegpt",
+      "local_path": "/home/shuhao/vllm-hust-slicegpt",
+      "source_revision": "6acf19d9cbb3ed6caa3f5e6341b1da41941f9f2e",
+      "status": "documentation-only-no-runtime",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "**Status: migration scaffold. This repository does not yet contain an"
+        }
+      ],
+      "tracked_tree": [
+        ".github/CODEOWNERS",
+        "MAINTAINERS.md",
+        "PROVENANCE.md",
+        "README.md"
+      ]
+    },
+    {
+      "id": "ride-control-plane",
+      "name": "RIDE Control Plane",
+      "artifact_type": "external_system",
+      "public": true,
+      "repository": "",
+      "local_path": null,
+      "source_revision": null,
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-local-control-host",
+      "name": "vLLM Local Control Host",
+      "artifact_type": "bridge",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust",
+      "local_path": "/home/shuhao/vllm-hust",
+      "source_revision": "48b27166f36ecd093af6a3328e92651d23feb48e",
+      "status": "infrastructure"
+    },
+    {
+      "id": "ride-runtime-bridge",
+      "name": "RIDE Remote Runtime Sidecar",
+      "artifact_type": "bridge",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust",
+      "local_path": "/home/shuhao/vllm-hust",
+      "source_revision": "48b27166f36ecd093af6a3328e92651d23feb48e",
+      "status": "infrastructure"
+    },
+    {
+      "id": "quantized-kv-cache-migration",
+      "name": "Quantized KV Cache",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-quantized-kv-cache-hust",
+      "local_path": "/home/shuhao/vllm-ascend-quantized-kv-cache-hust",
+      "source_revision": "8dd24cdce248519c173710993f6c633a96107c0d",
+      "status": "import-only-no-runtime-entrypoint",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: quantized KV dtype, packed-layout, and fail-closed resolution contracts are installable and tested; device kernels and vLLM Ascend attachment remain blocked until `HOST_CONTRACT.md` is implemented.**"
+        },
+        {
+          "path": "README.md",
+          "line": 16,
+          "text": "is deliberately `import_only`: it can be built, installed, discovered, and"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_ascend_quantized_kv_cache/vllm-hust-extension-v0.2.json",
+          "sha256": "453ea881a1f1102c16143d6a46341c6d66e50cc9d918a8ba67e169272953e4f5",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_quantized_kv_cache.dtypes",
+              "object": "resolve_layout",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source and complete Git tree inspection",
+        "source_path": "src/vllm_ascend_quantized_kv_cache/dtypes.py",
+        "source_sha256": "5be616ab97ac3c409e6b303634c80e8bfbb43188702a43785f1dd1692150320c",
+        "finding": "Package contains device-independent dtype and packed-layout arithmetic. Active quantize/dequantize/attention kernels and host allocation/layout/transfer integration are not supplied by that implementation; archived historical patches are provenance, not enabled runtime code."
+      }
+    },
+    {
+      "id": "simllm-migration",
+      "name": "SimLLM",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-simllm-hust",
+      "local_path": "/home/shuhao/vllm-ascend-simllm-hust",
+      "source_revision": "dcdc6edf7bdcc68bdf35058888ebfd9752ae3566",
+      "status": "import-only-no-runtime-entrypoint",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 3,
+          "text": "Owner-led migration carrier for task-similarity KV reuse. Release is blocked until the owner confirms whether the legacy code is independent or derives from the public SimLLM repository, which has no declared license."
+        },
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: host-contract and source-license-gate package. There is no runtime"
+        },
+        {
+          "path": "README.md",
+          "line": 17,
+          "text": "is deliberately `import_only`: it can be built, installed, discovered, and"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 49,
+          "text": "Activation requires all four protocols, a pinned vLLM/vLLM Ascend range, a"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 67,
+          "text": "Until then, the package remains `import_only` and Extension Manager must refuse"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_ascend_simllm/vllm-hust-extension-v0.2.json",
+          "sha256": "efbb3b3df5094d9d564841e4d87ae8dd1061ebb0bd7bf0927bee9643a4268e8d",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_simllm.license_gate",
+              "object": "SimLLMHostContractDescriptor",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source and complete Git tree inspection",
+        "source_path": "src/vllm_ascend_simllm/license_gate.py",
+        "source_sha256": "76e96bf550efb7731347bbea6e9ca80884130d5bac3bf29a23b4d5972c96f597",
+        "finding": "Package contains source-evidence validation and a non-activating host descriptor; module explicitly contains no SimLLM implementation. No similarity index, embedding provider or runtime rewrite implementation is present in the pinned src tree."
+      }
+    },
+    {
+      "id": "unified-communication-migration",
+      "name": "Unified Communication",
+      "artifact_type": "bridge",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-unified-comm",
+      "local_path": "/home/shuhao/vllm-hust-unified-comm",
+      "source_revision": "f00d1ef4c19a992d67ef8012952a9405d52dd447",
+      "status": "collective-host-integration-missing",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: device-neutral contracts, registry, and decision policies are installable and tested; vLLM collective delegation remains blocked until the host contracts in `HOST_CONTRACT.md` exist.**"
+        },
+        {
+          "path": "src/vllm_hust_unified_comm/vllm-hust-extension-v0.2.json",
+          "line": 57,
+          "text": "    \"entry_points\": [],"
+        }
+      ]
+    },
+    {
+      "id": "split-batch-full-graph-migration",
+      "name": "Split-Batch / Full-Graph Parallel",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-split-batch-hust",
+      "local_path": "/home/shuhao/vllm-ascend-split-batch-hust",
+      "source_revision": "b46de46e90204a0a7636a1dbc952f73178859ada",
+      "status": "import-only-no-runtime-entrypoint",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: default-off dual-pad planning and compatibility prechecks are installable and tested; Ascend graph/worker execution remains blocked until `HOST_CONTRACT.md` is implemented.**"
+        },
+        {
+          "path": "README.md",
+          "line": 16,
+          "text": "is deliberately `import_only`: it can be built, installed, discovered, and"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 3,
+          "text": "The extracted planner is pure and default-off. Runtime activation requires:"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_ascend_split_batch/vllm-hust-extension-v0.2.json",
+          "sha256": "f58e7425bea31719a3a771fcab4a3f0a614049488341b6479dcb76a710eae614",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_split_batch.planner",
+              "object": "plan_dual_pad",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ],
+      "compatibility_probe": {
+        "kind": "pure-source-check-not-performance",
+        "source": "src/vllm_ascend_split_batch/planner.py:59",
+        "speculative_decode_true": "speculative_decode_conflict",
+        "otherwise_identical_speculative_decode_false": null,
+        "runtime_impact": "MTP2 cannot pass existing precheck even after wiring host contracts"
+      }
+    },
+    {
+      "id": "kv-transfer-observability-migration",
+      "name": "KV Transfer Observability",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-transfer-observability",
+      "local_path": "/home/shuhao/vllm-hust-kv-transfer-observability",
+      "source_revision": "ec3446d936b6ac148e0be33b1dba831f9ecfc0c4",
+      "status": "import-only-no-runtime-entrypoint",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: the typed, bounded, address-free observation core and sinks are"
+        },
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "installable and tested; automatic vLLM attachment remains blocked until a real"
+        },
+        {
+          "path": "README.md",
+          "line": 18,
+          "text": "is deliberately `import_only`: the observability primitives can be imported and"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_hust_kv_transfer_observability/vllm-hust-extension-v0.2.json",
+          "sha256": "637b980343f41ad73dc1e4dbbbd2b89af1807b68eae41be2cd8819e0d856da8e",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_hust_kv_transfer_observability.events",
+              "object": "JsonlKVTransferEventSink",
+              "status": "import_only"
+            },
+            {
+              "type": "python_module",
+              "module": "vllm_hust_kv_transfer_observability.descriptors",
+              "object": "DescriptorLayoutCapture",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source/host contract inspection; no hardware activation claimed",
+        "source_path": "HOST_CONTRACT.md",
+        "source_sha256": "6636fa2281b184dec7c2b6a1e8f457a1183e3ca95a4984a4d97638dad3b0e961",
+        "finding": "Host-independent observer/event sinks require typed lifecycle, region descriptors, stable identity and observer registration. These are diagnostic facilities, not an implemented transfer optimization; the required exact protocol identifiers are absent from the common core Python source."
+      }
+    },
+    {
+      "id": "layered-prefill-migration",
+      "name": "Layered Prefill",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-layered-prefill-hust",
+      "local_path": "/home/shuhao/vllm-ascend-layered-prefill-hust",
+      "source_revision": "a45e41709ccacc3d7c736910b93c1b5985d9ee94",
+      "status": "import-only-no-runtime-entrypoint",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: stage partitioning, request metadata, model-adapter declarations, and MoE cursor logic are installable and tested; vLLM Ascend attachment remains blocked until `HOST_CONTRACT.md` is implemented.**"
+        },
+        {
+          "path": "README.md",
+          "line": 16,
+          "text": "is deliberately `import_only`: it can be built, installed, discovered, and"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 4,
+          "text": "host-independent. Runtime activation is a vLLM Ascend extension and requires:"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_ascend_layered_prefill/vllm-hust-extension-v0.2.json",
+          "sha256": "d3121e71ec177d80b62f1bec491f6a6926a58f20526641df43460b556fea1554",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_ascend_layered_prefill.control",
+              "object": "LayeredPrefillMetadata",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ],
+      "missing_host_contracts": [
+        "vllm.scheduler.layered-prefill.v1",
+        "vllm.model.partial-forward.v1",
+        "vllm.worker.request-state.v1",
+        "vllm.ascend.moe-cursor.v1"
+      ],
+      "contract_source": "HOST_CONTRACT.md",
+      "common_runtime_contract_search": "None of these four advertised contract identifiers found in pinned common core/Ascend trees."
+    },
+    {
+      "id": "activation-sparsity-migration",
+      "name": "Activation Sparsity",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-activation-sparsity",
+      "local_path": "/home/shuhao/vllm-hust-activation-sparsity",
+      "source_revision": "0e4d0628c1972d5086a217b0007576c1fd8998a3",
+      "status": "import-only-no-runtime-entrypoint",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: fail-closed TEAL/La RoSA configuration and compatibility validation are installable and tested; model/kernel attachment remains blocked until `HOST_CONTRACT.md` is implemented.**"
+        },
+        {
+          "path": "README.md",
+          "line": 16,
+          "text": "is deliberately `import_only`: it can be built, installed, discovered, and"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 4,
+          "text": "cache identity without importing vLLM or torch. Runtime activation requires:"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_hust_activation_sparsity/vllm-hust-extension-v0.2.json",
+          "sha256": "31ef587b7d0282b395754b0992e88ec793d32bb0445dffe5fae49902b1fab5b4",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_hust_activation_sparsity.config",
+              "object": "ActivationSparsityConfig",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source and complete Git tree inspection",
+        "source_path": "src/vllm_hust_activation_sparsity/config.py",
+        "source_sha256": "e4e59e06c3959723617c44dc387a57372d6449780638443ce89c5b2f084100d9",
+        "finding": "Only configuration validation/hash is packaged; enabled compatibility check rejects TP2 and requires calibration. Projection/weight transforms and sparse linear host integration remain absent from the package.",
+        "cpu_compatibility_probe": {
+          "tp1_control": "accepted",
+          "tp2_candidate": "activation sparsity requires tensor_parallel_size=1",
+          "scope": "Exact pinned configuration function, no real calibration/model/NPU execution"
+        }
+      }
+    },
+    {
+      "id": "pipeline-microbatch-migration",
+      "name": "Pipeline Microbatch",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-pipeline-microbatch",
+      "local_path": "/home/shuhao/vllm-hust-pipeline-microbatch",
+      "source_revision": "a15a22961a0e4858da74a0ab806575c82cb254e6",
+      "status": "five-point-matched-curves-published",
+      "published_evidence": {
+        "concurrency": [
+          1,
+          2,
+          4,
+          8,
+          16
+        ],
+        "pull_requests": [
+          "https://github.com/vLLM-HUST/vllm-hust-website/pull/280",
+          "https://github.com/vLLM-HUST/vllm-hust-website/pull/282"
+        ],
+        "interpretation": "Single observations per cell, not evidence of stable acceleration."
+      }
+    },
+    {
+      "id": "qos-scheduler-migration",
+      "name": "QoS Scheduler",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-qos-scheduler",
+      "local_path": "/home/shuhao/vllm-hust-qos-scheduler",
+      "source_revision": "13d376a7d8990c4dcf5c0903cb6fbf2398ef0fb0",
+      "status": "import-only-no-runtime-entrypoint",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: request-level SLO validation, monotonic deadline tracking, and ordering keys are installable and tested; vLLM API/scheduler attachment remains blocked until `HOST_CONTRACT.md` is implemented.**"
+        },
+        {
+          "path": "README.md",
+          "line": 16,
+          "text": "is deliberately `import_only`: it can be built, installed, discovered, and"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 4,
+          "text": "scheduler classes. Runtime activation requires:"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_hust_qos_scheduler/vllm-hust-extension-v0.2.json",
+          "sha256": "1bf6b9f5f792f05a7ab268874f2cae6130ae3df6eec77570852ce55a0ecd27db",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_hust_qos_scheduler.policy",
+              "object": "QoSOrderingPolicy",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source/host contract inspection; no hardware activation claimed",
+        "source_path": "HOST_CONTRACT.md",
+        "source_sha256": "03ad81ec1a76cb94e3f6777065689717f44c678bccea04eba397ed1802741191",
+        "finding": "Request/deadline model and ordering keys exist, but activation requires QoS API metadata, request snapshots, scheduler ordering registration and output observation. Phase-one contract excludes unqualified speculative decoding; current workload does not provide QoS SLO metadata."
+      }
+    },
+    {
+      "id": "stateharbor",
+      "name": "StateHarbor",
+      "artifact_type": "bridge",
+      "public": false,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-stateharbor",
+      "local_path": "/home/shuhao/vllm-hust-stateharbor",
+      "source_revision": "e1366f3c33f384437201e70ad482b84fdb1dcf60",
+      "status": "import-only-no-runtime-entrypoint",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 6,
+          "text": "**Status: installable contract/reference package (`import_only`). It contains"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_hust_stateharbor/vllm-hust-extension-v0.2.json",
+          "sha256": "ff8a56b2339d46fffb88a6715b099b251185b351db4c42dc004b88ecdf4ccf58",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_hust_stateharbor",
+              "object": "StateHarborDescriptor",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source/host contract inspection; no hardware activation claimed",
+        "source_path": "README.md",
+        "source_sha256": "a98f4402f72c9feabffc102cb37b1556a5444bbd6da8cea982027a799f97ed58",
+        "finding": "Reference coordinator/worker state machines and window policy only. Actual scheduler, worker, KV allocation, transport and device integration are outside this package; no vLLM activation hook."
+      }
+    },
+    {
+      "id": "scheduler-policy-lab",
+      "name": "Scheduler Policy Lab",
+      "artifact_type": "tool",
+      "public": false,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-scheduler-policy-lab",
+      "local_path": "/home/shuhao/vllm-hust-scheduler-policy-lab",
+      "source_revision": "215bdab44fb572f125e1426f78103e4d4ac7b833",
+      "status": "import-only-no-runtime-entrypoint",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 5,
+          "text": "**Status: host-independent policy code is installable and tested; vLLM runtime activation remains blocked until the host contracts in `HOST_CONTRACT.md` exist.**"
+        },
+        {
+          "path": "README.md",
+          "line": 16,
+          "text": "is deliberately `import_only`: Past-Future, Sarathi, and recapture-observer"
+        },
+        {
+          "path": "HOST_CONTRACT.md",
+          "line": 3,
+          "text": "The extracted policies do not import vLLM internals. Activation requires a host"
+        }
+      ],
+      "manifest_evidence": [
+        {
+          "path": "src/vllm_hust_scheduler_policy_lab/vllm-hust-extension-v0.2.json",
+          "sha256": "116333ce5b3ad88622a9f08f46ddab11c355f7e090666c643d15fece9ab25153",
+          "implementation": [
+            {
+              "type": "python_module",
+              "module": "vllm_hust_scheduler_policy_lab.past_future",
+              "object": "PastFuturePolicy",
+              "status": "import_only"
+            },
+            {
+              "type": "python_module",
+              "module": "vllm_hust_scheduler_policy_lab.sarathi",
+              "object": "SarathiPolicy",
+              "status": "import_only"
+            },
+            {
+              "type": "python_module",
+              "module": "vllm_hust_scheduler_policy_lab.observer",
+              "object": "NativeRecaptureScopeObserver",
+              "status": "import_only"
+            }
+          ],
+          "activation": {
+            "entry_points": [],
+            "environment": {},
+            "additional_config": {}
+          }
+        }
+      ],
+      "implementation_constraints": {
+        "scope": "Pinned source/host contract inspection; no hardware activation claimed",
+        "source_path": "HOST_CONTRACT.md",
+        "source_sha256": "4e27936e633cf8e5a6d4e34a7919c7bce67a5291cc56000579e24eb4617823fb",
+        "finding": "Host-independent policy functions require policy registration, KV-budget/request snapshots, completion lifecycle and post-schedule observers. None of the four exact protocol identifiers appears in the common core Python source; this scoped search does not prove no semantically similar internal API exists."
+      }
+    },
+    {
+      "id": "request-lifecycle-profiler",
+      "name": "Request Lifecycle Causal Profiler",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-request-lifecycle-profiler",
+      "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/request-lifecycle-profiler-ssh",
+      "source_revision": "e32a0e91027ae7a2b96bf48d2dcb7db1b3c42c87",
+      "status": "required-host-observer-interface-missing",
+      "source_witnesses": [
+        {
+          "path": "src/vllm_request_lifecycle_profiler/plugin.py",
+          "line": 49,
+          "text": "Enabled recovery observation requires vllm.v1.kv_recovery_profile observer factory; general-plugin discovery alone does not prove instrumentation."
+        },
+        {
+          "path": "AGENTS.md",
+          "line": 52,
+          "text": "Profiler observations are diagnosis evidence and do not by themselves establish runtime speedup."
+        }
+      ]
+    },
+    {
+      "id": "kv-materialization-arrival-control",
+      "name": "KV Materialization Arrival Control",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-materialization-arrival-control",
+      "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/kv-arrival-ssh",
+      "source_revision": "10428b81e2b383cdcb183d4548f38a98929fd0e4",
+      "status": "request-header-and-runtime-seam-integration-pending",
+      "source_witnesses": [
+        {
+          "path": "src/vllm_kv_materialization/live_control.py",
+          "line": 198,
+          "text": "Absent primary-anchor metadata yields zero reusable prefix; software probe with no headers selects request-scoped recompute."
+        },
+        {
+          "path": "src/vllm_kv_materialization/live_control.py",
+          "line": 66,
+          "text": "Segmented reuse relies on kv_materialization_runtime_control; this key is absent from the current common core capsule."
+        }
+      ],
+      "software_probe": {
+        "kind": "software-only-not-performance",
+        "prompt_tokens": 4096,
+        "output_tokens": 128,
+        "headers": {},
+        "effective_decision": "recompute",
+        "target_reuse_tokens": 0
+      }
+    },
+    {
+      "id": "vllm-hust-benchmark",
+      "name": "vLLM-HUST Benchmark",
+      "artifact_type": "tool",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-benchmark",
+      "local_path": "/home/shuhao/vllm-hust-benchmark",
+      "source_revision": "e8a68923768adffb85c2d0fa255b2cec79af8ab5",
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-hust-docs",
+      "name": "vLLM-HUST Documentation",
+      "artifact_type": "tool",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-docs",
+      "local_path": "/home/shuhao/vllm-hust-docs",
+      "source_revision": "e70e4234c56512d312ac58cd39080411a13667f1",
+      "status": "infrastructure"
+    },
+    {
+      "id": "vllm-hust-website",
+      "name": "vLLM-HUST Website",
+      "artifact_type": "application",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-website",
+      "local_path": "/home/shuhao/vllm-hust-website",
+      "source_revision": "b46065782c562b33242dd3df2675c86bc535f699",
+      "status": "infrastructure"
+    },
+    {
+      "id": "betterscale",
+      "name": "BetterScale",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/BetterScale",
+      "local_path": "/home/shuhao/BetterScale",
+      "source_revision": null,
+      "status": "existing-measured",
+      "source_revisions": [
+        {
+          "revision": "3e99033a3d47df794cf282bc0d4a9f7faec82c5a",
+          "active_website_points": 2
+        },
+        {
+          "revision": "b0b8bb2d88c8673fe8431fefb2d47157fd91c76d",
+          "active_website_points": 8
+        },
+        {
+          "revision": "ce2ac3f4e2ddd663199fc9d39374c5f6c6d37a3d",
+          "active_website_points": 20
+        },
+        {
+          "revision": "f7598b9f1d4cb13607a94a3d4f13246d0b76fbd4",
+          "active_website_points": 10
+        }
+      ],
+      "source_revision_scope": "Multiple historical point-specific pins, no single common revision; copied from published MOD source receipts, not new measurements."
+    },
+    {
+      "id": "dla",
+      "name": "DLA",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-dla",
+      "local_path": "/data/codex-build-work/frontier-mods-qwen35-20260925/dla",
+      "source_revision": "dc20d0f8ea8d09106f77571e1947b9a2f8702545",
+      "status": "five-point-matched-curves-published",
+      "upstream_base_revision": "2fc5651c1ad1e0fd1a5db5ac9eb9f83ac3f94922",
+      "runtime_validation": {
+        "actual_container_tests_passed": 6,
+        "provenance_archive_sha256": "364b6d0cbd8d3ffc8bf59a9a26e14d2a1325bc34d61f7c5338fb38f5919c5fa5",
+        "scope": "Actual container integration passed before all five real online measurements; known output budgets, no learned predictor."
+      },
+      "measurement_scope": "All five C1/C2/C4/C8/C16 900s cells completed with matched fresh Native control; all 15 campaign cells qualified, raw-stream validated and released. Published in website PR283. No changed admission/preemption decisions observed.",
+      "campaign_archive_sha256": "192c3ce54b94aa70d28758ef09e523273afb574e099a4aa9a9c915a8ea3896f2",
+      "publication_pr": "https://github.com/vLLM-HUST/vllm-hust-website/pull/283"
+    },
+    {
+      "id": "traceloom",
+      "name": "TraceLoom",
+      "artifact_type": "runtime_component",
+      "public": true,
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-perf-analyzer",
+      "local_path": "/home/shuhao/vllm-hust-perf-analyzer",
+      "source_revision": "37323af55aeb5851b9a70b97155f5eacf104eafc",
+      "status": "offline-analysis-tool-no-serving-treatment",
+      "source_witnesses": [
+        {
+          "path": "README.md",
+          "line": 9,
+          "text": "Native C++17 offline analyzer for accelerator profiler traces; current production implementation is the native CLI."
+        }
+      ],
+      "curve_applicability": "No serving-time optimization entrypoint in this revision. Analyze profiling evidence separately; do not fabricate a vLLM speedup curve for an offline CLI."
+    }
+  ]
+}

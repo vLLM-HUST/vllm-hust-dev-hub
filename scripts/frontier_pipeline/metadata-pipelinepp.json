@@ -1,0 +1,220 @@
+{
+  "pod_uid": "33e57f4a-ee9b-4000-a326-7b5d45529e65",
+  "namespace": "coder-workspaces",
+  "pod": "coder-admin-shuhao-workspace-665dc6dff5-dmmbh",
+  "node": "host-192-168-0-84",
+  "container_allocated_npus": 8,
+  "serving_devices": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "serving_chips": 4,
+  "port": 33782,
+  "packages": {
+    "vllm": "0.25.1+frontier.bidkv.empty",
+    "vllm-ascend": "0.25.1rc1",
+    "torch": "2.10.0+cpu",
+    "torch-npu": "2.10.0.post4",
+    "triton-ascend": "3.2.2",
+    "transformers": "5.14.1",
+    "swe-prefix-reuse": "0.1.2",
+    "vllm-hust-bidkv": "0.2.1"
+  },
+  "cann": "9.1.0",
+  "wheel_sha256": "0e6ba24d581ef9200aa38ae6773363633070a21a84ce229fbe41bbedc054ae42",
+  "model_manifest_sha256": "6238348a1e071f7802cd6a3e808a6ac36592d83fc765872d3a988368b0b144f6",
+  "launch_script_sha256": "6157ad2bcb5873cdc662e3eda1b31d16e71897afd9102def767ffa5de7db6b54",
+  "environment": {
+    "VLLM_VERSION": "0.25.1",
+    "ASCEND_RT_VISIBLE_DEVICES": "0,1,2,3",
+    "TASK_QUEUE_ENABLE": "1",
+    "FRONTIER_PP_CALIBRATION_DIR": "unset",
+    "ATB_ENV_SCRIPT": "/usr/local/Ascend/nnal/atb/set_env.sh"
+  },
+  "worker_bridge_sha256": "a63c615acf7dd23062ab5e8407fcd8c30d1346c51becf2f5f9bd6483beb457e6",
+  "core_commit": "752a3a504485790a2e8491cacbb35c137339ad34",
+  "ascend_commit": "9bf964cb4b87c8cd0d6852c41a55b3c29711fa95",
+  "model": "Qwen3.5-35B-A3B",
+  "model_provenance": "ModelScope complete source manifest; 5 matching readonly mounted shards; remaining9 copied and all22 files SHA verified. Historical HF revision equivalence not claimed.",
+  "prepared_workload_sha256": "aa23f49e08a946d94eaab21307e9e015140cc8598adfbd5f7e244bdded7b17d0",
+  "benchmark_revision": "6861242dbd9f17b707003191e4200b7752911d7c",
+  "worker": "pipeline_worker.Worker",
+  "comparison": "Matched PP2xTP2 common hybrid-MTP runtime; one900s observation per cell; no comparison against older TP2-only control",
+  "mods": [
+    "pipeline-microbatch-migration"
+  ],
+  "runtime_source_files": {
+    "core/docs/design/preemption_policy.md": "7b389714079c3c387aeaf08f3aea56e9347df76c6ad7555aa9b9b6c333d8d715",
+    "core/tests/v1/core/test_batch_admission_policy.py": "f35d97577e66c7e6d55b0f701c1912fcc41bedec5ba880720fe3b69c386a5a58",
+    "core/tests/v1/core/test_preemption_policy.py": "b45be49dc00ebddce6522039fa89989c559e667ef8666c329a06ff1ec69ab334",
+    "core/tests/v1/core/test_scheduler.py": "1ec9966c45500316386af7451229979e7c1c60bffa7a839579491a23edccac6d",
+    "core/tests/v1/core/utils.py": "ce8c68172edae006adf2fb1ab40db947f61dbe27204d4143a40caee897b4d325",
+    "core/vllm/config/scheduler.py": "0e2f47e97a76f207e643e836dcdb0cc4e848fc8a3cd03f58564e804b12e415b4",
+    "core/vllm/engine/arg_utils.py": "a91673e82796b2d4eec2f9a7867a7af586cbb7d96ef6eb8b4cd3dc761b78789a",
+    "core/vllm/v1/core/sched/batch_admission.py": "317e0d52d2658a928f0296ed77c7f6704b1daa1f6e5629b6b13d709dac0a46a7",
+    "core/vllm/v1/core/sched/interface.py": "39afa2b8198e7d45e80cbdd788d63cec9e9e0a99cc0623c446828964919cb9aa",
+    "core/vllm/v1/core/sched/preemption.py": "b5491f6379a790d7228e1d02ea56f5363ee2516d620e6d906497f9590e6ad137",
+    "core/vllm/v1/core/sched/scheduler.py": "d7ef56177bad7084a6440b3f07ab2721770688ebb9f55bbb787129080b723cdd",
+    "core/vllm/v1/engine/core.py": "41cbdc64bb1b0588cc041f88f399dda3a81cc1cdf96133c6871bc10e32b0c378",
+    "core/vllm/v1/metrics/loggers.py": "e626cbd2e953d3ca6a873635cec1d0d5538b13eb1bc9083ddbae010ef2efac26",
+    "core/vllm/v1/metrics/stats.py": "db273cef8c835b2e2a787dc37ab5b36c783ff041f6f67d8ccc757253580df7a2",
+    "core/vllm/v1/worker/gpu_model_runner.py": "c24d8dec66b5ed042f2021326eef94b3163422bf6ec753d4cc6e2e58f83db3c4",
+    "pipeline_worker.py": "75fb09ac32c83d3d26a7d4d60448e6f986652d911aed5ca85bd8af07a08ce359",
+    "../frontier_worker.py": "a63c615acf7dd23062ab5e8407fcd8c30d1346c51becf2f5f9bd6483beb457e6",
+    "ascend-wheel/vllm_ascend/worker/model_runner_v1.py": "2c188ee04a4eb1c3b4f3bff9d5f3c4e4c69dddc4e0ed39137b09675420765463",
+    "ascend-wheel/vllm_ascend/worker/pp_hybrid_feedback.py": "6a61bcd0011b571362685f5522048f1414ea840a70ae09e1ea3bf7036a8ca1b6",
+    "ascend-wheel/vllm_ascend/libvllm_ascend_kernels.so": "602756c9eb232bf58b35522ccbf6744d507addfffb4a2f042396e719135fa1cd",
+    "ascend-wheel/vllm_ascend/vllm_ascend_C.cpython-312-aarch64-linux-gnu.so": "fc049639b5bf962697da0c8611188421d1f38db56362b63df097b6d2092f1b84",
+    "ascend-wheel/vllm_ascend/_cann_ops_custom/vendors/custom_transformer/op_api/lib/libcust_opapi.so": "905821801cc2d205347fc350d8f753f53688ad750ad9bf32d21fecb0cecbf10e",
+    "ascend-wheel/vllm_ascend/_cann_ops_custom/vendors/custom_transformer/op_impl/cpu/aicpu_kernel/impl/libtransformer_aicpu_kernels.so": "c68c8b1171349222679f5f2eeecd4f2cff5942ab8ff684a4392ff62868ed9674",
+    "ascend-wheel/vllm_ascend/_cann_ops_custom/vendors/custom_transformer/op_impl/ai_core/tbe/op_tiling/liboptiling.so": "bc443be80fdddf97a2b45f59fc8ec3a06e1052bde41b7a63db57ac0802e40496",
+    "ascend-wheel/vllm_ascend/_cann_ops_custom/vendors/custom_transformer/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64/libcust_opmaster_rt2.0.so": "bc443be80fdddf97a2b45f59fc8ec3a06e1052bde41b7a63db57ac0802e40496",
+    "ascend-wheel/vllm_ascend/_cann_ops_custom/vendors/custom_transformer/op_proto/lib/linux/aarch64/libcust_opsproto_rt2.0.so": "4089bea44e2781efbbdd23d218697994823a787e88d3342fd6b4c0c0edd31652",
+    "ascend-wheel/vllm_ascend/patch/platform/patch_pp_mtp.py": "452029caefb43dd0e36e5727700b4bed16276bf316b54ea26d67b0199b9f5a51"
+  },
+  "source_patches_sha256": {
+    "core-qualified.patch.gz": "1120f2628cb4a973090ab9161394154e24cfa403f0897a912e3ca34390356303",
+    "ascend-qualified.patch.gz": "5d1d03a980815aee9303d99af3178cb60161813d866c515934b1d6511f59fae2"
+  },
+  "runtime_common_changes": "Neutral batch admission API; actual in-flight queued scheduler snapshots; request-keyed PP Mamba acceptance feedback; exact-output fence ownership; nonfinal-stage draft scatter; confirmed token-count reconciliation",
+  "source_commits_are_bases": true,
+  "mod_revision": "a15a22961a0e4858da74a0ab806575c82cb254e6",
+  "calibration": {
+    "profile": {
+      "mode": "calibrated",
+      "model_ids": [
+        "/home/coder/frontier-mods-qwen35-20260925/model"
+      ],
+      "pipeline_parallel_size": 2,
+      "tensor_parallel_size": 2,
+      "microbatch_count": 2,
+      "cost_models": [
+        {
+          "pp_rank": 0,
+          "layer_num": 20,
+          "p0": 0,
+          "p1": 2.337736504957753,
+          "p2": 0,
+          "p3": 0.0013904910859525073,
+          "p4": 0,
+          "p5": 41.526477773684775
+        },
+        {
+          "pp_rank": 0,
+          "layer_num": 20,
+          "p0": 0,
+          "p1": 2.3378393230092156,
+          "p2": 0,
+          "p3": 0.0013986642534462414,
+          "p4": 0,
+          "p5": 41.495214833677984
+        },
+        {
+          "pp_rank": 1,
+          "layer_num": 20,
+          "p0": 0,
+          "p1": 2.1554347273584242,
+          "p2": 0,
+          "p3": 0.001427110719812561,
+          "p4": 0,
+          "p5": 42.069390809437735
+        },
+        {
+          "pp_rank": 1,
+          "layer_num": 20,
+          "p0": 0,
+          "p1": 2.179656307253565,
+          "p2": 0,
+          "p3": 0.0014240655999693246,
+          "p4": 0,
+          "p5": 42.03938134034371
+        }
+      ]
+    },
+    "validation": {
+      "passed": true,
+      "kind": "measured-calibration-not-performance",
+      "method": "Nonnegative least squares, chronological 70/30 holdout; median APE<=35%, p90<=75%, minimum40 decode rows per rank",
+      "identifiability": "Fixed per-stage layer counts make the six-column model collinear; p0,p2,p4 structurally zero, fit request/context/intercept terms",
+      "scope": "Observed execute+sample NPU event intervals include communication and synchronization gaps; profiling disabled in performance windows",
+      "ranks": [
+        {
+          "pp_rank": 0,
+          "tp_rank": 0,
+          "rows": 2420,
+          "holdout_rows": 726,
+          "median_ape": 0.03588762095162034,
+          "p90_ape": 0.0731095241309526,
+          "passed": true,
+          "sha256": "e28aff064848209e15f9a65f7227bae028588e65c9b26213b9f0aa37bd708cf2",
+          "request_range": [
+            1.0,
+            10.0
+          ],
+          "context_sum_range": [
+            1025.0,
+            262084.0
+          ]
+        },
+        {
+          "pp_rank": 0,
+          "tp_rank": 1,
+          "rows": 2420,
+          "holdout_rows": 726,
+          "median_ape": 0.03561428355786947,
+          "p90_ape": 0.0731395664458094,
+          "passed": true,
+          "sha256": "d307edfef63b20e8640f71cfe3b9deffd3d04a8350003ec9f82b3493135fca57",
+          "request_range": [
+            1.0,
+            10.0
+          ],
+          "context_sum_range": [
+            1025.0,
+            262084.0
+          ]
+        },
+        {
+          "pp_rank": 1,
+          "tp_rank": 0,
+          "rows": 2420,
+          "holdout_rows": 726,
+          "median_ape": 0.03399129607929348,
+          "p90_ape": 0.08005017345567796,
+          "passed": true,
+          "sha256": "68b29d653a0a8b429720fd8fe6366e4a6714bb23396d0d5598cb729c4dc7138f",
+          "request_range": [
+            1.0,
+            10.0
+          ],
+          "context_sum_range": [
+            1025.0,
+            262084.0
+          ]
+        },
+        {
+          "pp_rank": 1,
+          "tp_rank": 1,
+          "rows": 2420,
+          "holdout_rows": 726,
+          "median_ape": 0.034278038246449566,
+          "p90_ape": 0.078944821800909,
+          "passed": true,
+          "sha256": "7bb92835c7034c64ff4a23aa916c8e51c360acc93d945a49e285265dd8a083fe",
+          "request_range": [
+            1.0,
+            10.0
+          ],
+          "context_sum_range": [
+            1025.0,
+            262084.0
+          ]
+        }
+      ]
+    },
+    "policy_sha256": "75f1b100201142938cbf3bca9fc3057705e62d0358e51f961552df440c790bea",
+    "profiling_in_measurement": false
+  }
+}

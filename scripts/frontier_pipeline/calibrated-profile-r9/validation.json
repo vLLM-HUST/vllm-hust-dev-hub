@@ -1,0 +1,81 @@
+{
+  "passed": true,
+  "kind": "measured-calibration-not-performance",
+  "method": "Nonnegative least squares, chronological 70/30 holdout; median APE<=35%, p90<=75%, minimum40 decode rows per rank",
+  "identifiability": "Fixed per-stage layer counts make the six-column model collinear; p0,p2,p4 structurally zero, fit request/context/intercept terms",
+  "scope": "Observed execute+sample NPU event intervals include communication and synchronization gaps; profiling disabled in performance windows",
+  "ranks": [
+    {
+      "pp_rank": 0,
+      "tp_rank": 0,
+      "rows": 2415,
+      "holdout_rows": 725,
+      "median_ape": 0.04393870917094463,
+      "p90_ape": 0.08375496018767505,
+      "passed": true,
+      "sha256": "9701e481eb7baebac9df1ba0eab098394cc934535cec97bceaabed280cb4ccdf",
+      "request_range": [
+        1.0,
+        11.0
+      ],
+      "context_sum_range": [
+        1025.0,
+        262084.0
+      ]
+    },
+    {
+      "pp_rank": 0,
+      "tp_rank": 1,
+      "rows": 2415,
+      "holdout_rows": 725,
+      "median_ape": 0.0444782111629187,
+      "p90_ape": 0.08404659133705467,
+      "passed": true,
+      "sha256": "e78ab7d310817a7a64fb4e8bb251429ada5f4e4e9e52cd84ba32c432b572f334",
+      "request_range": [
+        1.0,
+        11.0
+      ],
+      "context_sum_range": [
+        1025.0,
+        262084.0
+      ]
+    },
+    {
+      "pp_rank": 1,
+      "tp_rank": 0,
+      "rows": 2415,
+      "holdout_rows": 725,
+      "median_ape": 0.047158842584196434,
+      "p90_ape": 0.089833692957963,
+      "passed": true,
+      "sha256": "d8668442843abd6bd052054d46abdfc940a55fd91ddf30cac6c5adc2148e0b0c",
+      "request_range": [
+        1.0,
+        11.0
+      ],
+      "context_sum_range": [
+        1025.0,
+        262084.0
+      ]
+    },
+    {
+      "pp_rank": 1,
+      "tp_rank": 1,
+      "rows": 2415,
+      "holdout_rows": 725,
+      "median_ape": 0.048214428488037225,
+      "p90_ape": 0.09045861243440036,
+      "passed": true,
+      "sha256": "3741dcdfbee2f136d7c6f0c8bc859ea7a82bcf64c45f3c4ea47e44e6dc580100",
+      "request_range": [
+        1.0,
+        11.0
+      ],
+      "context_sum_range": [
+        1025.0,
+        262084.0
+      ]
+    }
+  ]
+}
