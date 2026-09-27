@@ -12,3 +12,7 @@ requires `TASK_QUEUE_ENABLE=0`, while the frozen contract requires `1`. Pipeline
 PP1 to PP2. vSpec and DiffSpec replace MTP2 with another speculative method/model pair. LatchMoE and
 KVCompression require different models/topology or disable fixed Frontier features. Those are
 configuration incompatibilities, not missing numeric values to be filled with another baseline.
+
+`collect_when_complete.py` waits for this follow-up and the phase9 collection, copies the raw
+candidate capsule, and audits BidKV/DLA against phase9's five Native run IDs. The derived artifact
+must contain ten unique candidate run IDs and exactly five reused Native run IDs before publication.
