@@ -22,14 +22,19 @@ load("contract", HERE.parent / "frontier_unified/contract.py")
 unified = load(
     "phase9_unified_audit", HERE.parent / "frontier_unified/audit_results.py"
 )
+retry_auditor = load(
+    "phase9_retry_audit", HERE.parent / "frontier_unified/audit_retry_results.py"
+)
 followup = load("phase10_followup_contract", HERE / "contract.py")
 read = unified.read
 CELLS = unified.CELLS
 
 
-def audit(candidate_root: Path, native_root: Path) -> dict:
-    candidate_root, native_root = Path(candidate_root), Path(native_root)
-    native_audit = unified.audit(native_root)
+def audit(candidate_root: Path, retry_root: Path, native_root: Path) -> dict:
+    candidate_root = Path(candidate_root)
+    retry_root = Path(retry_root)
+    native_root = Path(native_root)
+    retry_audit = retry_auditor.audit(retry_root, native_root)
     campaign = read(candidate_root / "receipts/shared-native-followup-r1/status.json")
     if (
         campaign.get("passed") is not True
@@ -42,7 +47,7 @@ def audit(candidate_root: Path, native_root: Path) -> dict:
     manifest = read(candidate_root / "manifest.json")
     if (
         manifest.get("software_tests_passed") is not True
-        or manifest.get("baseline_id") != native_audit["baseline_id"]
+        or manifest.get("baseline_id") != retry_audit["baseline_id"]
     ):
         raise ValueError("Follow-up software admission or Native identity is missing")
     for relative, expected in manifest["sha256"].items():
@@ -60,18 +65,30 @@ def audit(candidate_root: Path, native_root: Path) -> dict:
     native = unified.checked_arm(
         native_root, "native", read(native_root / "manager-plans.json")
     )
-    phase9 = read(native_root / "receipts/shared-native-r1/status.json")
-    final_phase9_arm = phase9["arms"][-1]["arm"]
-    phase9_release = read(
-        native_root / f"receipts/{final_phase9_arm}-measured-r1/status.json"
-    )["hbm_after_stop"]["observed_unix"]
-    previous_release = phase9_release
-    seen_pids: set[int] = set()
+    retry_tiering = unified.checked_arm(
+        retry_root, "tiering", plans=read(retry_root / "manager-plans.json")
+    )
+    previous_release = retry_tiering["state"]["hbm_after_stop"]["observed_unix"]
+    seen_pids: set[int] = {
+        row["custody"]["server_pid"]
+        for row in (
+            unified.checked_arm(
+                native_root, "native", read(native_root / "manager-plans.json")
+            ),
+            unified.checked_arm(
+                retry_root,
+                "mooncake",
+                read(retry_root / "manager-plans.json"),
+                "mooncake-measured-r2",
+            ),
+            retry_tiering,
+        )
+    }
     for arm in followup.ARMS:
         checked = arms[arm]
         metadata = checked["metadata"]
         if (
-            metadata.get("shared_native_baseline_id") != native_audit["baseline_id"]
+            metadata.get("shared_native_baseline_id") != retry_audit["baseline_id"]
             or metadata.get("shared_native_contract_sha256") != native_contract_sha
             or metadata.get("runtime_source_files") != manifest["external_sha256"]
             or metadata.get("prepared_workload_sha256")
@@ -121,7 +138,7 @@ def audit(candidate_root: Path, native_root: Path) -> dict:
         "passed": True,
         "evidence_kind": "derived-artifact",
         "source_kind": "real-online",
-        "baseline_id": native_audit["baseline_id"],
+        "baseline_id": retry_audit["baseline_id"],
         "contract_sha256": native_contract_sha,
         "native_series_count": 1,
         "rows": rows,
@@ -129,4 +146,8 @@ def audit(candidate_root: Path, native_root: Path) -> dict:
 
 
 if __name__ == "__main__":
-    print(json.dumps(audit(Path(sys.argv[1]), Path(sys.argv[2])), indent=2))
+    print(
+        json.dumps(
+            audit(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])), indent=2
+        )
+    )

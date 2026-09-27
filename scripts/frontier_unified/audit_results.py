@@ -25,8 +25,8 @@ def digest_bytes(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
-def checked_arm(root, arm, plans):
-    run = root / "receipts" / f"{arm}-measured-r1"
+def checked_arm(root, arm, plans, attempt=None):
+    run = root / "receipts" / (attempt or f"{arm}-measured-r1")
     if (run / "FAILED.txt").exists():
         raise ValueError("Failed arm marker exists")
     state, custody = read(run / "status.json"), read(run / "custody.json")

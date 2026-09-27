@@ -1,4 +1,4 @@
-"""Durably collect and audit shared-Native BidKV/DLA follow-up results."""
+"""Collect candidate retries and audit them against the retained Native capsule."""
 
 from __future__ import annotations
 
@@ -11,14 +11,10 @@ import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-REMOTE = "/home/coder/frontier-mods-qwen35-20260925/phase10-followup-r1"
+REMOTE = "/home/coder/frontier-mods-qwen35-20260925/phase9-unified-retry-r1"
 NATIVE_COLLECTION = Path(
     "/home/shuhao/vllm-hust-dev-hub/.planning/"
     "unified-native-frontier-20260927/collection-r1"
-)
-RETRY_COLLECTION = Path(
-    "/home/shuhao/vllm-hust-dev-hub/.planning/"
-    "unified-native-retry-20260927/collection-r1"
 )
 SSH = [
     "ssh",
@@ -51,19 +47,9 @@ def main(output: str) -> None:
         "remote": REMOTE,
         "baseline_series_count": 1,
     }
-    sources = [
-        path
-        for directory in (
-            "frontier_unified",
-            "frontier_unified_followup",
-            "frontier_mooncake",
-            "frontier_tiering",
-            "frontier_dla",
-            "frontier_pipeline",
-            "frontier_runtime",
-        )
-        for path in (HERE.parent / directory).glob("*.py")
-    ]
+    sources = [path for path in HERE.glob("*.py")]
+    sources.extend((HERE.parent / "frontier_mooncake").glob("*.py"))
+    sources.extend((HERE.parent / "frontier_tiering").glob("*.py"))
     frozen = {str(path): digest(path) for path in sources}
     write(output / "collector-source-lock.json", frozen)
     deadline = time.monotonic() + 24 * 3600
@@ -72,7 +58,7 @@ def main(output: str) -> None:
         while time.monotonic() < deadline:
             result = subprocess.run(
                 SSH
-                + ["cat " + REMOTE + "/receipts/shared-native-followup-r1/status.json"],
+                + ["cat " + REMOTE + "/receipts/shared-native-retry-r1/status.json"],
                 capture_output=True,
                 text=True,
                 timeout=45,
@@ -88,13 +74,12 @@ def main(output: str) -> None:
             write(output / "status.json", status)
             time.sleep(60)
         else:
-            raise TimeoutError("Follow-up collection deadline")
+            raise TimeoutError("Candidate retry collection deadline")
         status["stage"] = "collecting"
         write(output / "status.json", status)
         archive_remote = REMOTE + "-results.tar.gz"
         command = (
-            "tar --exclude=./bundles --exclude=./__pycache__ "
-            "--exclude=./supervisor.sock -C "
+            "tar --exclude=./__pycache__ --exclude=./supervisor.sock -C "
             + REMOTE
             + " -czf "
             + archive_remote
@@ -104,7 +89,7 @@ def main(output: str) -> None:
         expected = subprocess.check_output(
             SSH + ["sha256sum " + archive_remote], text=True, timeout=30
         ).split()[0]
-        archive = output / "candidate-results.tar.gz"
+        archive = output / "retry-results.tar.gz"
         subprocess.run(
             [
                 "scp",
@@ -118,34 +103,30 @@ def main(output: str) -> None:
             timeout=600,
         )
         if digest(archive) != expected:
-            raise ValueError("Transferred follow-up archive hash differs")
-        candidate = output / "candidate-capsule"
-        candidate.mkdir()
+            raise ValueError("Transferred retry archive hash differs")
+        retry = output / "retry-capsule"
+        retry.mkdir()
         with tarfile.open(archive, "r:gz") as handle:
             for member in handle.getmembers():
-                target = (candidate / member.name).resolve()
-                if not target.is_relative_to(candidate) or not (
+                target = (retry / member.name).resolve()
+                if not target.is_relative_to(retry) or not (
                     member.isfile() or member.isdir()
                 ):
-                    raise ValueError("Unexpected follow-up archive member")
-            handle.extractall(candidate)
+                    raise ValueError("Unexpected retry archive member")
+            handle.extractall(retry)
         status["archive_sha256"] = expected
         if state is None or not state.get("passed"):
-            raise RuntimeError("Follow-up failed; collected without performance claims")
-        while time.monotonic() < deadline:
-            retry_status_path = RETRY_COLLECTION / "status.json"
-            if retry_status_path.exists():
-                retry_status = json.loads(retry_status_path.read_text())
-                if retry_status.get("passed") is True:
-                    break
-                if retry_status.get("stage") == "failed":
-                    raise RuntimeError("Candidate retry collection failed")
-            time.sleep(30)
-        else:
-            raise TimeoutError("Candidate retry collection deadline")
+            raise RuntimeError("Candidate retry failed; no performance claim allowed")
         native_status = json.loads((NATIVE_COLLECTION / "status.json").read_text())
-        if not native_status.get("archive_sha256"):
-            raise RuntimeError("Retained Native collection is unavailable")
+        native_capsule = NATIVE_COLLECTION / "capsule"
+        if (
+            not native_capsule.is_dir()
+            or not (
+                native_capsule / "receipts/native-measured-r1/status.json"
+            ).is_file()
+            or not native_status.get("archive_sha256")
+        ):
+            raise RuntimeError("Retained Native capsule is unavailable")
         if any(
             digest(Path(path)) != digest_expected
             for path, digest_expected in frozen.items()
@@ -154,10 +135,9 @@ def main(output: str) -> None:
         result = subprocess.run(
             [
                 sys.executable,
-                str(HERE / "audit_results.py"),
-                str(candidate),
-                str(RETRY_COLLECTION / "retry-capsule"),
-                str(NATIVE_COLLECTION / "capsule"),
+                str(HERE / "audit_retry_results.py"),
+                str(retry),
+                str(native_capsule),
             ],
             capture_output=True,
             text=True,
@@ -165,16 +145,14 @@ def main(output: str) -> None:
         )
         (output / "audit.log").write_text(result.stderr)
         if result.returncode:
-            raise RuntimeError("Follow-up raw-data audit failed")
+            raise RuntimeError("Candidate retry raw-data audit failed")
         audit = json.loads(result.stdout)
-        write(output / "followup-audit.json", audit)
+        write(output / "retry-audit.json", audit)
         status.update(
             passed=True,
             stage="ready-for-publication-review",
             published=False,
             points=len(audit["rows"]),
-            retry_collection=str(RETRY_COLLECTION),
-            retry_archive_sha256=retry_status["archive_sha256"],
             native_collection=str(NATIVE_COLLECTION),
             native_archive_sha256=native_status["archive_sha256"],
         )
