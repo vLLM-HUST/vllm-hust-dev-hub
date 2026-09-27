@@ -116,6 +116,15 @@ are nonnegative. Drains are excluded from throughput.
 
 Public report: https://github.com/vLLM-HUST/vllm-hust-website/blob/main/docs/FRONTIER-QWEN35-PIPELINE-K8S.md
 
+## Extension Manager launch acceptance
+
+The measured command has also passed a separate ECPA-managed real-online smoke.
+The manager rendered the same calibrated policy configuration, started the PP2×TP2
+service, served a real completion, exposed nonzero policy calls/admissions and then
+released all four devices. This lifecycle smoke did not rerun or replace the
+performance windows. Its adapter, frozen manager input and receipt are under
+[`ecpa/`](ecpa/README.md).
+
 For reproduction, preserve the frozen runtime and use a fresh output namespace.
 Calibration requires a new writable `FRONTIER_PP_CALIBRATION_DIR`; collect actual
 rank records with the common worker, fit/validate them, then qualify the candidate

@@ -1,0 +1,14 @@
+{
+  "schema_version": "0.2-experimental",
+  "extension_id": "org.vllm-hust.pipeline-frontier-adapter",
+  "extension_version": "0.1.0",
+  "kind": "scheduler_policy",
+  "host": {"provider": "vllm", "name": "vllm", "version_range": ">=0.25.1,<0.26", "api_range": ">=1,<2"},
+  "runtime": {"type": "python", "process_scope": "scheduler", "isolation": "trusted_in_process"},
+  "lifecycle_owner": "vllm",
+  "protocols": [{"name": "vllm.batch-admission-policy", "version_range": ">=1.1,<2"}],
+  "implementation": [{"type": "python_module", "module": "vllm_hust_pipeline_microbatch.policy", "object": "PipelineMicrobatchPolicy", "status": "active"}],
+  "requires_services": [],
+  "components": [{"component_id": "batch-admission-policy", "contracts": ["vllm.batch-admission-policy.v1"], "execution_planes": ["scheduler"], "isolation": "trusted_in_process", "implementation_ref": "vllm_hust_pipeline_microbatch.policy:PipelineMicrobatchPolicy", "permissions": []}],
+  "activation": {"entry_points": [], "environment": {}, "additional_config": {}}
+}
