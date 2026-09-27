@@ -69,6 +69,13 @@ def test_point_uses_public_mod_id_and_unified_series(tmp_path: Path):
         "swe-unified-kv-tiering-migration-20260927"
     )
     assert point["configuration"]["parameters"]["host_kv_budget_gib"] == 8
+    assert point["configuration"]["parameters"]["host_memory_policy"] == (
+        "8 GiB candidate host KV tier"
+    )
+    assert (
+        "Same explicit 26038239232-byte device KV budget"
+        in point["configuration"]["parameters"]["capacity_policy"]
+    )
     assert point["metrics"]["output_tps"] == 123.5
     assert point["evidence"]["run_ids"] == ["real-run"]
     assert evidence["validation"]["shared_native_contract_sha256"] == "contract"

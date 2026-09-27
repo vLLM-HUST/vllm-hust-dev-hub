@@ -147,6 +147,15 @@ def build_point(
         participating_deployment_chips=metadata["serving_chips"],
         pod_npu_quota=metadata["container_allocated_npus"],
         host_kv_budget_gib=8 if arm == "tiering" else 0,
+        host_memory_policy=(
+            "8 GiB candidate host KV tier"
+            if arm == "tiering"
+            else "No declared local host KV tier"
+        ),
+        capacity_policy=(
+            "Same explicit 26038239232-byte device KV budget per chip in every arm; "
+            "candidate storage is part of the MOD treatment"
+        ),
         unified_native_contract_sha256=contract_sha,
     )
     configuration["mod_sources"] = []
