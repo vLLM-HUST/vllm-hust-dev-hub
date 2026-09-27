@@ -267,6 +267,12 @@ def publish(args) -> dict:
         )
         if arm:
             entry["series_id"] = SERIES[arm]
+            entry["url"] = args.evidence_url
+            entry["ecpa"] = {
+                "launch_acceptance": "manager-verified",
+                "configuration_path": "manager-standard",
+                "analysis_integration": "external-harness",
+            }
     for path, value in (
         (frontier_path, frontier),
         (evidence_path, evidence),
