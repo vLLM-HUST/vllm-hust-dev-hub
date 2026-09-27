@@ -6,7 +6,7 @@ container, service unit, model, device or Mod is registered by this repository.
 
 The broker listens on an administrator-selected AF_UNIX socket and derives every
 caller UID, PID and process start tick with `SO_PEERCRED` and `/proc`. Its root-owned
-policy maps an `instance_id` and `start`/`stop` action to one exact argv, cwd,
+policy maps an `instance_id` and `start`/`stop`/`restart` action to one exact argv, cwd,
 environment, health socket and policy digest. Requests cannot carry commands,
 paths, images, PIDs, UIDs, owner claims or environment values.
 
@@ -23,12 +23,16 @@ All requests and replies are bounded JSON objects using
 - `execute(instance_id, lifecycle_action, grant)` is accepted only from the fixed
   target owner UID. Claim atomically consumes the grant and binds it to that peer,
   action digest, operation, generation, target spec, executor and fence.
-- `canary_status(inert-canary)` and `canary_lifecycle(inert-canary, start|stop)`
+- `canary_status(inert-canary)` and
+  `canary_lifecycle(inert-canary, start|stop|restart|rollback)`
   are controller-peer-only convenience operations for the bundled CPU self-test.
   The broker creates the immutable plan, approval and reservation, keeps forward
   and rollback grants in broker memory, executes under its fixed owner UID, and
   commits only after PID/start-ticks health verification. These operations cannot
   address a shared instance or carry a command, Mod, image, owner, approval or grant.
+  `restart` performs a fenced process replacement while retaining the running
+  specification. `rollback` is a Controller rollback to the retained stopped
+  specification and is available only after a successful start retained it.
 
 The fixed process adapter persists PID/start-ticks and the policy digest inside
 the same SQLite transaction that guards spawn. Stop signals only that exact live

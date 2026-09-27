@@ -1,0 +1,7 @@
+{
+  "schema": "vllm-hust.production-backend/v1",
+  "enabled": false,
+  "executor_uid": 65534,
+  "state_directory": "/var/lib/vllm-hust-lifecycle",
+  "targets": []
+}

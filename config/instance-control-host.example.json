@@ -1,0 +1,8 @@
+{
+  "schema": "vllm-hust.instance-control-host/v1",
+  "enabled": false,
+  "state_directory": "/var/lib/vllm-hust-instance-control",
+  "administrator_uids": [0],
+  "backend_ids": [],
+  "candidates": {}
+}

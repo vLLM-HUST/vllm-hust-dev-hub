@@ -74,6 +74,11 @@ class Store:
         return decode(row[0])
 
     @staticmethod
+    def get_value(row):
+        """Decode a row selected directly from the documents table."""
+        return decode(row[0])
+
+    @staticmethod
     def put(db, kind, key, value, *, immutable=False):
         encoded = canonical(value)
         if immutable:

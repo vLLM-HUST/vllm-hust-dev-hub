@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 
@@ -58,8 +59,43 @@ def test_current_explicit_allowlist_is_preserved_and_shell_quoted() -> None:
     ]
 
 
+def test_responses_runtime_configuration_is_forwarded_without_product_glue() -> None:
+    exports = container_env_exports.render_exports(
+        {
+            "VLLM_ENABLE_RESPONSES_API_STORE": "1",
+            "VLLM_OPENAI_MODELS_CATALOG_JSON": "/runtime/model-catalog.json",
+            "VLLM_RESPONSES_API_STORE_MAX_ENTRIES": "256",
+            "VLLM_RESPONSES_API_STORE_TTL_SECONDS": "3600",
+        }
+    )
+
+    assert exports == [
+        "export VLLM_ENABLE_RESPONSES_API_STORE=1",
+        "export VLLM_OPENAI_MODELS_CATALOG_JSON=/runtime/model-catalog.json",
+        "export VLLM_RESPONSES_API_STORE_MAX_ENTRIES=256",
+        "export VLLM_RESPONSES_API_STORE_TTL_SECONDS=3600",
+    ]
+
+
 def test_launcher_uses_the_testable_export_renderer() -> None:
     launcher = (Path(__file__).parents[1] / "scripts/run_vllm_hust_engine.sh").read_text()
 
     assert 'python3 "$repo_root/scripts/container_env_exports.py"' in launcher
     assert "safe_token_keys =" not in launcher
+
+
+def test_qwen38_catalog_has_a_single_matching_slug_and_safe_compaction_limit() -> None:
+    catalog_path = (
+        Path(__file__).parents[1]
+        / "config"
+        / "model-catalogs"
+        / "qwen3.8-27b.json"
+    )
+    payload = json.loads(catalog_path.read_text(encoding="utf-8"))
+
+    assert [model["slug"] for model in payload["models"]] == [
+        "Qwen/Qwen3.8-27B"
+    ]
+    model = payload["models"][0]
+    assert 0 < model["auto_compact_token_limit"] < model["context_window"]
+    assert model["apply_patch_tool_type"] == "freeform"

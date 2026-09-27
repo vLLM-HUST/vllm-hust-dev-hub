@@ -133,10 +133,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -n "$optimization_profile" ]]; then
+  optimization_workspace_root="${VLLM_OPTIMIZATION_WORKSPACE_ROOT:-$repo_root/..}"
   profile_command=(
     python3 "$repo_root/scripts/optimization_profile.py"
     --profile "$optimization_profile"
-    --workspace-root "$repo_root/.."
+    --workspace-root "$optimization_workspace_root"
   )
   for parameter in "${optimization_params[@]}"; do
     profile_command+=(--param "$parameter")
@@ -226,10 +227,14 @@ Type=simple
 WorkingDirectory=$repo_root
 EnvironmentFile=-$unit_env_path
 ExecStart=$repo_root/scripts/run_vllm_hust_engine.sh
+ExecStop=$repo_root/scripts/cleanup_vllm_hust_engine.sh
 Restart=on-failure
 RestartSec=10
 TimeoutStopSec=60
-KillMode=control-group
+# Container workers are outside this user unit's cgroup. The explicit ExecStop
+# owns their bounded TERM/KILL lifecycle; only the host launcher is signalled by
+# systemd after that cleanup completes.
+KillMode=process
 
 [Install]
 WantedBy=default.target
@@ -278,7 +283,6 @@ case "$action" in
   stop)
     require_unit
     systemctl --user stop "$unit_name"
-    "$repo_root/scripts/cleanup_vllm_hust_engine.sh" || true
     systemctl --user --no-pager --full status "$unit_name" || true
     ;;
   restart)

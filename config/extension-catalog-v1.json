@@ -1,0 +1,1335 @@
+{
+  "schema": "vllm-hust.extension-catalog/v1",
+  "generated_at": "2026-09-07T00:00:00Z",
+  "source": {
+    "ref": "extension-manager/main",
+    "commit": "cf1ea71e3e2cb81ab06267ef05eddb3e580ea20b"
+  },
+  "policy": {
+    "availability": "Passed function and recovery plus immutable installation determine availability.",
+    "performance": "Negative performance is scoped to recommendation and does not hide a functionally qualified extension.",
+    "preview": "Unverified function or recovery is visible but never enableable.",
+    "runtime_state": "Installed, configured, enabled, and runtime effective are independent states."
+  },
+  "extensions": [
+    {
+      "id": "adaptive-quantized-kv",
+      "name": "Adaptive Quantized KV",
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-adaptive-quantized-kv-hust",
+      "source": {
+        "ref": "main",
+        "commit": "ddd306fce8d885b9b9cfeb8c947ed576c5269e66"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "Model/KV dtype/operator correctness and rollback are unverified.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "adaptive-quantized-kv-target",
+          "description": "Dynamic KV quantization under capacity pressure.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "Potential KV capacity reduction; unmeasured.",
+        "cost": "Quantize/dequantize overhead and quality risk; unmeasured."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    },
+    {
+      "id": "bidkv",
+      "name": "BidKV",
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-bidkv",
+      "source": {
+        "ref": "main",
+        "commit": "ba700cb69ed5c84f012e5103eb115aa22cdbc1f5"
+      },
+      "maturity": "qualified",
+      "availability": "available",
+      "installation": {
+        "type": "python-source",
+        "repository": "https://github.com/vLLM-HUST/vllm-hust-bidkv",
+        "commit": "199e0bdc6fc38fc9b14b626515efdcbf81de0b62",
+        "manifest_path": ".vllm-hust/optimization.json",
+        "manifest_sha256": "sha256:5c12035115b5d44ea0be48ac39d7d5c0414eade103d176d7e24dd6f0a2b17d23",
+        "source_subdir": "src",
+        "entrypoint": {
+          "group": "vllm_hust.extension_bundles",
+          "name": "org.vllm-hust.bidkv"
+        }
+      },
+      "enablement": {
+        "allowed": true,
+        "blocker": null
+      },
+      "runtime_requirements": {
+        "models": [
+          "Qwen3.8-27B"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "TP4 FULL_DECODE_ONLY graph"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "passed",
+        "scope": "Four-rank graph, output, cancellation, and recovery gates.",
+        "recovery": "passed",
+        "evidence": [
+          "https://github.com/vLLM-HUST/vllm-hust-bidkv/blob/ba700cb69ed5c84f012e5103eb115aa22cdbc1f5/docs/evidence/sage-mate-20260905-current-main-tp4-graph-r2.md"
+        ]
+      },
+      "tested_effects": [
+        {
+          "status": "inconclusive",
+          "cell": "ascending mixed, concurrency 4, 1-GiB KV pressure, n=3",
+          "summary": "Intervals overlap and one repeat did not invoke policy.",
+          "evidence": [
+            "docs/sage-mate-mod-compatibility-20260904.md"
+          ]
+        },
+        {
+          "status": "not-recommended-for-tested-cell",
+          "cell": "interactive, concurrency 8, 1-GiB KV pressure, n=3",
+          "summary": "Throughput -25.31%; P95 latency +34.57%.",
+          "evidence": [
+            "docs/sage-mate-mod-compatibility-20260904.md"
+          ]
+        }
+      ],
+      "expected_scenarios": [
+        {
+          "id": "high-kv-pressure-heterogeneous",
+          "description": "High KV pressure with heterogeneous remaining lengths, SLOs, and priorities.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "not-recommended-for-tested-cell",
+        "reason": "Functionally available; the measured interactive cell regressed."
+      },
+      "resource_tradeoff": {
+        "benefit": "May improve victim choice under sustained KV pressure.",
+        "cost": "Scheduler scoring overhead; no HBM saving is claimed."
+      },
+      "conflicts": [
+        {
+          "id": "bidkv-legacy",
+          "reason": "Removed private victim-selector path."
+        }
+      ],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "Disable the preemption policy.",
+          "Restart through the managed graph launcher and verify baseline output."
+        ]
+      }
+    },
+    {
+      "id": "clm-lifecycle",
+      "name": "CLM Lifecycle",
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-clm-lifecycle",
+      "source": {
+        "ref": "main",
+        "commit": "7657592806b76d8436458c9ac06a292a5e76e048"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "Resource ownership, fencing, cancellation, and recovery unverified.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "clm-lifecycle-target",
+          "description": "Cache and model resource lifecycle management.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "Potential resource reclamation; unmeasured.",
+        "cost": "Lifecycle race and ownership risk."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    },
+    {
+      "id": "diffspec",
+      "name": "DiffSpec",
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec",
+      "source": {
+        "ref": "main",
+        "commit": "42e5909fc6fe276ba0defe1901257a523653aefb"
+      },
+      "maturity": "qualified",
+      "availability": "available",
+      "installation": {
+        "type": "python-source",
+        "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec",
+        "commit": "c78f55c7e4923da342f2fc52c2cb509c150e5363",
+        "manifest_path": ".vllm-hust/optimization.json",
+        "manifest_sha256": "sha256:b791c8c3ade03c665f8fedd2285c260f390e88687373b64cd3dfde9b6ac70878",
+        "source_subdir": "",
+        "entrypoint": {
+          "group": "vllm.general_plugins",
+          "name": "diffspec"
+        }
+      },
+      "enablement": {
+        "allowed": true,
+        "blocker": null
+      },
+      "runtime_requirements": {
+        "models": [
+          "Qwen3.8-27B"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "TP4 FULL_DECODE_ONLY graph"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [
+          {
+            "model": "VirVen/Qwen3.5-27B-EAGLE3-v2",
+            "sha256": "sha256:a57cefc45874197a24dd2a092cfd0d0f7d6a2f2cca156d09f2d2f4a56dc4e5be",
+            "required": true
+          }
+        ],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "Target and exact draft model must both fit the qualified lane.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "passed",
+        "scope": "Four-rank draft/KV metadata, graph, concurrency, cancel/recovery.",
+        "recovery": "passed",
+        "evidence": [
+          "https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec/blob/c78f55c7e4923da342f2fc52c2cb509c150e5363/docs/evidence/sage-mate-20260904-checkpoint-gate.md"
+        ]
+      },
+      "tested_effects": [
+        {
+          "status": "not-recommended-for-tested-cell",
+          "cell": "qualified Eagle3 configuration",
+          "summary": "Acceptance 19.29%; output 14.00 versus 47.72 tok/s.",
+          "evidence": [
+            "docs/sage-mate-mod-compatibility-20260904.md"
+          ]
+        }
+      ],
+      "expected_scenarios": [
+        {
+          "id": "high-acceptance-long-output-depth-sweep",
+          "description": "High draft acceptance, long output, reachable long-context threshold, and draft depths 1/2/3.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "not-recommended-for-tested-cell",
+        "reason": "Correct and available, but the exact draft is slower in this cell."
+      },
+      "resource_tradeoff": {
+        "benefit": "Can reduce target decode work when acceptance is high.",
+        "cost": "Draft weights, draft forward passes, and rank synchronization."
+      },
+      "conflicts": [
+        {
+          "id": "latchmoe",
+          "reason": "The qualified activation plans conflict."
+        }
+      ],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "Disable speculative configuration.",
+          "Restart target-only graph service and verify recovery output."
+        ]
+      }
+    },
+    {
+      "id": "knorm",
+      "name": "KNorm",
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-knorm",
+      "source": {
+        "ref": "main",
+        "commit": "e0e872abfc9fa88659b3e83c1c8b8b2b3de88fc0"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "Documentation-only scaffold; no package, license file, or runtime.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "knorm-target",
+          "description": "Normalization and KV-compression interaction research.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "No resource benefit demonstrated.",
+        "cost": "Unknown operator, quality, and long-context risk."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    },
+    {
+      "id": "kv-tiering",
+      "name": "KV Tiering",
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-tiering",
+      "source": {
+        "ref": "main",
+        "commit": "3a73c7e1628801ea5d4f585bcc9d06260161a78c"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "Documentation-only scaffold; storage consistency unverified.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "kv-tiering-target",
+          "description": "KV migration across device, CPU, and storage tiers.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "Potential effective KV capacity increase; unmeasured.",
+        "cost": "Transfer latency, storage durability, and data-lifecycle risk."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    },
+    {
+      "id": "kv-transfer-observability",
+      "name": "KV Transfer Observability",
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-transfer-observability",
+      "source": {
+        "ref": "main",
+        "commit": "70d1fdc05c7a56e29b452aa11ee00f701749cb94"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "Metric completeness, cardinality, overhead, and recovery unverified.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "kv-transfer-observability-target",
+          "description": "KV transfer failure and recovery observability.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "Operational visibility rather than serving acceleration.",
+        "cost": "Telemetry overhead and cardinality risk."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    },
+    {
+      "id": "kvcompress",
+      "name": "KVCompress",
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-kvcompress-hust",
+      "source": {
+        "ref": "master",
+        "commit": "db18568aa8ce01c6d66d4e96b9357fdf766fdcde"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "Current model, attention backend, quality, and recovery unverified.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "kvcompress-target",
+          "description": "Long-context KV compression.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "Potential KV capacity reduction; unmeasured.",
+        "cost": "Quality and latency tradeoff; unmeasured."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    },
+    {
+      "id": "latchmoe",
+      "name": "LatchMoE",
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE",
+      "source": {
+        "ref": "main",
+        "commit": "9b2d4acdbfbe6463a22dd0bb8e6ca5bfda47e2c1"
+      },
+      "maturity": "qualified",
+      "availability": "available",
+      "installation": {
+        "type": "python-source",
+        "repository": "https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE",
+        "commit": "63781f3dd0235f933735bfd8ce614d388093c0b5",
+        "manifest_path": ".vllm-hust/optimization.json",
+        "manifest_sha256": "sha256:aa6d2b3ac6ed10add531448aa8c09c061ca898054c96b69eab1ab2509db35068",
+        "source_subdir": "",
+        "entrypoint": {
+          "group": "vllm.general_plugins",
+          "name": "moe_offload_ascend"
+        }
+      },
+      "enablement": {
+        "allowed": true,
+        "blocker": null
+      },
+      "runtime_requirements": {
+        "models": [
+          "Qwen3-30B-A3B",
+          "Qwen3.8-27B (not applicable: dense)"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "TP4 PIECEWISE graph"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "Capacity mechanism; exact HBM saving curve remains unverified.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "passed",
+        "scope": "MoE mapping, swap, address stability, concurrency, recovery.",
+        "recovery": "passed",
+        "evidence": [
+          "https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE/blob/9b2d4acdbfbe6463a22dd0bb8e6ca5bfda47e2c1/docs/evidence/sage-mate-20260904-tp4-graph.md"
+        ]
+      },
+      "tested_effects": [
+        {
+          "status": "not-recommended-for-tested-cell",
+          "cell": "Qwen3-30B-A3B qualified offload configuration",
+          "summary": "Output 2.91 versus 23.57 tok/s baseline.",
+          "evidence": [
+            "docs/sage-mate-mod-compatibility-20260904.md"
+          ]
+        }
+      ],
+      "expected_scenarios": [
+        {
+          "id": "capacity-first-moe-sweep",
+          "description": "Model does not fit HBM; sweep slots, resident experts, and prefetch for HBM-saving/throughput curves.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "capacity-only-not-recommended-for-tested-cell",
+        "reason": "Dense Qwen3.8 is not applicable; measured MoE cell regressed."
+      },
+      "resource_tradeoff": {
+        "benefit": "May make an otherwise non-fitting MoE model runnable.",
+        "cost": "Host/device transfers and severe measured throughput loss."
+      },
+      "conflicts": [
+        {
+          "id": "diffspec",
+          "reason": "The qualified activation plans conflict."
+        }
+      ],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "Disable expert offload.",
+          "Restart the baseline MoE graph service and verify stable health."
+        ]
+      }
+    },
+    {
+      "id": "mapped-kv-offload",
+      "name": "Mapped KV Offload",
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-mapped-kv-offload-hust",
+      "source": {
+        "ref": "main",
+        "commit": "8d4dc47063f164d5cb5859f35bf9d5087544648d"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "Worker adapter, native operator, NUMA, isolation, recovery unverified.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "mapped-kv-offload-target",
+          "description": "Host-memory-assisted KV offload.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "Potential effective KV capacity increase; unmeasured.",
+        "cost": "Host/device transfer and NUMA placement cost."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    },
+    {
+      "id": "pegaflow",
+      "name": "PegaFlow",
+      "repository": "https://github.com/vLLM-HUST/pegaflow-hust",
+      "source": {
+        "ref": "main",
+        "commit": "a3c574b8526969b70654715d86976474a4cc1b58"
+      },
+      "maturity": "external",
+      "availability": "external",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "Externally operated service; Workstation has no lifecycle authority."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Service-defined"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "External endpoint"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "Owned and governed by the PegaFlow operator.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "external",
+        "scope": "Endpoint health and data lifecycle are operator-owned.",
+        "recovery": "not-applicable",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "existing-pegaflow-service",
+          "description": "Connect to an independently operated PegaFlow KV service.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "scenario-dependent-external",
+        "reason": "Use only with an owned endpoint and operator evidence."
+      },
+      "resource_tradeoff": {
+        "benefit": "External KV capacity and transfer services.",
+        "cost": "Network, storage, consistency, and external lifecycle dependency."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "external PegaFlow operator",
+        "steps": [
+          "Remove Workstation connection intent; do not delete external data."
+        ]
+      }
+    },
+    {
+      "id": "pipeline-microbatch",
+      "name": "Pipeline Microbatch",
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-pipeline-microbatch",
+      "source": {
+        "ref": "main",
+        "commit": "a15a22961a0e4858da74a0ab806575c82cb254e6"
+      },
+      "maturity": "qualified",
+      "availability": "available",
+      "installation": {
+        "type": "python-source",
+        "repository": "https://github.com/vLLM-HUST/vllm-hust-pipeline-microbatch",
+        "commit": "a15a22961a0e4858da74a0ab806575c82cb254e6",
+        "manifest_path": ".vllm-hust/optimization.json",
+        "manifest_sha256": "sha256:43c96338d784ea77d471143dd4a9454aace645a6476630e8d08afb97f8e5982c",
+        "source_subdir": "src",
+        "entrypoint": {
+          "group": "vllm_hust.extension_bundles",
+          "name": "org.vllm-hust.pipeline-microbatch"
+        }
+      },
+      "enablement": {
+        "allowed": true,
+        "blocker": null
+      },
+      "runtime_requirements": {
+        "models": [
+          "Qwen3.8-27B"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "PP2 x TP2 FULL_DECODE_ONLY graph"
+        ],
+        "core": "0.28.1rc1.dev319@3e57b2f75cffffd26dda0df4d9bcac890cfe99fc",
+        "ascend": "0.25.1rc1@1cf88e9e6e513282cf02dfc9b3e806967387125c",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "passed",
+        "scope": "Policy invocation, output, concurrency, cancellation, recovery.",
+        "recovery": "passed",
+        "evidence": [
+          "https://github.com/vLLM-HUST/vllm-hust-pipeline-microbatch/blob/a15a22961a0e4858da74a0ab806575c82cb254e6/docs/evidence/sage-mate-20260905-qwen38-pp2tp2-graph.md"
+        ]
+      },
+      "tested_effects": [
+        {
+          "status": "not-recommended-for-tested-cell",
+          "cell": "Qwen3.8 PP2 x TP2, concurrency 8",
+          "summary": "Uniform throughput -4.37%; mixed throughput -26.33%, mixed P95 +80.16%.",
+          "evidence": [
+            "https://github.com/vLLM-HUST/vllm-hust-pipeline-microbatch/blob/a15a22961a0e4858da74a0ab806575c82cb254e6/docs/evidence/sage-mate-20260905-qwen38-pp2tp2-graph.md"
+          ]
+        }
+      ],
+      "expected_scenarios": [
+        {
+          "id": "fresh-rank-local-calibration",
+          "description": "Pipeline-parallel workload with fresh per-rank calibration.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "not-recommended-for-tested-cell",
+        "reason": "Available after integration merge; measured balanced cell regressed."
+      },
+      "resource_tradeoff": {
+        "benefit": "May reduce pipeline bubbles after valid calibration.",
+        "cost": "Admission overhead and severe long-request tail imbalance measured."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "Remove batch-admission policy arguments.",
+          "Restart the built-in scheduler and verify recovery output."
+        ]
+      }
+    },
+    {
+      "id": "prefix-router",
+      "name": "Prefix Router",
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-prefix-router",
+      "source": {
+        "ref": "main",
+        "commit": "4e007c4fc1bd376a6dccfefbc1fd851019c8ceb6"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "Documentation-only scaffold; no package, license file, or failover.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "prefix-router-target",
+          "description": "Multi-replica prefix-affinity routing.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "Potential prefix-cache hit increase; unmeasured.",
+        "cost": "Load skew, stale cache events, and failover risk."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    },
+    {
+      "id": "pyramidkv",
+      "name": "PyramidKV",
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-pyramidkv-hust",
+      "source": {
+        "ref": "main",
+        "commit": "77b0862c1e5be8c883fda934cdb383c57cf7ad0d"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "Layer policy, model structure, quality, graph, recovery unverified.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "pyramidkv-target",
+          "description": "Layered KV retention for long context.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "Potential KV capacity reduction; unmeasured.",
+        "cost": "Quality and graph-shape risk."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    },
+    {
+      "id": "qos-scheduler",
+      "name": "QoS Scheduler",
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-qos-scheduler",
+      "source": {
+        "ref": "main",
+        "commit": "13d376a7d8990c4dcf5c0903cb6fbf2398ef0fb0"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "API attachment, fairness, starvation, cancellation, recovery unverified.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "qos-scheduler-target",
+          "description": "Multi-tenant priority and SLO isolation.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "Potential tail-latency/SLO control; unmeasured.",
+        "cost": "Fairness and aggregate throughput tradeoff."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    },
+    {
+      "id": "quantized-kv-cache",
+      "name": "Quantized KV Cache",
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-quantized-kv-cache-hust",
+      "source": {
+        "ref": "main",
+        "commit": "8dd24cdce248519c173710993f6c633a96107c0d"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "INT8/KIVI INT4 quality, graph, concurrency, recovery unverified.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "quantized-kv-cache-target",
+          "description": "Long-context KV capacity and quantization tradeoff.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "Potential KV capacity reduction; unmeasured.",
+        "cost": "Quantization quality and operator overhead."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    },
+    {
+      "id": "scheduler-policy-lab",
+      "name": "Scheduler Policy Lab",
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-scheduler-policy-lab",
+      "source": {
+        "ref": "main",
+        "commit": "215bdab44fb572f125e1426f78103e4d4ac7b833"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "Each policy requires independent correctness and recovery evidence.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "scheduler-policy-lab-target",
+          "description": "Scheduler policy A/B and behavior observation.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "Research comparison infrastructure.",
+        "cost": "Experimental policies may violate fairness or SLOs."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    },
+    {
+      "id": "simllm",
+      "name": "SimLLM",
+      "repository": "https://github.com/vLLM-HUST/vllm-ascend-simllm-hust",
+      "source": {
+        "ref": "main",
+        "commit": "dcdc6edf7bdcc68bdf35058888ebfd9752ae3566"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "Simulation is not a production-worker qualification.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "simllm-target",
+          "description": "Serving strategy simulation and design screening.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "Low-cost design exploration, not runtime acceleration.",
+        "cost": "Modeling error; simulated results cannot be called measured."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    },
+    {
+      "id": "slicegpt",
+      "name": "SliceGPT",
+      "repository": "https://github.com/vLLM-HUST/vllm-hust-slicegpt",
+      "source": {
+        "ref": "main",
+        "commit": "6acf19d9cbb3ed6caa3f5e6341b1da41941f9f2e"
+      },
+      "maturity": "preview",
+      "availability": "preview",
+      "installation": null,
+      "enablement": {
+        "allowed": false,
+        "blocker": "No current-baseline functional and recovery qualification with an immutable Extension Manager manifest."
+      },
+      "runtime_requirements": {
+        "models": [
+          "Model support unverified"
+        ],
+        "hardware": [
+          "Ascend NPU"
+        ],
+        "topologies": [
+          "Topology support unverified"
+        ],
+        "core": "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8",
+        "ascend": "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394",
+        "additional_models": [],
+        "storage": "No additional persistent storage is required.",
+        "hbm": "No incremental HBM benefit is claimed.",
+        "environment": {}
+      },
+      "functional_qualification": {
+        "status": "unverified",
+        "scope": "Documentation-only scaffold; compressed model artifact absent.",
+        "recovery": "unverified",
+        "evidence": []
+      },
+      "tested_effects": [],
+      "expected_scenarios": [
+        {
+          "id": "slicegpt-target",
+          "description": "Compressed-model capacity, quality, and performance tradeoff.",
+          "status": "unverified",
+          "evidence": []
+        }
+      ],
+      "recommendation": {
+        "level": "experimental-preview",
+        "reason": "Inspect only; do not prepare, configure, or enable."
+      },
+      "resource_tradeoff": {
+        "benefit": "Potential model HBM reduction; unmeasured.",
+        "cost": "Model conversion, quality, loader, and missing-license risk."
+      },
+      "conflicts": [],
+      "rollback": {
+        "owner": "operator",
+        "steps": [
+          "No activation is permitted; remove preview metadata only."
+        ]
+      }
+    }
+  ]
+}

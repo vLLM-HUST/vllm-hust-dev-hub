@@ -9,30 +9,30 @@
   "vllm_core": {
     "repository": "git@github.com:vLLM-HUST/vllm-hust.git",
     "branch": "main",
-    "commit": "762f85b311fbab0bcf8921dd216f5093cd58b9b8",
-    "upstream_base_commit": "2a4e3cc3dbddf4f44d69864209361f1e2a70c79a",
-    "source_channel": "upstream-main-snapshot",
-    "source_version": "0.28.1rc1.dev319+g762f85b31",
-    "package_version": "0.28.1rc1.dev319+g762f85b31.empty",
+    "commit": "a67f6a5dda6e6b81eb42d0ef82c7fca864ca969f",
+    "upstream_base_commit": "6c73b08dec2af5052288169663549687ba61f330",
+    "source_channel": "hust-main-upstream-synchronized-snapshot",
+    "source_version": "0.28.1.post1.dev73+ga67f6a5dd",
+    "package_version": "0.28.1.post1.dev73+ga67f6a5dd.empty",
     "artifact": {
-      "filename": "vllm-0.28.1rc1.dev319+g762f85b31.empty-cp312-cp312-linux_aarch64.whl",
-      "sha256": "ac0c941e6c076198f9c97c45f878188030f7319cb3d5b1d20b60e8f7168eb51d"
+      "filename": "vllm-0.28.1.post1.dev73+ga67f6a5dd.empty-cp312-cp312-linux_aarch64.whl",
+      "sha256": "1a1d707c8d28a86d13afd30620508aba8e278c5bdff0a635fe733ad486174acd"
     }
   },
   "vllm_ascend": {
     "repository": "git@github.com:vLLM-HUST/vllm-ascend-hust.git",
     "branch": "main",
-    "commit": "4e57439e58ed3d78e675f9fd7b4614fb183c5394",
-    "upstream_base_commit": "6d02e22f078e59eb4b7947a887116151ad8eb100",
-    "source_channel": "hust-main-tagged-snapshot",
+    "commit": "74f0c0a272376412b51e1c1864803d5f3a0f1b5f",
+    "upstream_base_commit": "b0c49dc7a884d3d343f6a556380f11b74191c3e8",
+    "source_channel": "hust-main-upstream-synchronized-snapshot",
     "source_tag": "v0.25.1rc1+hust.20260903.4",
     "upstream_release_baseline": "v0.25.1rc1",
-    "source_version": "0.25.1rc1+hust.20260903.4",
-    "package_version": "0.25.1rc1+hust.20260903.4",
+    "source_version": "0.25.1rc2.dev125+hust.20260903.4.g74f0c0a27",
+    "package_version": "0.25.1rc2.dev125+hust.20260903.4.g74f0c0a27",
     "verified_core_file": ".github/vllm-main-verified.commit",
     "artifact": {
-      "filename": "vllm_ascend-0.25.1rc1+hust.20260903.4-cp312-cp312-linux_aarch64.whl",
-      "sha256": "f13964eaf1f2b2edde43365533298b9054d2ae9dd988b41eba8c5eac387e5549"
+      "filename": "vllm_ascend-0.25.1rc2.dev125+hust.20260903.4.g74f0c0a27-cp312-cp312-linux_aarch64.whl",
+      "sha256": "d4f71512255d06510b3b08e13e20c7283b89d860b3f50649279e20d9902a3560"
     }
   },
   "python_stack": {
@@ -104,9 +104,9 @@
   },
   "compatibility": {
     "stable_release_baseline": "v0.23.0",
-    "source_profile": "latest-main-snapshot",
-    "core_line": "vLLM upstream main snapshot at 2a4e3cc3d plus HUST integration commits",
-    "plugin_line": "vLLM Ascend main snapshot at 6d02e22f0 plus HUST native hybrid cache compatibility",
+    "source_profile": "hust-latest-main-production",
+    "core_line": "vLLM-HUST merged main a67f6a5d synchronized through upstream 6c73b08d plus bounded Responses state, custom-tool compatibility, streaming context fixes and exact custom-tool grammar constraints",
+    "plugin_line": "vLLM-Ascend-HUST merged main 74f0c0a2 synchronized through upstream b0c49dc7 plus HUST compatibility commits; verified core a67f6a5d",
     "cann": "9.1.0",
     "torch_npu": "2.13.0rc1"
   },
@@ -114,8 +114,11 @@
     "cann": "9.1.0",
     "soc": "ascend910b1",
     "graph_mode": true,
+    "prefix_caching": true,
+    "prefix_cache_mode": "mamba-align",
+    "chunked_prefill": true,
     "install_mode": "immutable-wheels",
-    "artifact_directory": "/data/codex-build-artifacts/latest-main-20260901"
+    "artifact_directory": "/data/codex-build-artifacts/responses-grammar-final-20260908"
   },
-  "image_tag": "sage-mate/vllm-ascend-hust:core-762f85b3-plugin-4e57439e-hybrid4-cann9.1"
+  "image_tag": "sage-mate/vllm-ascend-hust:core-a67f6a5d-plugin-74f0c0a2-cann9.1"
 }

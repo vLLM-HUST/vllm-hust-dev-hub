@@ -1,0 +1,9 @@
+{
+  "schema": "vllm-hust.lifecycle-host/v1",
+  "enabled": false,
+  "state_directory": "/var/lib/vllm-hust-lifecycle",
+  "socket_path": "/run/vllm-hust-lifecycle/api.sock",
+  "socket_gid": null,
+  "administrator_uids": [0],
+  "profiles": {}
+}

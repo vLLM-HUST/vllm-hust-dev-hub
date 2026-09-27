@@ -1446,12 +1446,19 @@ install_ascend_repo_into_env() {
     log "Using Ascend custom-kernel mode: COMPILE_CUSTOM_KERNELS=$compile_custom_kernels"
   fi
 
+  # vllm-ascend-hust's setup.py imports the sibling module build_version at
+  # module import time. pip's in-process PEP 517/660 hook execs setup.py without
+  # adding the project root to sys.path, which makes that import fail during
+  # editable-metadata generation. Expose the repo root via PYTHONPATH (prefixing
+  # rather than replacing so any caller-provided PYTHONPATH entries are kept) so
+  # the upstream setup.py does not need to be patched.
   if ! run_with_heartbeat \
     "installing editable package from $repo_path" \
     run_pip_install_in_env "$ENV_NAME" \
       "COMPILE_CUSTOM_KERNELS=$compile_custom_kernels" \
       "TORCH_DEVICE_BACKEND_AUTOLOAD=0" \
       "LD_LIBRARY_PATH=$build_ld_library_path" \
+      "PYTHONPATH=${repo_path}${PYTHONPATH:+:$PYTHONPATH}" \
       -- "${pip_args[@]}"; then
     log "Warning: editable Ascend install failed for '$repo_path' (COMPILE_CUSTOM_KERNELS=$compile_custom_kernels)"
     return "$rc_editable_install"

@@ -24,11 +24,24 @@ For the exact core/plugin lock, derived-image labels, deployment receipt and
 rollback procedure used by Sage Mate, see the
 [Sage Mate production runtime profile](docs/sage-mate-production-runtime.md).
 
+The reviewed Workstation Mod inventory is generated from
+[`config/extension-catalog-v1.json`](config/extension-catalog-v1.json). It keeps
+functional qualification, measured effect, expected scenarios, recommendation,
+resource tradeoffs, conflicts, and rollback separate. Regenerate it with
+`python3 scripts/generate_extension_catalog.py`; unverified entries remain
+visible previews and cannot be enabled.
+
 Agent workflow note: on any prepared dev-hub Ascend development machine,
 use this repo's `./manage.sh` as the first-choice entrypoint for launching,
 restarting, health-checking, and testing the prepared vLLM-HUST service. Avoid
 ad-hoc host accelerator environments: NPU execution belongs in the official
 container, while the host supplies Docker, NPU devices, and driver interfaces.
+
+For product-facing lifecycle integration, use the [unified lifecycle API](docs/instance-lifecycle-v1.md).
+It provides allocation/approval, start/stop, ownership transfer, audit and recovery
+through an authenticated local socket. The supplied policy is disabled and the
+production adapter is separately [default-off and allowlisted](docs/production-lifecycle-backend.md);
+no existing service is enrolled.
 
 ## Quick Start
 
@@ -295,6 +308,19 @@ Start and inspect the service:
 ./manage.sh restart
 ./manage.sh stop
 ```
+
+Managed units run a bounded, port-scoped container cleanup through `ExecStop`
+before systemd terminates the host launcher. Missing or already-stopped
+containers are idempotent success; Docker errors or verified surviving workers
+fail the stop instead of being hidden. Because container workers are not owned
+by the user unit's cgroup, generated units use `KillMode=process` only after
+that explicit cleanup contract.
+
+Current vLLM-Ascend releases deprecate the legacy
+`VLLM_ASCEND_ENABLE_FLASHCOMM1` and `VLLM_ASCEND_ENABLE_FUSED_MC2` environment
+switches, so the launcher removes them by default. An older, separately verified
+plugin profile may set `VLLM_ENGINE_ENABLE_LEGACY_ASCEND_ENV=1` to forward
+explicit legacy values during a bounded migration.
 
 Common `.env` knobs:
 

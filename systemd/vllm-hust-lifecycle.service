@@ -1,0 +1,27 @@
+[Unit]
+Description=vLLM-HUST instance lifecycle control API (default-off policy)
+After=local-fs.target
+
+[Service]
+Type=simple
+User=vllm-hust-lifecycle
+Group=vllm-hust-control
+ExecStart=/usr/bin/python3 /opt/vllm-hust-dev-hub/scripts/instance_lifecycle.py --config /etc/vllm-hust/lifecycle.json
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=30
+KillMode=control-group
+RuntimeDirectory=vllm-hust-lifecycle
+RuntimeDirectoryMode=0750
+StateDirectory=vllm-hust-lifecycle
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+RestrictAddressFamilies=AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

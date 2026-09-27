@@ -15,13 +15,13 @@ def test_production_runtime_lock_is_complete_and_immutable() -> None:
     assert re.fullmatch(r"[0-9a-f]{40}", lock["vllm_ascend"]["commit"])
     assert lock["vllm_core"]["repository"] == "git@github.com:vLLM-HUST/vllm-hust.git"
     assert lock["vllm_ascend"]["repository"] == "git@github.com:vLLM-HUST/vllm-ascend-hust.git"
-    assert lock["vllm_core"]["source_channel"] == "upstream-main-snapshot"
-    assert lock["vllm_ascend"]["source_channel"] == "hust-main-tagged-snapshot"
+    assert lock["vllm_core"]["source_channel"] == "hust-main-upstream-synchronized-snapshot"
+    assert lock["vllm_ascend"]["source_channel"] == "hust-main-upstream-synchronized-snapshot"
     assert lock["vllm_ascend"]["source_tag"].startswith("v0.25.1rc1+hust.")
     assert lock["vllm_core"]["commit"][:9] in lock["vllm_core"]["package_version"]
-    assert lock["vllm_ascend"]["source_tag"].removeprefix("v") == lock["vllm_ascend"]["package_version"]
+    assert lock["vllm_ascend"]["commit"][:9] in lock["vllm_ascend"]["package_version"]
     assert lock["compatibility"]["stable_release_baseline"] == "v0.23.0"
-    assert lock["compatibility"]["source_profile"] == "latest-main-snapshot"
+    assert lock["compatibility"]["source_profile"] == "hust-latest-main-production"
     assert lock["compatibility"]["cann"] == "9.1.0"
     assert lock["compatibility"]["torch_npu"] == "2.13.0rc1"
     for component in (lock["vllm_core"], lock["vllm_ascend"]):
@@ -35,6 +35,9 @@ def test_production_runtime_lock_is_complete_and_immutable() -> None:
         assert component["filename"].endswith(".whl")
     assert lock["runtime"]["cann"] == "9.1.0"
     assert lock["runtime"]["graph_mode"] is True
+    assert lock["runtime"]["prefix_caching"] is True
+    assert lock["runtime"]["prefix_cache_mode"] == "mamba-align"
+    assert lock["runtime"]["chunked_prefill"] is True
     assert lock["runtime"]["install_mode"] == "immutable-wheels"
 
 

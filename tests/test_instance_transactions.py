@@ -137,6 +137,18 @@ class Transactions(unittest.TestCase):
         approval = self.controller.approve(plan["plan_id"])
         return self.controller.begin(plan["plan_id"], approval)
 
+    @staticmethod
+    def recover(controller, operation_id):
+        approval = controller.approve_recovery(operation_id)
+        return controller.recover(operation_id, approval)
+
+    def test_registration_cannot_bypass_lifecycle_authority(self):
+        registration = {**self.registration, "instance_id": "lifecycle-owned"}
+        with self.store.transaction() as db:
+            self.store.put(db, "lifecycle_instance", "lifecycle-owned", {"state": "stopped"})
+        with self.assertRaisesRegex(ControlError, "lifecycle_authority_conflict"):
+            self.controller.register(registration, self.baseline)
+
     def test_immutable_complete_spec_and_roundtrip(self):
         frozen = DeploymentSpec.freeze(self.candidate)
         self.candidate["launch"]["environment"]["DRIFT"] = "changed"
@@ -250,7 +262,7 @@ class Transactions(unittest.TestCase):
                     self.assertIsNone(current["operation"])
                     self.assertEqual(current["spec"], DeploymentSpec.freeze(self.candidate).sha256)
                 else:
-                    recovered = replacement.recover(current["operation"])
+                    recovered = self.recover(replacement, current["operation"])
                     self.assertEqual(recovered["phase"], "failed" if phase in {"reserved", "applying"} else "rolled_back")
                     self.assertEqual(backend.spec.sha256, DeploymentSpec.freeze(self.baseline).sha256)
 
@@ -275,7 +287,7 @@ class Transactions(unittest.TestCase):
                 if current["operation"]:
                     replacement = Controller(Store(Path(tmp) / "state"), {"fixture": backend}, enabled=False,
                                              admin_uids=[os.geteuid()], clock=lambda: self.time)
-                    self.assertEqual(replacement.recover(token["id"])["phase"], "rolled_back")
+                    self.assertEqual(self.recover(replacement, token["id"])["phase"], "rolled_back")
                 self.assertEqual(backend.spec.sha256, DeploymentSpec.freeze(self.baseline).sha256)
 
     def test_recovery_crash_fences_both_preceding_executors(self):
@@ -285,13 +297,29 @@ class Transactions(unittest.TestCase):
             self.controller.execute(token)
         self.controller.checkpoint = lambda phase: (_ for _ in ()).throw(Crash()) if phase == "recovering" else None
         with self.assertRaises(Crash):
-            self.controller.recover(token["id"])
+            self.recover(self.controller, token["id"])
         second = self.store.read("operation", token["id"])
         self.controller.checkpoint = lambda _: None
-        self.controller.recover(token["id"])
+        self.recover(self.controller, token["id"])
         for stale in (token, second):
             with self.assertRaisesRegex(ControlError, "fence_lost"):
                 self.controller.execute(stale)
+
+    def test_recovery_approval_replay_after_fence_commit_cannot_resume(self):
+        token = self.begin()
+        approval = self.controller.approve_recovery(token["id"])
+        self.controller.checkpoint = lambda phase: (
+            (_ for _ in ()).throw(Crash()) if phase == "recovering" else None
+        )
+        with self.assertRaises(Crash):
+            self.controller.recover(token["id"], approval)
+        operation = self.store.read("operation", token["id"])
+        self.assertEqual(operation["phase"], "recovering")
+        self.assertTrue(self.store.read("recovery_approval", digest(approval))["consumed"])
+        effects = list(self.backend.effects)
+        with self.assertRaisesRegex(ControlError, "recovery_approval_mismatch|expired_or_replayed"):
+            self.controller.recover(token["id"], approval)
+        self.assertEqual(effects, self.backend.effects)
 
     def test_action_allowlist_and_tampered_plan_are_rejected(self):
         with self.store.transaction() as db:
@@ -352,7 +380,7 @@ class Transactions(unittest.TestCase):
             self.controller.execute(token)
         self.controller.checkpoint = lambda _: None
         self.controller.enabled = False
-        recovered = self.controller.recover(token["id"])
+        recovered = self.recover(self.controller, token["id"])
         self.assertEqual(recovered["phase"], "rolled_back")
         effects = list(self.backend.effects)
         with self.assertRaisesRegex(ControlError, "fence_lost"):
@@ -384,11 +412,12 @@ class Transactions(unittest.TestCase):
     def test_recovery_requires_quiescence_not_time_or_pid_absence(self):
         token = self.begin()
         self.backend.quiet = False
+        approval = self.controller.approve_recovery(token["id"])
         with self.assertRaisesRegex(ControlError, "not_fenced"):
-            self.controller.recover(token["id"])
+            self.controller.recover(token["id"], approval)
         self.time += 1000
-        with self.assertRaisesRegex(ControlError, "new_recovery_approval"):
-            self.controller.recover(token["id"])
+        with self.assertRaisesRegex(ControlError, "recovery_scope_expired"):
+            self.controller.approve_recovery(token["id"])
         self.assertEqual(self.backend.effects, [])
 
     def test_nested_writer_fails_fast_instead_of_deadlocking(self):

@@ -65,6 +65,10 @@ is created merely by parsing an owner request.
    budgets, expiry, expected generation/fence and exact rollback scope.
 3. `approve`: actual authorized OS identity issues a one-time secret nonce for
    the exact plan/action/generation/expiry. The private store holds only its hash.
+   `cancel_plan` durably cancels only a plan which has not reserved an operation;
+   it prevents both later approval and consumption of an already issued approval.
+   Reserved or executing work returns `cancellation_not_safe` and remains under
+   its rollback/recovery state machine.
 4. `begin`: atomically revalidate identity/CAS, consume approval, increment fence,
    store operation/executor identity and retain the complete baseline snapshot.
 5. `execute`: persisted applying -> synchronous fenced deployment -> verifying ->
@@ -72,11 +76,13 @@ is created merely by parsing an owner request.
 6. Failure: only the original baseline, while this operation still owns the
    resource. Untouched healthy baseline ends failed without a restart. Foreign
    identity or failed restoration leaves recovery-required/rollback_failed.
-7. `recover`: explicit admin, original bounded approval scope, backend proof of
-   old effects' quiescence, then a higher persisted fence and new executor identity.
+7. `recover_approve`: an explicit admin issues a separate one-time nonce bound to
+   the exact operation, instance, current generation/fence and original bounded
+   recovery deadline. `recover` atomically consumes it only after backend proof of
+   old effects' quiescence, then persists a higher fence and new executor identity.
    Old executors are rejected even if they revive. Expiry/PID absence alone never
-   authorizes recovery. Expired recovery scope requires new approval (not yet
-   exposed as a recovery-approval API).
+   authorizes recovery; an expired original recovery scope cannot be extended by
+   minting another nonce.
 
 Disable is a new approved no-Mod/no-witness deployment. Manual rollback requires
 another plan/approval and a retained revision. Reference protection is conservative:
@@ -125,12 +131,45 @@ Next gates: production backend/OS writer exclusion, authenticated local transpor
 foreground supervision, Manager-rendered launch consumption, thin-client/UI wiring
 and separate target-specific TP4/graph qualification. Keep all live gates closed.
 
-The separate `instance-control/v1` thin-client transport is described in
+The separate `instance-control/v1` local transport is described in
 `config/instance-control-contract.json` and `scripts/instance_control_entry.py`.
 It accepts only registered candidate/instance/plan/operation IDs and opaque approval
-nonces, not deployment specs, commands or owner authorization claims. `inspect`
-truthfully reports unavailable authority; every mutation fails closed. This is a
-wire-contract fixture boundary, not a running controller service.
+nonces, not deployment specs, commands or owner authorization claims. Without
+`VLLM_HUST_INSTANCE_CONTROL_CONFIG`, `inspect` truthfully reports unavailable and
+every mutation fails closed. A configured authority additionally requires an
+absolute, non-symlink, mode-0600 host file owned by root or the process euid; that
+file fixes the mode-0700 state directory, administrator euid allowlist, backend ID
+allowlist and candidate-ID-to-spec-hash map. See
+`config/instance-control-host.example.json`.
 
-Initial focused validation: 39 pytest tests and 22 subtests (instance transactions,
-existing deployment receipts and optimization profiles), plus Ruff and diff checks.
+Trusted host code may embed `ControlTransport` and inject already constructed
+backend objects. Neither host configuration nor wire JSON can import a backend.
+The standalone CLI deliberately injects none, so a registered shared instance is
+reported with `productionBackendQualified=false` and `lifecycleAvailable=false`.
+`operationsAccepting` is a stricter current-state gate: it is true only when the
+authority is enabled, the backend is qualified, the instance is ready and no
+operation owns it. Closed, in-progress and recovery-required states use distinct
+reason codes. A rejected plan or consumed approval does not falsely change
+`authorityAvailable` to false. Unexpected backend exceptions are redacted to
+`transport_unavailable`; their text and Python traceback never cross the CLI wire.
+This provides real plan/approve/cancel/apply/disable/rollback/status and separately
+approved recovery dispatch for qualified embedded fixtures without converting
+repository checkout, Web login, a caller-provided owner ID or a configuration
+string into production authority. Cancellation is intentionally limited to an
+unreserved plan; this transport has no unsafe mid-deployment interrupt primitive.
+Closing the new-operation gate rejects plan/approve/apply/disable/rollback, while
+read-only status, safe unreserved-plan cancellation and separately authorized
+recovery remain available so shutdown of the control feature cannot strand an
+already reserved deployment.
+
+Initial focused validation covers instance transactions, transport, existing
+deployment receipts, optimization profiles and foreground ownership, plus Ruff
+and diff checks. Test counts are reported by the validating commit rather than
+hard-coded here as the fault matrix grows.
+
+## Generic lifecycle integration
+
+Allocation and start/stop now have a separate [product-neutral lifecycle API](instance-lifecycle-v1.md).
+It reuses the private Store while keeping stopped/allocation state distinct from
+verified Mod deployment state. Same-store dual registration is rejected; no
+production backend or live-instance migration is enabled by this addition.

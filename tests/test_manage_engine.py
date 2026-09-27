@@ -19,6 +19,9 @@ ENTRYPOINT_PROBE = REPO_ROOT / "scripts" / "check_optimization_entrypoint.py"
 OPTIMIZATION_INSTALLER = REPO_ROOT / "scripts" / "prepare_optimization_plugin.py"
 OPTIMIZATION_PLUGIN_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "optimization_plugins"
 NPU_FAILURE_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "npu_allocating_failure.py"
+OPTIMIZATION_MANIFEST_FIXTURE = (
+    REPO_ROOT / "tests" / "fixtures" / "optimization_manifests" / "bidkv.json"
+)
 
 
 class ManageEngineGuardTests(unittest.TestCase):
@@ -33,12 +36,16 @@ class ManageEngineGuardTests(unittest.TestCase):
             systemctl = bin_dir / "systemctl"
             systemctl.write_text("#!/usr/bin/env bash\nexit 0\n")
             systemctl.chmod(0o755)
+            manifest = root / "workspace" / "vllm-hust-bidkv" / ".vllm-hust" / "optimization.json"
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text(OPTIMIZATION_MANIFEST_FIXTURE.read_text())
             env = os.environ.copy()
             env.update(
                 {
                     "PATH": f"{bin_dir}:{env['PATH']}",
                     "XDG_CONFIG_HOME": str(root / "xdg"),
                     "VLLM_ENGINE_SYSTEMD_UNIT": "bidkv-managed-test.service",
+                    "VLLM_OPTIMIZATION_WORKSPACE_ROOT": str(root / "workspace"),
                 }
             )
 
@@ -94,6 +101,60 @@ class ManageEngineGuardTests(unittest.TestCase):
             self.assertTrue(mode & stat.S_IXUSR, f"{script} should be executable")
             subprocess.run(["bash", "-n", str(script)], check=True)
 
+    def test_generated_unit_cleans_container_before_process_only_kill(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            bin_dir = root / "bin"
+            bin_dir.mkdir()
+            systemctl = bin_dir / "systemctl"
+            systemctl.write_text("#!/usr/bin/env bash\nexit 0\n")
+            systemctl.chmod(0o755)
+            env = os.environ.copy()
+            env.update(
+                {
+                    "PATH": f"{bin_dir}:{env['PATH']}",
+                    "XDG_CONFIG_HOME": str(root / "xdg"),
+                    "VLLM_ENGINE_SYSTEMD_UNIT": "shutdown-contract.service",
+                }
+            )
+
+            installed = subprocess.run(
+                [str(MANAGE_SCRIPT), "install"],
+                cwd=REPO_ROOT,
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(installed.returncode, 0, installed.stderr)
+            unit_text = (
+                root / "xdg/systemd/user/shutdown-contract.service"
+            ).read_text()
+
+            self.assertIn(f"ExecStop={CLEANUP_SCRIPT}", unit_text)
+            self.assertIn("KillMode=process", unit_text)
+            self.assertNotIn("KillMode=control-group", unit_text)
+            self.assertLess(unit_text.index("ExecStop="), unit_text.index("KillMode="))
+
+    def test_legacy_ascend_environment_is_default_off_and_explicit(self) -> None:
+        script = ENGINE_SCRIPT.read_text()
+
+        self.assertIn(
+            'legacy_ascend_env="${VLLM_ENGINE_ENABLE_LEGACY_ASCEND_ENV:-0}"',
+            script,
+        )
+        self.assertIn(
+            "unset VLLM_ASCEND_ENABLE_FLASHCOMM1 VLLM_ASCEND_ENABLE_FUSED_MC2",
+            script,
+        )
+        self.assertIn('if [[ "__ENABLE_LEGACY_ASCEND_ENV__" == "1" ]]', script)
+        self.assertNotIn(
+            'flashcomm1="${VLLM_ASCEND_ENABLE_FLASHCOMM1:-0}"', script
+        )
+        self.assertNotIn(
+            'fused_mc2="${VLLM_ASCEND_ENABLE_FUSED_MC2:-1}"', script
+        )
+
     def test_cleanup_error_documents_canonical_and_legacy_variables(self) -> None:
         script = CLEANUP_SCRIPT.read_text()
 
@@ -122,6 +183,30 @@ class ManageEngineGuardTests(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("real API key", result.stderr)
+        self.assertNotIn("Docker container", result.stderr)
+
+    def test_required_prefix_cache_rejects_disabled_configuration_before_docker(self) -> None:
+        env = os.environ.copy()
+        env.update(
+            {
+                "VLLM_ENGINE_CONTAINER": "dummy-container",
+                "VLLM_HUST_API_KEY": "test-only-key",
+                "VLLM_ENGINE_MODEL_PATH": "/tmp/test-model",
+                "VLLM_ENGINE_ENABLE_PREFIX_CACHING": "0",
+                "VLLM_ENGINE_REQUIRE_PREFIX_CACHING": "1",
+            }
+        )
+        result = subprocess.run(
+            [str(ENGINE_SCRIPT)],
+            cwd=REPO_ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("prefix caching is required", result.stderr)
         self.assertNotIn("Docker container", result.stderr)
 
     def test_engine_credentials_never_enter_process_arguments(self) -> None:
@@ -172,6 +257,8 @@ class ManageEngineGuardTests(unittest.TestCase):
         self.assertIn("VLLM_ENGINE_CONTAINER_HOME", template)
         self.assertIn("VLLM_ENGINE_KV_CACHE_DTYPE", template)
         self.assertIn("VLLM_ENGINE_KV_CACHE_MEMORY_BYTES", template)
+        self.assertIn("VLLM_ENGINE_ENABLE_PREFIX_CACHING=1", template)
+        self.assertIn("VLLM_ENGINE_REQUIRE_PREFIX_CACHING=1", template)
 
     def test_readme_documents_one_command_management(self) -> None:
         readme = README.read_text()

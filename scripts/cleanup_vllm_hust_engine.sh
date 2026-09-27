@@ -33,16 +33,35 @@ if [[ -n "${VLLM_ENGINE_DOCKER_SUDO:-sudo}" ]]; then
 fi
 
 if ! "${docker_cmd[@]}" info >/dev/null 2>&1; then
+  echo "ERROR: cleanup cannot contact the configured Docker daemon." >&2
+  exit 1
+fi
+if ! running=$("${docker_cmd[@]}" inspect -f '{{.State.Running}}' "$container" 2>/dev/null); then
   exit 0
 fi
-if ! "${docker_cmd[@]}" inspect -f '{{.State.Running}}' "$container" >/dev/null 2>&1; then
-  exit 0
+[[ "$running" == "true" ]] || exit 0
+
+term_attempts="${VLLM_ENGINE_CLEANUP_TERM_ATTEMPTS:-10}"
+kill_attempts="${VLLM_ENGINE_CLEANUP_KILL_ATTEMPTS:-10}"
+poll_interval="${VLLM_ENGINE_CLEANUP_POLL_INTERVAL:-0.5}"
+for value in "$term_attempts" "$kill_attempts"; do
+  if [[ ! "$value" =~ ^[1-9][0-9]*$ ]]; then
+    echo "ERROR: cleanup attempt counts must be positive integers." >&2
+    exit 2
+  fi
+done
+if [[ ! "$poll_interval" =~ ^([0-9]+([.][0-9]+)?|[.][0-9]+)$ ]]; then
+  echo "ERROR: VLLM_ENGINE_CLEANUP_POLL_INTERVAL must be a non-negative number." >&2
+  exit 2
 fi
 
 cleanup_script='
 port="$1"
-all=""
-for _ in 1 2 3; do
+term_attempts="$2"
+kill_attempts="$3"
+poll_interval="$4"
+
+collect_matches() {
   matches="$(ps -eo pid=,args= | awk -v port="$port" '"'"'
     /vllm/ && / serve / {
       if ($0 ~ ("--port " port) || $0 ~ ("--port=" port)) {
@@ -72,20 +91,42 @@ for _ in 1 2 3; do
     '"'"' | tr "\n" " ")"
     matches="$matches $orphans"
   fi
-  if [ -z "$matches" ]; then
-    continue
+  printf "%s\n" $matches 2>/dev/null | awk '"'"'/^[0-9]+$/ { print }'"'"' | sort -un | tr "\n" " "
+}
+
+wait_for_exit() {
+  attempts="$1"
+  while [ "$attempts" -gt 0 ]; do
+    remaining="$(collect_matches)"
+    [ -z "$remaining" ] && return 0
+    sleep "$poll_interval"
+    attempts=$((attempts - 1))
+  done
+  [ -z "$(collect_matches)" ]
+}
+
+initial="$(collect_matches)"
+[ -n "$initial" ] || exit 0
+
+kill -TERM $initial 2>/dev/null || true
+if ! wait_for_exit "$term_attempts"; then
+  survivors="$(collect_matches)"
+  kill -KILL $survivors 2>/dev/null || true
+  if ! wait_for_exit "$kill_attempts"; then
+    echo "ERROR: vLLM process(es) remain after SIGKILL: $(collect_matches)" >&2
+    exit 1
   fi
-  all="$all $matches"
-  kill $matches 2>/dev/null || true
-  sleep 2
-  kill -9 $matches 2>/dev/null || true
-done
-if [ -n "$all" ]; then
-  echo "$all"
 fi
+echo "$initial"
 '
 
-cleaned_pids=$("${docker_cmd[@]}" exec --env "VLLM_ENGINE_AGGRESSIVE_CLEANUP=${VLLM_ENGINE_AGGRESSIVE_CLEANUP:-0}" "$container" sh -c "$cleanup_script" sh "$port" 2>/dev/null || true)
+if ! cleaned_pids=$("${docker_cmd[@]}" exec \
+  --env "VLLM_ENGINE_AGGRESSIVE_CLEANUP=${VLLM_ENGINE_AGGRESSIVE_CLEANUP:-0}" \
+  "$container" sh -c "$cleanup_script" sh "$port" "$term_attempts" \
+  "$kill_attempts" "$poll_interval"); then
+  echo "ERROR: container vLLM cleanup failed for '$container' on port $port." >&2
+  exit 1
+fi
 if [[ -n "$cleaned_pids" ]]; then
   echo "[vllm-hust] stopped container vLLM process(es) on port $port: $cleaned_pids"
 fi

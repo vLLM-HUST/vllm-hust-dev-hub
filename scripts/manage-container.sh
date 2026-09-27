@@ -37,6 +37,7 @@ DEFAULT_GPU_MEM_UTIL="0.85"
 DEFAULT_DTYPE="bfloat16"
 DEFAULT_LOAD_FORMAT="auto"
 DEFAULT_PREFIX_CACHING="1"
+DEFAULT_REQUIRE_PREFIX_CACHING="0"
 DEFAULT_CHUNKED_PREFILL="1"
 DEFAULT_ENFORCE_EAGER="1"
 DEFAULT_PLUGINS="ascend"
@@ -262,6 +263,7 @@ resolve_config() {
   DTYPE="${VLLM_ENGINE_DTYPE:-$DEFAULT_DTYPE}"
   LOAD_FORMAT="${VLLM_ENGINE_LOAD_FORMAT:-$DEFAULT_LOAD_FORMAT}"
   PREFIX_CACHING="${VLLM_ENGINE_ENABLE_PREFIX_CACHING:-$DEFAULT_PREFIX_CACHING}"
+  REQUIRE_PREFIX_CACHING="${VLLM_ENGINE_REQUIRE_PREFIX_CACHING:-$DEFAULT_REQUIRE_PREFIX_CACHING}"
   CHUNKED_PREFILL="${VLLM_ENGINE_ENABLE_CHUNKED_PREFILL:-$DEFAULT_CHUNKED_PREFILL}"
   ENFORCE_EAGER="${VLLM_ENGINE_ENFORCE_EAGER:-$DEFAULT_ENFORCE_EAGER}"
   PLUGINS="${VLLM_PLUGINS:-$DEFAULT_PLUGINS}"
@@ -304,6 +306,17 @@ resolve_config() {
   [[ -z "$MODEL_PATH" ]] && { log_err "VLLM_ENGINE_MODEL_PATH is required"; exit 1; }
   [[ -z "$SERVED_MODEL_NAME" ]] && SERVED_MODEL_NAME="$(basename "$MODEL_PATH")"
   (( MAX_NUM_BATCHED_TOKENS < MAX_MODEL_LEN )) && MAX_NUM_BATCHED_TOKENS="$MAX_MODEL_LEN"
+  for setting in PREFIX_CACHING REQUIRE_PREFIX_CACHING CHUNKED_PREFILL ENFORCE_EAGER; do
+    value="${!setting}"
+    [[ "$value" == "0" || "$value" == "1" ]] || {
+      log_err "$setting must be 0 or 1 (got: $value)"
+      exit 1
+    }
+  done
+  if [[ "$REQUIRE_PREFIX_CACHING" == "1" && "$PREFIX_CACHING" != "1" ]]; then
+    log_err "prefix caching is required; refusing configuration with VLLM_ENGINE_ENABLE_PREFIX_CACHING=$PREFIX_CACHING"
+    exit 1
+  fi
 
   mkdir -p "$LOG_DIR" "$PROFILE_OUTPUT_DIR"
 }
@@ -333,7 +346,7 @@ save_state() {
       VLLM_ENGINE_HOST VLLM_ENGINE_PORT VLLM_ENGINE_TP_SIZE VLLM_ENGINE_NPU_DEVICES \
       VLLM_ENGINE_MAX_MODEL_LEN VLLM_ENGINE_MAX_NUM_BATCHED_TOKENS VLLM_ENGINE_MAX_NUM_SEQS \
       VLLM_ENGINE_GPU_MEM_UTIL VLLM_ENGINE_DTYPE VLLM_ENGINE_LOAD_FORMAT \
-      VLLM_ENGINE_ENABLE_PREFIX_CACHING VLLM_ENGINE_ENABLE_CHUNKED_PREFILL \
+      VLLM_ENGINE_ENABLE_PREFIX_CACHING VLLM_ENGINE_REQUIRE_PREFIX_CACHING VLLM_ENGINE_ENABLE_CHUNKED_PREFILL \
       VLLM_ENGINE_ENFORCE_EAGER VLLM_ENGINE_COMPILATION_CONFIG VLLM_ENGINE_QUANTIZATION \
       VLLM_ENGINE_PYTHON \
       VLLM_PLUGINS \
@@ -855,6 +868,7 @@ cmd_config() {
   "dtype": "$DTYPE",
   "load_format": "$LOAD_FORMAT",
   "prefix_caching": $([[ $PREFIX_CACHING == 1 ]] && echo true || echo false),
+  "prefix_caching_required": $([[ $REQUIRE_PREFIX_CACHING == 1 ]] && echo true || echo false),
   "chunked_prefill": $([[ $CHUNKED_PREFILL == 1 ]] && echo true || echo false),
   "enforce_eager": $([[ $ENFORCE_EAGER == 1 ]] && echo true || echo false),
   "plugins": "$PLUGINS",
@@ -889,6 +903,7 @@ JSON
     printf "  %-22s = %s\n" "gpu_mem_util"         "$GPU_MEM_UTIL"
     printf "  %-22s = %s\n" "dtype"                "$DTYPE"
     printf "  %-22s = %s\n" "prefix_caching"       "$PREFIX_CACHING"
+    printf "  %-22s = %s\n" "prefix_cache_required" "$REQUIRE_PREFIX_CACHING"
     printf "  %-22s = %s\n" "chunked_prefill"      "$CHUNKED_PREFILL"
     printf "  %-22s = %s\n" "enforce_eager"        "$ENFORCE_EAGER"
     printf "  %-22s = %s\n" "plugins"              "$PLUGINS"

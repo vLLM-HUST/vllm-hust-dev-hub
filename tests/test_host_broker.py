@@ -10,6 +10,7 @@ import sys
 import tempfile
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from instance_control import ControlError, Store
@@ -25,9 +26,7 @@ class HostBrokerTests(unittest.TestCase):
             / "vllm-hust-host-broker.service"
         ).read_text()
         self.assertIn("RuntimeDirectoryMode=0750", unit)
-        self.assertIn(
-            "Group=__CONTROL_GROUP__", unit
-        )
+        self.assertIn("Group=__CONTROL_GROUP__", unit)
         self.assertIn("SupplementaryGroups=vllm-hust-broker", unit)
         self.assertNotIn("ExecStartPre=+", unit)
         self.assertNotIn("RuntimeDirectoryMode=0755", unit)
@@ -37,17 +36,18 @@ class HostBrokerTests(unittest.TestCase):
 
     def test_canary_gate_refuses_a_shared_target_by_construction(self):
         source = (
-            Path(__file__).resolve().parents[1]
-            / "scripts"
-            / "set_inert_canary_gate.py"
+            Path(__file__).resolve().parents[1] / "scripts" / "set_inert_canary_gate.py"
         ).read_text()
         self.assertIn('!= ["inert-canary"]', source)
         self.assertNotIn("docker", source.lower())
         self.assertNotIn("systemctl", source.lower())
-        installer = (Path(__file__).resolve().parents[1] / "scripts" /
-                     "install_instance_host_broker.sh").read_text()
+        installer = (
+            Path(__file__).resolve().parents[1]
+            / "scripts"
+            / "install_instance_host_broker.sh"
+        ).read_text()
         self.assertIn('pwd.getpwnam("vllm-hust-broker").pw_uid', installer)
-        self.assertNotIn('owner_uids\"] = [int(uid)]', installer)
+        self.assertNotIn('owner_uids"] = [int(uid)]', installer)
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="host-broker-")
@@ -73,7 +73,7 @@ class HostBrokerTests(unittest.TestCase):
                 {
                     "instance_id": "inert-canary",
                     "owner_uids": [os.geteuid()],
-                    "actions": ["start", "stop"],
+                    "actions": ["start", "stop", "restart"],
                     "argv": [
                         str(Path(sys.executable).resolve()),
                         str(self.worker),
@@ -115,8 +115,8 @@ class HostBrokerTests(unittest.TestCase):
         self.addCleanup(self.right.close)
         self.operation = self.seed("start", fence=1, generation=0)
 
-    def seed(self, action, *, fence, generation):
-        operation_id = ("1" if action == "start" else "2") * 32
+    def seed(self, action, *, fence, generation, operation_id=None):
+        operation_id = operation_id or (("1" if action == "start" else "2") * 32)
         baseline = "a" * 64
         candidate = "b" * 64 if action == "start" else "c" * 64
         registration = {
@@ -350,45 +350,232 @@ class HostBrokerTests(unittest.TestCase):
         process.terminate()
         process.wait(timeout=3)
 
-    def test_real_daemon_controller_owner_start_stop_round_trip(self):
+    def test_real_daemon_controller_owner_full_lifecycle_round_trip(self):
         state = self.root / "daemon-coordinated-state"
         process = subprocess.Popen(
-            [sys.executable, "-I", str(Path(__file__).resolve().parents[1] /
-             "scripts" / "instance_host_broker.py"), "--config", str(self.config),
-             "--state", str(state)], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL)
+            [
+                sys.executable,
+                "-I",
+                str(
+                    Path(__file__).resolve().parents[1]
+                    / "scripts"
+                    / "instance_host_broker.py"
+                ),
+                "--config",
+                str(self.config),
+                "--state",
+                str(state),
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
         self.addCleanup(lambda: process.poll() is None and process.kill())
         deadline = time.monotonic() + 3
-        while time.monotonic() < deadline and not Path(self.policy.socket_path).exists():
+        while (
+            time.monotonic() < deadline and not Path(self.policy.socket_path).exists()
+        ):
             time.sleep(0.02)
         self.assertIsNone(process.poll())
-        started = broker_request(self.policy.socket_path, {
-            "schema": "vllm-hust.host-broker/v1", "action": "canary_lifecycle",
-            "instance_id": "inert-canary", "lifecycle_action": "start"})
+        started = broker_request(
+            self.policy.socket_path,
+            {
+                "schema": "vllm-hust.host-broker/v1",
+                "action": "canary_lifecycle",
+                "instance_id": "inert-canary",
+                "lifecycle_action": "start",
+            },
+        )
         self.assertTrue(started["ok"])
         self.assertTrue(started["healthy"])
         self.assertTrue(started["replayRejected"])
         self.assertRegex(started["operationId"], r"^[a-f0-9]{32}$")
         self.assertNotIn("grant", json.dumps(started).lower())
         identity = started["identity"]
-        stopped = broker_request(self.policy.socket_path, {
-            "schema": "vllm-hust.host-broker/v1", "action": "canary_lifecycle",
-            "instance_id": "inert-canary", "lifecycle_action": "stop"})
-        self.assertTrue(stopped["ok"])
-        self.assertEqual(stopped["generation"], 2)
+
+        restarted = broker_request(
+            self.policy.socket_path,
+            {
+                "schema": "vllm-hust.host-broker/v1",
+                "action": "canary_lifecycle",
+                "instance_id": "inert-canary",
+                "lifecycle_action": "restart",
+            },
+        )
+        self.assertTrue(restarted["ok"])
+        self.assertTrue(restarted["healthy"])
+        self.assertEqual(restarted["generation"], 2)
+        self.assertNotEqual(restarted["identity"], identity)
         self.assertEqual(_pid_state(identity["pid"], identity["startTicks"]), "absent")
+
+        rolled_back = broker_request(
+            self.policy.socket_path,
+            {
+                "schema": "vllm-hust.host-broker/v1",
+                "action": "canary_lifecycle",
+                "instance_id": "inert-canary",
+                "lifecycle_action": "rollback",
+            },
+        )
+        self.assertTrue(rolled_back["ok"])
+        self.assertEqual(rolled_back["state"], "stopped")
+        self.assertEqual(rolled_back["generation"], 3)
+        self.assertEqual(
+            _pid_state(
+                restarted["identity"]["pid"], restarted["identity"]["startTicks"]
+            ),
+            "absent",
+        )
+
+        started_again = broker_request(
+            self.policy.socket_path,
+            {
+                "schema": "vllm-hust.host-broker/v1",
+                "action": "canary_lifecycle",
+                "instance_id": "inert-canary",
+                "lifecycle_action": "start",
+            },
+        )
+        self.assertTrue(started_again["healthy"])
+        self.assertEqual(started_again["generation"], 4)
+        stopped = broker_request(
+            self.policy.socket_path,
+            {
+                "schema": "vllm-hust.host-broker/v1",
+                "action": "canary_lifecycle",
+                "instance_id": "inert-canary",
+                "lifecycle_action": "stop",
+            },
+        )
+        self.assertTrue(stopped["ok"])
+        self.assertEqual(stopped["generation"], 5)
+        self.assertEqual(
+            _pid_state(
+                started_again["identity"]["pid"],
+                started_again["identity"]["startTicks"],
+            ),
+            "absent",
+        )
         self.assertFalse(self.health.exists())
         process.terminate()
         process.wait(timeout=3)
+
+    def test_real_peer_roles_concurrent_grant_and_expiry(self):
+        value = json.loads(self.config.read_text())
+        value["controller_uids"] = [os.geteuid() + 1]
+        ordinary_config = self.root / "ordinary-policy.json"
+        ordinary_config.write_text(json.dumps(value))
+        ordinary_config.chmod(0o600)
+        ordinary = HostBroker(
+            Store(self.root / "ordinary-state", initialize=True),
+            BrokerPolicy.load(str(ordinary_config)),
+        )
+        described = ordinary.handle(
+            self.left,
+            json.dumps(
+                {
+                    "schema": "vllm-hust.host-broker/v1",
+                    "action": "describe",
+                    "instance_id": "inert-canary",
+                }
+            ).encode(),
+        )
+        self.assertEqual(described["instanceId"], "inert-canary")
+        with self.assertRaisesRegex(ControlError, "controller_peer_not_allowed"):
+            ordinary.handle(
+                self.left,
+                json.dumps(
+                    {
+                        "schema": "vllm-hust.host-broker/v1",
+                        "action": "canary_lifecycle",
+                        "instance_id": "inert-canary",
+                        "lifecycle_action": "start",
+                    }
+                ).encode(),
+            )
+
+        grant = self.grant(self.operation, "start")
+
+        def consume():
+            try:
+                return self.execute(grant, "start")["healthy"]
+            except ControlError as exc:
+                return str(exc)
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            outcomes = list(pool.map(lambda _index: consume(), range(2)))
+        self.assertEqual(outcomes.count(True), 1)
+        self.assertTrue(
+            any(
+                value
+                in {
+                    "authority_busy_or_unavailable",
+                    "launch_grant_expired_or_replayed",
+                }
+                for value in outcomes
+            )
+        )
+
+        with self.store.transaction() as db:
+            current = self.store.get(db, "instance", "inert-canary")
+            current.update(
+                generation=1,
+                operation=None,
+                spec=self.operation["candidate"],
+                status="ready",
+            )
+            operation = self.store.get(db, "operation", self.operation["id"])
+            operation["phase"] = "committed"
+            self.store.put(db, "instance", "inert-canary", current)
+            self.store.put(db, "operation", operation["id"], operation)
+        stop = self.seed("stop", fence=2, generation=1)
+        self.execute(self.grant(stop, "stop"), "stop")
+
+        now = [time.time()]
+        expiring = HostBroker(self.store, self.policy, clock=lambda: now[0])
+        expired_operation = self.seed(
+            "start", fence=3, generation=2, operation_id="3" * 32
+        )
+        expired_grant = expiring.handle(
+            self.left,
+            json.dumps(
+                {
+                    "schema": "vllm-hust.host-broker/v1",
+                    "action": "issue",
+                    "instance_id": "inert-canary",
+                    "lifecycle_action": "start",
+                    "operation": expired_operation,
+                }
+            ).encode(),
+        )["grant"]
+        now[0] += 61
+        with self.assertRaisesRegex(ControlError, "launch_grant_expired_or_replayed"):
+            expiring.handle(
+                self.left,
+                json.dumps(
+                    {
+                        "schema": "vllm-hust.host-broker/v1",
+                        "action": "execute",
+                        "instance_id": "inert-canary",
+                        "lifecycle_action": "start",
+                        "grant": expired_grant,
+                    }
+                ).encode(),
+            )
 
     def test_controller_backed_canary_lifecycle_has_no_wire_grant(self):
         state = self.root / "coordinated-state"
         broker = HostBroker(Store(state, initialize=True), self.policy)
         started = broker.handle(
             self.left,
-            json.dumps({"schema": "vllm-hust.host-broker/v1",
-                        "action": "canary_lifecycle", "instance_id": "inert-canary",
-                        "lifecycle_action": "start"}).encode(),
+            json.dumps(
+                {
+                    "schema": "vllm-hust.host-broker/v1",
+                    "action": "canary_lifecycle",
+                    "instance_id": "inert-canary",
+                    "lifecycle_action": "start",
+                }
+            ).encode(),
         )
         self.assertEqual(started["phase"], "committed")
         self.assertTrue(started["healthy"])
@@ -401,17 +588,27 @@ class HostBrokerTests(unittest.TestCase):
 
         status = broker.handle(
             self.left,
-            json.dumps({"schema": "vllm-hust.host-broker/v1",
-                        "action": "canary_status", "instance_id": "inert-canary"}).encode(),
+            json.dumps(
+                {
+                    "schema": "vllm-hust.host-broker/v1",
+                    "action": "canary_status",
+                    "instance_id": "inert-canary",
+                }
+            ).encode(),
         )
         self.assertEqual(status["generation"], 1)
         self.assertTrue(status["healthy"])
 
         stopped = broker.handle(
             self.left,
-            json.dumps({"schema": "vllm-hust.host-broker/v1",
-                        "action": "canary_lifecycle", "instance_id": "inert-canary",
-                        "lifecycle_action": "stop"}).encode(),
+            json.dumps(
+                {
+                    "schema": "vllm-hust.host-broker/v1",
+                    "action": "canary_lifecycle",
+                    "instance_id": "inert-canary",
+                    "lifecycle_action": "stop",
+                }
+            ).encode(),
         )
         self.assertEqual(stopped["phase"], "committed")
         self.assertEqual(stopped["state"], "stopped")
@@ -424,12 +621,23 @@ class HostBrokerTests(unittest.TestCase):
         self.assertTrue(events.exists())
 
     def test_canary_lifecycle_rejects_extra_fields_and_shared_target(self):
-        broker = HostBroker(Store(self.root / "strict-state", initialize=True), self.policy)
+        broker = HostBroker(
+            Store(self.root / "strict-state", initialize=True), self.policy
+        )
         for request in (
-            {"schema": "vllm-hust.host-broker/v1", "action": "canary_lifecycle",
-             "instance_id": "shared-qwen", "lifecycle_action": "start"},
-            {"schema": "vllm-hust.host-broker/v1", "action": "canary_lifecycle",
-             "instance_id": "inert-canary", "lifecycle_action": "start", "grant": "attacker"},
+            {
+                "schema": "vllm-hust.host-broker/v1",
+                "action": "canary_lifecycle",
+                "instance_id": "shared-qwen",
+                "lifecycle_action": "start",
+            },
+            {
+                "schema": "vllm-hust.host-broker/v1",
+                "action": "canary_lifecycle",
+                "instance_id": "inert-canary",
+                "lifecycle_action": "start",
+                "grant": "attacker",
+            },
         ):
             with self.subTest(request=request), self.assertRaises(ControlError):
                 broker.handle(self.left, json.dumps(request).encode())

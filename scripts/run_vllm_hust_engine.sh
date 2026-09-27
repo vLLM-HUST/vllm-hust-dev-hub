@@ -36,6 +36,11 @@ if [[ -n "${VLLM_ENGINE_ENV_FILE:-}" ]]; then
   load_dotenv "$VLLM_ENGINE_ENV_FILE" true
 fi
 
+# Validate the source/package identity before inspecting or recreating a
+# container. This keeps a stale nested package receipt from turning a harmless
+# configuration typo into a systemd restart loop and an avoidable outage.
+python3 "$repo_root/scripts/validate_runtime_identity_contract.py"
+
 container="${VLLM_ENGINE_CONTAINER_NAME:-${VLLM_ENGINE_CONTAINER:-${DOCKER_CONTAINER:-vllm-ascend-dev}}}"
 container_image="${VLLM_ENGINE_IMAGE:-${IMAGE:-quay.io/ascend/vllm-ascend:v0.23.0-openeuler}}"
 expected_image_id="${VLLM_ENGINE_EXPECTED_IMAGE_ID:-}"
@@ -81,11 +86,28 @@ engine_python="${VLLM_ENGINE_PYTHON:-}"
 api_key="${VLLM_HUST_API_KEY:-${VLLM_ENGINE_API_KEY:-}}"
 replace_existing="${VLLM_ENGINE_REPLACE_EXISTING:-true}"
 enable_prefix_caching="${VLLM_ENGINE_ENABLE_PREFIX_CACHING:-1}"
+require_prefix_caching="${VLLM_ENGINE_REQUIRE_PREFIX_CACHING:-0}"
 enable_chunked_prefill="${VLLM_ENGINE_ENABLE_CHUNKED_PREFILL:-1}"
 enforce_eager="${VLLM_ENGINE_ENFORCE_EAGER:-0}"
 expert_parallel="${VLLM_ENGINE_ENABLE_EXPERT_PARALLEL:-0}"
-flashcomm1="${VLLM_ASCEND_ENABLE_FLASHCOMM1:-0}"
-fused_mc2="${VLLM_ASCEND_ENABLE_FUSED_MC2:-1}"
+legacy_ascend_env="${VLLM_ENGINE_ENABLE_LEGACY_ASCEND_ENV:-0}"
+flashcomm1="${VLLM_ASCEND_ENABLE_FLASHCOMM1:-}"
+fused_mc2="${VLLM_ASCEND_ENABLE_FUSED_MC2:-}"
+if [[ "$legacy_ascend_env" != "0" && "$legacy_ascend_env" != "1" ]]; then
+  echo "ERROR: VLLM_ENGINE_ENABLE_LEGACY_ASCEND_ENV must be 0 or 1." >&2
+  exit 1
+fi
+for setting in enable_prefix_caching require_prefix_caching enable_chunked_prefill enforce_eager; do
+  value="${!setting}"
+  if [[ "$value" != "0" && "$value" != "1" ]]; then
+    echo "ERROR: ${setting} must resolve to 0 or 1 (got: $value)." >&2
+    exit 1
+  fi
+done
+if [[ "$require_prefix_caching" == "1" && "$enable_prefix_caching" != "1" ]]; then
+  echo "ERROR: prefix caching is required by VLLM_ENGINE_REQUIRE_PREFIX_CACHING=1; refusing to launch with VLLM_ENGINE_ENABLE_PREFIX_CACHING=$enable_prefix_caching." >&2
+  exit 1
+fi
 optimization_repo_container="${VLLM_OPTIMIZATION_REPO_CONTAINER:-}"
 optimization_src_subdir="${VLLM_OPTIMIZATION_SRC_SUBDIR:-src}"
 optimization_plugin="${VLLM_OPTIMIZATION_PLUGIN:-}"
@@ -315,6 +337,7 @@ echo "[vllm-hust] runtime_devices   = $runtime_visible_devices"
 echo "[vllm-hust] max_model_len     = $max_model_len"
 echo "[vllm-hust] max_num_seqs      = $max_num_seqs"
 echo "[vllm-hust] prefix_cache      = $enable_prefix_caching"
+echo "[vllm-hust] prefix_required   = $require_prefix_caching"
 echo "[vllm-hust] chunked_prefill   = $enable_chunked_prefill"
 echo "[vllm-hust] graph_mode        = $([[ "$enforce_eager" == "1" ]] && echo "OFF (--enforce-eager)" || echo "ON")"
 if [[ -n "$compilation_config" ]]; then
@@ -491,8 +514,11 @@ if [[ -n "${HCCL_OP_EXPANSION_MODE:-}" ]]; then
 fi
 export PYTORCH_NPU_ALLOC_CONF="${PYTORCH_NPU_ALLOC_CONF:-expandable_segments:True}"
 export VLLM_PLUGINS="${VLLM_PLUGINS:-__PLUGINS__}"
-export VLLM_ASCEND_ENABLE_FLASHCOMM1="${VLLM_ASCEND_ENABLE_FLASHCOMM1:-__FLASHCOMM1__}"
-export VLLM_ASCEND_ENABLE_FUSED_MC2="${VLLM_ASCEND_ENABLE_FUSED_MC2:-__FUSED_MC2__}"
+unset VLLM_ASCEND_ENABLE_FLASHCOMM1 VLLM_ASCEND_ENABLE_FUSED_MC2
+if [[ "__ENABLE_LEGACY_ASCEND_ENV__" == "1" ]]; then
+  [[ -n "__FLASHCOMM1__" ]] && export VLLM_ASCEND_ENABLE_FLASHCOMM1="__FLASHCOMM1__"
+  [[ -n "__FUSED_MC2__" ]] && export VLLM_ASCEND_ENABLE_FUSED_MC2="__FUSED_MC2__"
+fi
 export VLLM_ASCEND_TORCH_PREFLIGHT="${VLLM_ASCEND_TORCH_PREFLIGHT:-0}"
 export COMPILE_CUSTOM_KERNELS="${COMPILE_CUSTOM_KERNELS:-1}"
 export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
@@ -846,6 +872,7 @@ replace "__CONTAINER_LD_PRELOAD__" "$container_ld_preload"
 replace "__TARGET_DEVICE__" "$target_device"
 replace "__NPU_DEVICES__" "$runtime_visible_devices"
 replace "__PLUGINS__" "$plugins"
+replace "__ENABLE_LEGACY_ASCEND_ENV__" "$legacy_ascend_env"
 replace "__FLASHCOMM1__" "$flashcomm1"
 replace "__FUSED_MC2__" "$fused_mc2"
 replace "__PYTHONPATH__" "$pythonpath"

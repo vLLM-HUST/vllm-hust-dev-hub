@@ -65,6 +65,9 @@ class Controller:
             rows = db.execute("SELECT 1 FROM documents WHERE kind='instance' AND id=?",
                               (registration["instance_id"],)).fetchone()
             require(rows is None, "instance_already_registered")
+            lifecycle = db.execute("SELECT value FROM documents WHERE kind='lifecycle_instance' AND id=?",
+                                   (registration["instance_id"],)).fetchone()
+            require(lifecycle is None, "lifecycle_authority_conflict")
             self.store.put(db, "spec", spec.sha256, spec.value(), immutable=True)
             self.store.put(db, "registration", registration["instance_id"], registration, immutable=True)
             self.store.put(db, "instance", registration["instance_id"], {
@@ -142,6 +145,10 @@ class Controller:
         with self.store.transaction() as db:
             plan = self.store.get(db, "plan", plan_id)
             require(digest(plan) == plan_id and self.clock() < plan["expires_at"], "plan_expired_or_changed")
+            cancelled = db.execute(
+                "SELECT 1 FROM documents WHERE kind='plan_cancellation' AND id=?", (plan_id,)
+            ).fetchone()
+            require(cancelled is None, "plan_cancelled")
             current = self.store.get(db, "instance", plan["instance_id"])
             require(current["generation"] == plan["generation"] and current["fence"] == plan["fence"]
                     and current["operation"] is None, "generation_conflict")
@@ -151,16 +158,52 @@ class Controller:
             self.store.event(db, plan_id, "approved", {"administrator_uid": os.geteuid()})
         return nonce  # Only returned once, never in public logs or operation status.
 
-    def begin(self, plan_id, approval):
+    def cancel_plan(self, plan_id):
+        """Cancel only a plan which has never reserved an operation.
+
+        Cancellation is allowed while the new-operation gate is closed, but it
+        cannot interrupt or relabel an already reserved/executing deployment.
+        """
+        self._admin()
+        with self.store.transaction() as db:
+            plan = self.store.get(db, "plan", plan_id)
+            require(digest(plan) == plan_id, "plan_changed")
+            existing = db.execute(
+                "SELECT 1 FROM documents WHERE kind='plan_cancellation' AND id=?", (plan_id,)
+            ).fetchone()
+            if existing is not None:
+                return self.store.get(db, "plan_cancellation", plan_id)
+            operations = db.execute(
+                "SELECT value FROM documents WHERE kind='operation'"
+            ).fetchall()
+            require(
+                not any(self.store.get_value(row)["plan_id"] == plan_id for row in operations),
+                "cancellation_not_safe",
+            )
+            cancellation = {"plan_id": plan_id, "cancelled_at": self.clock(),
+                            "administrator_uid": os.geteuid()}
+            self.store.put(db, "plan_cancellation", plan_id, cancellation, immutable=True)
+            self.store.event(db, plan_id, "plan_cancelled", {})
+        return cancellation
+
+    def begin(self, plan_id, approval, *, expected_action=None):
         """Atomic CAS + approval consume + durable recovery spec + fence grant."""
         self._gate()
         self._admin()
-        plan = self.store.read("plan", plan_id)
-        registration = self.store.read("registration", plan["instance_id"])
-        backend = self._backend(registration)
-        observed = backend.inspect(registration)
+        # Keep the bounded identity inspection in the reservation transaction.
+        # This leaves one fail-fast lock acquisition before the CAS, so racing
+        # callers cannot alternate across pre-read transactions and both lose.
         with self.store.transaction() as db:
             plan = self.store.get(db, "plan", plan_id)
+            registration = self.store.get(db, "registration", plan["instance_id"])
+            backend = self._backend(registration)
+            observed = backend.inspect(registration)
+            require(expected_action is None or plan["action"] == expected_action,
+                    "deployment_action_mismatch")
+            cancelled = db.execute(
+                "SELECT 1 FROM documents WHERE kind='plan_cancellation' AND id=?", (plan_id,)
+            ).fetchone()
+            require(cancelled is None, "plan_cancelled")
             ticket = self.store.get(db, "approval", digest(approval))
             current = self.store.get(db, "instance", plan["instance_id"])
             require(digest(plan) == plan_id and ticket["plan_id"] == plan_id
@@ -378,7 +421,30 @@ class Controller:
                 self.store.event(db, token["id"], "rollback_failed", {"reason": "verification_or_ownership_failed"})
             return operation
 
-    def recover(self, operation_id):
+    def approve_recovery(self, operation_id, *, ttl=300):
+        """Issue one bounded recovery approval for the exact current fence."""
+        self._admin()
+        require(type(ttl) is int and 1 <= ttl <= 600, "invalid_recovery_approval")
+        nonce = secrets.token_urlsafe(32)
+        with self.store.transaction() as db:
+            operation = self.store.get(db, "operation", operation_id)
+            require(operation["phase"] not in TERMINAL, "operation_terminal")
+            current = self.store.get(db, "instance", operation["instance_id"])
+            require(current["operation"] == operation_id
+                    and current["fence"] == operation["fence"], "fence_lost")
+            require(self.clock() < operation["recovery_deadline"],
+                    "recovery_scope_expired")
+            expires_at = min(self.clock() + ttl, operation["recovery_deadline"])
+            ticket = {"operation_id": operation_id, "instance_id": operation["instance_id"],
+                      "fence": operation["fence"], "generation": current["generation"],
+                      "expires_at": expires_at, "administrator_uid": os.geteuid(),
+                      "consumed": False}
+            self.store.put(db, "recovery_approval", digest(nonce), ticket, immutable=True)
+            self.store.event(db, operation_id, "recovery_approved",
+                             {"fence": operation["fence"], "expires_at": expires_at})
+        return nonce
+
+    def recover(self, operation_id, approval):
         """Only explicit admin recovery within original approved baseline scope.
 
         No lease timeout/PID absence takeover. Backend must establish that all old
@@ -391,11 +457,21 @@ class Controller:
             require(operation["phase"] not in TERMINAL, "operation_terminal")
             current = self.store.get(db, "instance", operation["instance_id"])
             require(current["operation"] == operation_id and current["fence"] == operation["fence"], "fence_lost")
-            require(self.clock() < operation["recovery_deadline"], "new_recovery_approval_required")
+            ticket = self.store.get(db, "recovery_approval", digest(approval))
+            require(ticket["operation_id"] == operation_id
+                    and ticket["instance_id"] == operation["instance_id"]
+                    and ticket["fence"] == operation["fence"]
+                    and ticket["generation"] == current["generation"],
+                    "recovery_approval_mismatch")
+            require(not ticket["consumed"] and self.clock() < ticket["expires_at"]
+                    and self.clock() < operation["recovery_deadline"],
+                    "recovery_approval_expired_or_replayed")
             registration = self.store.get(db, "registration", operation["instance_id"])
             require(self._backend(registration).quiescent(registration, operation) is True, "old_executor_not_fenced")
+            ticket["consumed"] = True
             current["fence"] += 1
             operation.update(fence=current["fence"], executor=uuid.uuid4().hex, phase="recovering")
+            self.store.put(db, "recovery_approval", digest(approval), ticket)
             self.store.put(db, "instance", operation["instance_id"], current)
             self.store.put(db, "operation", operation_id, operation)
             self.store.event(db, operation_id, "recovering", {"fence": operation["fence"]})

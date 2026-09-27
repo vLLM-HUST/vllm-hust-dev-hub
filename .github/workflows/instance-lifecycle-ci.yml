@@ -1,0 +1,29 @@
+name: Instance lifecycle control tests
+
+on:
+  push:
+    branches: [main]
+    paths: ['scripts/instance_control/**', 'scripts/instance_lifecycle.py', 'scripts/instance_production*.py', 'config/instance-production*.json', 'tests/test_production*.py', 'tests/test_instance*.py', 'tests/test_host*.py', '.github/workflows/instance-lifecycle-ci.yml']
+  pull_request:
+    paths: ['scripts/instance_control/**', 'scripts/instance_lifecycle.py', 'scripts/instance_production*.py', 'config/instance-production*.json', 'tests/test_production*.py', 'tests/test_instance*.py', 'tests/test_host*.py', '.github/workflows/instance-lifecycle-ci.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use the distro interpreter for broker artifact checks
+        # setup-python's toolcache executable may be group-writable. The broker
+        # correctly refuses it; keep that check and use the distro-owned binary.
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y python3-venv
+          /usr/bin/python3 -m venv "$RUNNER_TEMP/lifecycle-tests"
+          "$RUNNER_TEMP/lifecycle-tests/bin/python" -m pip install pytest
+      - name: Run CPU-only authority and lifecycle regressions
+        run: '"$RUNNER_TEMP/lifecycle-tests/bin/python" -m pytest -q tests/test_production_lifecycle.py tests/test_instance_lifecycle.py tests/test_instance_transactions.py tests/test_instance_control_transport.py tests/test_instance_foreground.py tests/test_host_authority.py tests/test_host_broker.py'

@@ -1,6 +1,6 @@
 {
   "protocol": "vllm-hust.instance-control/v1",
   "entrypoint": "scripts/instance_control_entry.py",
-  "actions": ["inspect", "plan", "approve", "apply", "disable", "rollback", "operation_status", "recover"],
+  "actions": ["inspect", "plan", "approve", "cancel_plan", "apply", "disable", "rollback", "operation_status", "recover_approve", "recover"],
   "productionBackendQualified": false
 }

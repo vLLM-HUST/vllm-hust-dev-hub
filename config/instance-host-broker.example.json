@@ -8,7 +8,7 @@
     {
       "instance_id": "inert-canary",
       "owner_uids": [1002],
-      "actions": ["start", "stop"],
+      "actions": ["start", "stop", "restart"],
       "argv": [
         "/usr/bin/python3.10",
         "/usr/lib/vllm-hust-host-broker/instance_canary_worker.py",

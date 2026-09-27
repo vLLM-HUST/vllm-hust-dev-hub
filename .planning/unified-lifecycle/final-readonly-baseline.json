@@ -1,0 +1,32 @@
+[
+  {
+    "status": "fulfilled",
+    "value": {
+      "chunk_id": "377a5a",
+      "wall_time_seconds": 0.00002712,
+      "exit_code": 0,
+      "original_token_count": 530,
+      "output": "  UNIT                                           LOAD   ACTIVE SUB     DESCRIPTION\n  at-spi-dbus-bus.service                        loaded active running Accessibility services bus\n  cloudflared-sage-local-235b.service            loaded active running Cloudflare Tunnel (sage-local-235b)\n  codex-app-server.service                       loaded active running Codex Desktop remote app-server\n  dbus.service                                   loaded active running D-Bus User Message Bus\n  sage-mate-app.service                          loaded active running Sage Mate application server\n  sage-mate-site.service                         loaded active running Sage Mate local site proxy\n  sage-mate-tunnel.service                       loaded active running Sage Mate Cloudflare tunnel\n  sage-mate-vllm-engine.service                  loaded active running Sage Mate vLLM-HUST inference engine\n  sage-mate-vllm-openai-proxy.service            loaded active running Sage Mate OpenAI-compatible vLLM proxy\n  statecentric-qwen38-native-openai-v45.service  loaded active running /usr/bin/bash /home/shuhao/statecentric-ascend-engine/scripts/run_native_openai_gateway.sh --served-model Qwen/Qwen3.8-27B --model-revision 1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0 --chat-renderer hf --max-model-len 2048 --max-sessions 4 --coerce-sampling-to-greedy --model-alias qwen3.8-27b\n  statecentric-qwen38-r113-restore-r1019.service loaded active running /usr/bin/bash -lc cd '/home/shuhao/stateaxis' && exec bash scripts/run_qwen38_native_stack.sh tp2pp2-r113 >> '/data/statecentric-builds/native-ascend-backend.XWskWm/r1019-r1015-device-subphase-validation-r002/r113-final-restore.log' 2>&1\n  vllm-hust-auth-proxy.service                   loaded active running vLLM HUST local auth proxy (18080 -> 8000)\n  vllm-hust-workstation.service                  loaded active running vLLM-HUST Workstation\n\nLOAD   = Reflects whether the unit definition was properly loaded.\nACTIVE = The high-level unit activation state, i.e. generalization of SUB.\nSUB    = The low-level unit activation state, values depend on unit type.\n13 loaded units listed.\n"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "chunk_id": "e023e6",
+      "wall_time_seconds": 0.00000728,
+      "exit_code": 0,
+      "original_token_count": 231,
+      "output": "funny_newton\t1ec0af9041fd\tUp 23 seconds\nstatecentric-qwen38-native-tp2pp2-r001\t2d8450dda23e\tUp 2 hours\nsage-mate-vllm-shuhao-sage-mate\t1cf7fbf70dc1\tUp 18 hours\npipeline-microbatch-baseline-r007\t49f38822b740\tUp 2 days\npipeline-microbatch-candidate-r006\tc0817bcd207b\tUp 2 days\npipeline-microbatch-candidate-r005\tda01edd23fd8\tUp 2 days\npipeline-microbatch-candidate-r004\t39591266606a\tUp 2 days\npipeline-microbatch-candidate-r003\tb389ab1d12b2\tUp 2 days\npipeline-microbatch-baseline-r006\td4e27c276900\tUp 2 days\npipeline-microbatch-candidate-r002\t448f20f0b5b7\tUp 2 days\npipeline-microbatch-baseline-r005\t134bb0dc99e7\tUp 2 days\npipeline-microbatch-baseline-r001\t17b7b5e3c3bb\tUp 2 days\nlaughing_meninsky\t74affead31a0\tUp 3 days\nprocess-exporter\t8ac377e4a7bf\tUp 6 weeks\ncadvisor\t10186153ac1c\tUp 5 weeks (healthy)\nnode-exporter\t0d3eb45f776d\tUp 6 weeks\nnpu-exporter\t28d30d737249\tUp 6 weeks\nportainer_edge_agent\t62392a635a15\tUp 6 weeks\n"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "chunk_id": "9074c8",
+      "wall_time_seconds": 3.214381654,
+      "exit_code": 0,
+      "original_token_count": 15,
+      "output": "a9438f1afc5fca68673524ffc1518c42e01637a1\trefs/heads/main\n"
+    }
+  }
+]
