@@ -15,7 +15,7 @@ Every arm passes 26 retrieval checks and the existing prefix-reuse gate before i
 measurement windows. A dedicated supervisor owns all processes and the outer cleanup checks both
 process groups and actual HBM release. Qualification and failed preparation are never performance
 points. The first preparation directory records an offline health-gate failure without launching
-serving or benchmarks; `phase9-unified-r2` is the prepared successor.
+serving or benchmarks; `phase9-unified-r3` is the prepared successor.
 
 The same Qwen3.5-35B-A3B BF16 model, TP2/PP1, APC, MTP2, asynchronous scheduling,
 FULL_AND_PIECEWISE captures3/6/12/24/48, context262144, maxseq16, batch4096 and KV26038239232

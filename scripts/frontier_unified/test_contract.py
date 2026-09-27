@@ -90,7 +90,7 @@ def test_unknown_connector_cannot_be_normalized_away():
 
 
 def test_generated_harness_compiles_when_supplied():
-    root = Path("/home/coder/frontier-mods-qwen35-20260925/phase9-unified-r2")
+    root = Path("/home/coder/frontier-mods-qwen35-20260925/phase9-unified-r3")
     if not root.exists():
         pytest.skip("generated container capsule not present")
     for name in (
@@ -102,3 +102,13 @@ def test_generated_harness_compiles_when_supplied():
     ):
         compile((root / name).read_text(), name, "exec")
     validate_plans(json.loads((root / "manager-plans.json").read_text()))
+
+
+def test_manager_logs_do_not_replace_the_structured_plan():
+    from contract import manager_json
+
+    assert manager_json('INFO plugin selected\n{\n"command": ["python"]\n}\n') == {
+        "command": ["python"]
+    }
+    with pytest.raises(ValueError):
+        manager_json("INFO no plan produced")

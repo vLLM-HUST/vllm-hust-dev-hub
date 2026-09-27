@@ -7,10 +7,10 @@ import socket
 import subprocess
 import zipfile
 from pathlib import Path
-from contract import ARMS, digest, validate_plans
+from contract import ARMS, digest, manager_json, validate_plans
 
 BASE = Path("/home/coder/frontier-mods-qwen35-20260925")
-ROOT = BASE / "phase9-unified-r2"
+ROOT = BASE / "phase9-unified-r3"
 OLD = BASE / "phase8"
 HERE = Path(__file__).resolve().parent
 
@@ -85,7 +85,7 @@ def main():
         (ROOT / f"plan-{arm}.log").write_text(result.stdout + result.stderr)
         if result.returncode:
             raise RuntimeError(f"{arm} manager plan failed: {result.stderr[-1500:]}")
-        plan = json.loads(result.stdout)
+        plan = manager_json(result.stdout)
         write(ROOT / f"plan-{arm}.json", plan)
         if arm == "mooncake":
             plans[arm] = plans["native"] + [
@@ -138,7 +138,7 @@ def main():
     )
     controller = controller.replace(
         "        started = True\n",
-        '        launch = (ROOT / f"launch-{program}.sh").read_text()\n        dry = subprocess.run(["/bin/bash", "-c", launch.replace(" run -- ", " run --dry-run -- ")], capture_output=True, text=True, timeout=120)\n        (out / "manager-live-dry-run.log").write_text(dry.stdout + dry.stderr)\n        expected = json.loads((ROOT / "manager-plans.json").read_text())[program]\n        if dry.returncode or json.loads(dry.stdout)["command"] != expected:\n            raise RuntimeError("Manager live health/plan differs from frozen common-Native contract")\n        started = True\n',
+        '        launch = (ROOT / f"launch-{program}.sh").read_text()\n        dry = subprocess.run(["/bin/bash", "-c", launch.replace(" run -- ", " run --dry-run -- ")], capture_output=True, text=True, timeout=120)\n        (out / "manager-live-dry-run.log").write_text(dry.stdout + dry.stderr)\n        expected = json.loads((ROOT / "manager-plans.json").read_text())[program]\n        from contract import manager_json\n        if dry.returncode or manager_json(dry.stdout)["command"] != expected:\n            raise RuntimeError("Manager live health/plan differs from frozen common-Native contract")\n        started = True\n',
     )
     compile(controller, "qualify.py", "exec")
     (ROOT / "qualify.py").write_text(controller)

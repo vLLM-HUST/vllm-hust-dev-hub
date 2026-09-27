@@ -87,3 +87,18 @@ def verify(root):
             root / "common-contract.json"
         ):
             raise RuntimeError("Candidate is not bound to the single Native contract")
+
+
+def manager_json(text):
+    """Retain logs separately; accept one complete JSON object after log lines."""
+    lines = text.splitlines(keepends=True)
+    for index, line in enumerate(lines):
+        if line.strip() != "{":
+            continue
+        try:
+            value = json.loads("".join(lines[index:]))
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict):
+            return value
+    raise ValueError("Manager output contains no complete JSON object")
