@@ -7,6 +7,7 @@ import copy
 import hashlib
 import importlib.util
 import json
+import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -220,6 +221,52 @@ def build_point(
     return point, evidence
 
 
+def render_report(runs: dict[str, dict]) -> str:
+    native = {
+        concurrency: runs["native"]["windows"][f"c{concurrency}"][1][
+            "output_tokens_per_second"
+        ]
+        for concurrency in CELLS
+    }
+    lines = [
+        "# Qwen3.5-35B unified MOD results",
+        "",
+        "All candidates use the same five-point Native series. Values are output token/s; "
+        "parentheses show the change from Native at the same concurrency.",
+        "",
+        "| MOD | C1 | C2 | C4 | C8 | C16 | Geometric mean vs Native |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Native | " + " | ".join(f"{native[c]:.2f}" for c in CELLS) + " | 0.00% |",
+    ]
+    for arm in PUBLIC_IDS:
+        ratios = []
+        cells = []
+        for concurrency in CELLS:
+            value = runs[arm]["windows"][f"c{concurrency}"][1][
+                "output_tokens_per_second"
+            ]
+            ratio = value / native[concurrency]
+            ratios.append(ratio)
+            cells.append(f"{value:.2f} ({(ratio - 1) * 100:+.2f}%)")
+        gain = (math.prod(ratios) ** (1 / len(ratios)) - 1) * 100
+        lines.append(
+            f"| {PUBLIC_IDS[arm]} | " + " | ".join(cells) + f" | {gain:+.2f}% |"
+        )
+    lines.extend(
+        [
+            "",
+            "Fixed controls: Qwen3.5-35B-A3B BF16, TP2/PP1, context 262144, APC, "
+            "natural MTP2, async scheduling, FULL_AND_PIECEWISE graph capture, "
+            "max sequences 16, batch tokens 4096, and 26038239232 device KV bytes per chip.",
+            "",
+            "Each point is one real-online 900-second observation with zero failed requests, "
+            "successful retrieval and prefix-reuse gates, and verified device release.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def publish(args) -> dict:
     site = args.site.resolve()
     frontier_path = site / "data/leaderboard_frontier.json"
@@ -279,6 +326,7 @@ def publish(args) -> dict:
         (performance_path, performance),
     ):
         path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n")
+    (site / "docs/FRONTIER-QWEN35-UNIFIED-MODS.md").write_text(render_report(runs))
     return {"points": sorted(new_ids), "baseline_series": SERIES["native"]}
 
 

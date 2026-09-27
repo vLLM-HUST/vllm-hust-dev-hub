@@ -85,3 +85,25 @@ def test_all_candidates_share_exactly_one_declared_native_series():
     assert publication.SERIES["native"] == "swe-unified-native-20260927"
     assert set(publication.PUBLIC_IDS) == {"mooncake", "tiering", "bidkv", "dla"}
     assert len(set(publication.SERIES.values())) == 5
+
+
+def test_report_derives_per_cell_and_geometric_gains():
+    runs = {}
+    for arm, scale in {
+        "native": 1.0,
+        "mooncake": 1.1,
+        "tiering": 0.9,
+        "bidkv": 1.2,
+        "dla": 1.0,
+    }.items():
+        runs[arm] = {
+            "windows": {
+                f"c{concurrency}": ({}, {"output_tokens_per_second": scale * 100})
+                for concurrency in publication.CELLS
+            }
+        }
+    report = publication.render_report(runs)
+    assert "| Native | 100.00 | 100.00 | 100.00 | 100.00 | 100.00 | 0.00% |" in report
+    assert "| mooncake-vllm-connectors | 110.00 (+10.00%)" in report
+    assert "| kv-tiering-migration | 90.00 (-10.00%)" in report
+    assert "| bidkv | 120.00 (+20.00%)" in report
