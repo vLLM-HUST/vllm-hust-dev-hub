@@ -53,9 +53,9 @@ def audit(candidate_root: Path, retry_root: Path, native_root: Path) -> dict:
     for relative, expected in manifest["sha256"].items():
         if unified.digest_bytes((candidate_root / relative).read_bytes()) != expected:
             raise ValueError(f"Follow-up capsule changed: {relative}")
-    plans = read(candidate_root / "manager-plans.json")
-    followup.validate_plans(plans)
     native_contract = read(native_root / "common-contract.json")
+    plans = read(candidate_root / "manager-plans.json")
+    followup.validate_plans(plans, native_contract["native_command"])
     native_contract_sha = unified.digest_bytes(
         (native_root / "common-contract.json").read_bytes()
     )

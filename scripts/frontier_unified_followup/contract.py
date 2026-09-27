@@ -55,10 +55,15 @@ def normalized(command: list[str], arm: str) -> list[str]:
     return result
 
 
-def validate_plans(plans: dict[str, list[str]]) -> None:
-    native = json.loads((NATIVE_ROOT / "common-contract.json").read_text())[
-        "native_command"
-    ]
+def validate_plans(
+    plans: dict[str, list[str]], native_command: list[str] | None = None
+) -> None:
+    native = (
+        native_command
+        or json.loads((NATIVE_ROOT / "common-contract.json").read_text())[
+            "native_command"
+        ]
+    )
     native_normalized = list(native)
     index = native_normalized.index("--additional-config")
     native_normalized[index + 1] = json.dumps(
