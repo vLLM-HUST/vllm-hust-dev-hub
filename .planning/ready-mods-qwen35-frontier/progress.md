@@ -13,12 +13,22 @@
 - Audited ADM and every other performance entry that lacks an eligible unified
   Qwen3.5 series.
 - Released all owned service and accelerator resources.
+- Expanded discovery from the website catalog to all 71 current organization
+  repositories and classified the additional performance, separate-cohort,
+  tool/control-plane, import-only and migration candidates.
+- Ported `async-output-row-deferral` from the obsolete async output class to
+  the actual Qwen3.5 MTP runner ABI, passed 71 repository tests and a real
+  60-second C1 qualification, and added an opt-in atomic runtime counter
+  snapshot for exact formal-window action counts.
 
 ## Formal windows
 
 - None started for PegaFlow. Qualification failed before `/health`.
 - None started for ADM. Under DP1 its optimized collective is unreachable by
   design, so it is not an exercised candidate under the immutable cohort.
+- None started for async output deferral yet. Its qualification passed, but an
+  unrelated long-running service remains active on another device pair; its
+  throughput is excluded and formal runs wait for an interference-free host.
 
 ## Delivery
 
@@ -29,4 +39,3 @@
   group-aware query/save/load semantics plus divergent-prompt and recurrent
   state restoration tests. The fixed configuration can then be retried
   without changing the workload or Native baseline.
-

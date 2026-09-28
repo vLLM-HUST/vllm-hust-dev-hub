@@ -51,3 +51,27 @@ Native/BidKV/DLA 的 15 个共同运行时观测已由 [#283](https://github.com
 16 GiB/rank 对照已完成：Native 26/26 通过，Mooncake 在第 10 项 warm-262080 再次返回 48 个 `!`，而对应冷请求通过。此次没有记录到 Store put/get 失败，失败请求日志的外部 `need_to_load=0`，所以不能直接归因为外部读取错误。退出时两个 worker 被 SIGKILL，仍有堆损坏日志；最终设备均释放。2744 个源文件哈希复核一致，完整归档 SHA256 为 `637405d49011869855793b8aa200c864ff736716e32e332bd704041f708cbfab`。扩大容量不足以解决资格失败，未进行 Mooncake 性能测量。
 
 已针对运行中 Mamba 跟踪器未传入已计算 token 数的问题制作并验证修复（Ascend `03766ac696fde5ab1980d80ca0b8543d3580c989`，相关调度测试 68 项通过）。独立硬件复测中 Native 26/26 通过，但 Mooncake 仍在 warm-262080 失败，退出堆损坏也仍存在，因此该修复不足以解决服务资格问题。修复版完整回执归档 SHA256：`557cbf246b158b037f27896e276657dd4c32a7f0ff6dd11cb722fd021c7647f4`；3895 个来源哈希一致，设备已释放，无性能测量。
+
+## 2026-09-28 组织全量 current-head 增量核查
+
+网站旧目录不是组织 MOD 的完整集合。GitHub API 当前返回 71 个组织仓库；其中还包含运行时、网站、benchmark、文档和论文仓库，不能把仓库数当作优化算法数。本轮对旧账本之外以及随后更新的性能候选重新读取 current head，结论如下。这里的“不可进统一 cohort”不是零分，也不是负性能点。
+
+| 仓库 / current head | 角色 | 统一 Qwen3.5 cohort 结论 |
+| --- | --- | --- |
+| `vllm-hust-legacy017-perf` / `0d425aaf…`（候选修复分支另有精确 revision） | 多机制候选包 | `async-output-row-deferral` 是当前唯一新增的 ready 候选。旧 ABI 在真实服务中未生效；current-ABI 修复后，60 秒 C1 资格测试通过，APC/MTP2 活跃且机制计数非零。待整机无干扰后执行五个 900 秒窗口。包内其他组件仍需各自正路径资格，不随此候选一起启用。 |
+| `vllm-ascend-kvcompress-hust` / `6e2b01bd…` | KV 压缩 | 0.8 current head 已不再是旧账本所述的全面组合拒绝：它有 Qwen3.5 hybrid、APC、真实 MTP2、async、align 和 FULL_AND_PIECEWISE 的 C4 证据。但该证据使用模型 `59d61f…`、工作负载 `810595…`、Core `fc06902…`、Ascend `5422a07…`、8192 batched tokens / 8 seqs；不能导入本 cohort。manifest 支持线为 vLLM 0.29 / Ascend 0.25，而统一底座为固定的 0.23 代源码，需先做真实 API 端口，不可直接重跑。 |
+| `freshkv-hust` / `738d24ad…` | 模型声明驱动的保留/回收研究系统 | 当前服务协议要求每轮 `freshkv` scope/turn、指定 `freshkv_step` tool 输出和 engine hooks；统一 SWE 请求没有这些字段，固定 Core 也不是其文档中的 v0.24 carrier。项目 README 明确当前论文尚未证明相对 LRU 的一般 serving advantage。需要独立宿主接入和 workload cohort，当前不 ready。 |
+| `vllm-hust-opset` / `85d794ab…` | 算子优化包 | 运行入口要求 `VLLM_BATCH_INVARIANT=1`，会改变固定 Frontier 合同；只能进入明确标注的独立 cohort，不能混入现有 Native 曲线。 |
+| `vllm-ascend-hust-LatchMoE` / `7bf114be…` | 专家权重 offload | current launcher 明确拒绝 `--enable-prefix-caching` 并强制关闭 prefix caching；统一 cohort 的 APC 不可关闭，因此不兼容。 |
+| `vllm-ascend-adaptive-quantized-kv-hust` / `8587845f…` | 自适应量化 KV | 当前 P1 包仍是 `import_only`，没有 runtime activation，不可测性能。 |
+| `vllm-ascend-quantized-kv-cache-hust` / `ae7b44bf…` | 量化 KV | 启用 INT8/KIVI 会改变统一 BF16/`kv-cache-dtype=auto` 合同；需独立量化 cohort，不能与唯一 Native 配对。 |
+| `ascend-distributed-metadata` / `16362b2d…` | DP metadata collective | 机制在 DP1 明确回落 Native；统一 cohort 固定 DP1，没有可执行优化机会。 |
+| `quality-bounded-inference-plugin` / `3c833eac…` | 质量约束推理研究载体 | current README 明确 general-plugin 只是 bootstrap/load marker，尚无完整 injection bridge；动态 Qwen3.5 MTP + hybrid prefix 仍是 hold，不 ready。 |
+| `Tricard` / `b1beacb0…` | 三卡专用研究系统 | 需要三卡、Qwen2.5-7B 和自定义拓扑/workload，不属于 TP2 Qwen3.5 cohort。 |
+| `vllm-hust-clm-lifecycle` / `8e378392…` | 生命周期感知/控制平面 | 主要是 request lifecycle 观察和 controller reporting，按工具/控制平面展示，不强制吞吐曲线。 |
+| `vllm-ascend-hust-workspace-lifecycle` / `b605978a…` | workspace 生命周期研究载体 | 当前仍是 incubation，已有 OProj reuse 的负向边界证据，尚未形成可提交统一五点的正式候选。 |
+| `vllm-ascend-pyramidkv-hust` / `77b0862c…`、`vllm-ascend-mapped-kv-offload-hust` / `8d4dc470…` | 迁移包 | current head 仍是 `import_only` / 缺宿主接入，不可运行。 |
+| `vllm-hust-kv-tiering` / `3a73c7e1…`、`vllm-hust-prefix-router` / `4e007c4f…`、`vllm-hust-knorm` / `e0e872ab…` | 迁移骨架 | README/current tree 仍没有可运行 release；导入成功不算机制测试。 |
+| `vllm-hust-unified-comm` / `f00d1ef4…` | 通信策略载体 | 注册表存在但共同 runtime 没有 collective delegation 接口，当前仍不能执行优化路径。 |
+
+因此，组织全量扫描后的执行顺序不是“只测网站列出的几个”：先完成已通过真实资格测试的 `async-output-row-deferral`；随后是需要固定底座端口验证的 KVCompress 0.8。FreshKV、OPset、量化 KV 和 Tricard 需要单独 cohort；LatchMoE 与不可关闭的 APC 直接冲突；import-only/migration 项目不能制造曲线。每项结论都绑定 current head，后续仓库更新后必须重新检查，不能沿用旧拒绝理由。
