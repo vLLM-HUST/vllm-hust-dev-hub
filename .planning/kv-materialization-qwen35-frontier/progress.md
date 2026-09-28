@@ -25,7 +25,7 @@
 
 ## Current
 
-- All five formal windows, public data/evidence, local validation, and compatibility follow-up are complete. Runtime and MOD PRs are merged. Website CI and Pages production verification remain in progress.
+- The kv-materialization campaign is complete and its website PR is merged. Follow-on KVCompress and Legacy017 work is paused because an unrelated experiment began using part of the NPU pool. All resumable state is documented in `handoff-20260928.md`; no formal point was claimed under shared accelerator load.
 
 ## Formal Windows
 
@@ -42,7 +42,7 @@
 - Five-point geometric-mean throughput gain versus `swe-unified-native-20260927`: +7.1301343328886935%.
 - Website branch `codex/kv-materialization-qwen35-frontier`: five candidate points, public evidence, generic multi-model plugin observations, computed gain, tests and model-scoped regression coverage implemented.
 - Website validation on current main: Node 73/73, pytest 374 passed with 3 skips, and all pre-commit hooks passed. Real Chromium validation passed English/Chinese, desktop/mobile, and light/dark coverage.
-- Website PR: `vLLM-HUST/vllm-hust-website#313`, head `27fe9ac941f157bbd93c09a093428d4258633cbc`; CI is running.
-- CI: runtime PR pre-run-check and pre-commit passed; website version-source-guard passed and remaining jobs are running.
-- Production verification: pending website merge and Pages deployment.
+- Website PR: `vLLM-HUST/vllm-hust-website#313`, merged as `10ee82ae2ee2e7b7d74ebc8e9578ff052379f61e`; all reported CI checks passed.
+- Follow-on KVCompress PR: `vLLM-HUST/vllm-ascend-kvcompress-hust#11`, branch head `5f4cfcc238162485f8b9443ccb2e138981011264`; compatibility code, tests, qualification, failures, hashes, and raw evidence are uploaded.
+- Follow-on Legacy017 async-output PR: `vLLM-HUST/vllm-hust-legacy017-perf#1`; qualification and formal runner are uploaded, but the five formal windows remain outstanding.
 - Audited DiffSpec, vSpec, LatchMoE, Quantized KV Cache, and Split-Batch against the exact unified contract. Each has a documented intrinsic/configuration blocker; concrete findings were posted to their existing maintainer issues without creating duplicate tickets.
