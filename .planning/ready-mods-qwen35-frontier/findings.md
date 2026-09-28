@@ -53,3 +53,27 @@
 - All four NPUs report healthy with no running NPU processes.
 - Qualification ports 33784, 50055 and 9091 no longer have owned listeners.
 
+## Organization-wide current-head expansion
+
+- The GitHub organization currently exposes 71 repositories. The earlier
+  website-derived list was not a complete MOD inventory.
+- The newly screened current heads and classifications are recorded in
+  `docs/FRONTIER-QWEN35-MOD-COVERAGE.md` under the 2026-09-28 current-head
+  delta section.
+- `vllm-hust-legacy017-perf/async-output-row-deferral` is the only newly found
+  candidate that preserves every immutable unified Frontier feature. A real
+  60-second C1 qualification passed after a minimal current-ABI repair, with
+  APC/MTP2 live and a nonzero runtime-effective counter.
+- KVCompress 0.8 has advanced beyond the stale catalog rejection and supports
+  the feature combination on a newer runtime, but its published C4 evidence is
+  not cohort-compatible and the extension declares a different host line.
+- FreshKV requires model-produced reuse declarations, request scope metadata,
+  a named tool protocol and host hooks absent from the unified SWE contract.
+  Its own README does not claim a general serving advantage over LRU.
+- OPset, quantized KV and Tricard require a materially different configuration
+  or topology; LatchMoE explicitly disables APC; ADM has no active mechanism at
+  DP1; the remaining newly found carriers are tool/control-plane, import-only,
+  or lack host integration.
+- An independently owned StateAxis campaign is using the first device pair.
+  It has been left untouched. Formal Frontier throughput must not be measured
+  while that adjacent service can introduce shared-system interference.

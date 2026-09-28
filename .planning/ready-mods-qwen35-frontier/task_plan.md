@@ -34,6 +34,13 @@
   connector currently uses group 0 block IDs for every layer and its load RPC
   cannot express per-layer cache-group block IDs.
 - No formal window was started and no PegaFlow performance point exists.
+- Organization-wide discovery now covers all 71 repositories rather than only
+  the website catalog. The first newly ready candidate is
+  `async-output-row-deferral`; it has passed real HTTP qualification and awaits
+  an interference-free machine for the five formal windows.
+- KVCompress 0.8 is the next porting candidate after that run. Its current
+  feature support must not be confused with compatibility with the older fixed
+  unified runtime or its different published Qwen3.5 cohort.
 
 ## Error log
 
@@ -46,4 +53,8 @@
 - 2026-09-28: Git smart-HTTP clone of the ADM repository repeatedly failed at
   the TLS handshake. Source audit used the GitHub API tarball pinned to commit
   `16362b2d6c229ec1c900b87cdb2c974039db95a6` without exposing credentials.
-
+- 2026-09-28: an attempted formal async-output server on the first logical
+  pair failed before readiness because an independently owned StateAxis run
+  already held nearly all memory on that pair. No measurement window started;
+  the process exited and its failure log was retained. The external run was
+  not stopped or modified.
