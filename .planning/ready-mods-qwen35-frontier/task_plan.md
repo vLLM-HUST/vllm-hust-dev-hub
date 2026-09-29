@@ -26,21 +26,18 @@
 
 ## Current state
 
-- PegaFlow was the only additional external-cache candidate that appeared to
-  preserve all visible launch flags. Its service and Manager acceptance pass,
-  but the vLLM engine cannot initialize because `PegaKVConnector` does not
-  support the hybrid memory allocator required by Qwen3.5.
-- The failure is not safely repairable by adding the `SupportsHMA` marker. The
-  connector currently uses group 0 block IDs for every layer and its load RPC
-  cannot express per-layer cache-group block IDs.
-- No formal window was started and no PegaFlow performance point exists.
-- Organization-wide discovery now covers all 71 repositories rather than only
-  the website catalog. The first newly ready candidate is
-  `async-output-row-deferral`; it has passed real HTTP qualification and awaits
-  an interference-free machine for the five formal windows.
-- KVCompress 0.8 is the next porting candidate after that run. Its current
-  feature support must not be confused with compatibility with the older fixed
-  unified runtime or its different published Qwen3.5 cohort.
+- PegaFlow and KVCompress have completed formal five-point campaigns, evidence
+  merges, website publication and production verification. Do not rerun them.
+- Legacy017 is deferred until its package is split into independently owned
+  functional MODs.
+- Organization-wide discovery covers all 71 repositories rather than only the
+  website catalog. No newly updated MOD can immediately enter qualification.
+- The nearest pending pair is PyramidKV PR #4 plus KVCompress PR #13. Their CPU
+  contracts pass, but both PRs remain Draft and PyramidKV remains `import_only`
+  with no activation entry point or fixed-host compatibility declaration.
+- LatchMoE still conflicts with APC/MTP2; AQK remains gated by Draft host and
+  activation work; ADM remains inactive at DP1; CLM remains a tool/control
+  plane. These states are blockers, not zero or negative performance results.
 
 ## Error log
 

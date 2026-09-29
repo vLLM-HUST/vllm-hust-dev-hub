@@ -10,22 +10,22 @@
 
 | 组件 | 当前证据与下一步 | 固定来源 |
 | --- | --- | --- |
-| Mooncake HUST | 已从固定源码构建，四类真实传输与跨进程 NPU Store 读写通过；Qwen3.5 检索资格两次失败：1 GiB/rank 在 warm-131072 失败；16 GiB/rank 在 warm-262080 失败，尚无性能曲线。 | [8b8c7ae7](https://github.com/vLLM-HUST/mooncake-hust/tree/8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca) |
-| Mooncake vLLM Connectors | 实际 AscendStore HMA/align 服务已加载模型并捕获图；相同环境 Native 26 项全通过；扩大容量后候选第 10 项 warm-262080 仍失败，且无容量错误日志。需修复混合缓存正确性与退出问题。 | [d0f22d2b](https://github.com/vLLM-HUST/vllm-hust/tree/d0f22d2bda562156e4dbf433ce645e1769b4f804) |
-| PegaFlow | 普通连接器未声明 HMA 且只使用第 0 缓存组；NIXL 路径虽支持 HMA，但固定版本设备表无 NPU，共同 Ascend 平台未扩展该表，会被设备检查拒绝。需实际 NPU 传输适配，不能仅绕过检查。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
-| PegaFlow vLLM Connectors | 普通连接器未声明 HMA 且只使用第 0 缓存组；NIXL 路径虽支持 HMA，但固定版本设备表无 NPU，共同 Ascend 平台未扩展该表，会被设备检查拒绝。需实际 NPU 传输适配，不能仅绕过检查。 | [a3c574b8](https://github.com/vLLM-HUST/pegaflow-hust/tree/a3c574b8526969b70654715d86976474a4cc1b58) |
+| Mooncake HUST | 后续修复版已由 Extension Manager 启动 AscendStoreConnector + Mooncake，完成五档及匹配 Native；吞吐低 1.02%-2.66%，检索 26/26、前缀复用与真实设备释放通过。 | [实测报告](https://github.com/vLLM-HUST/vllm-hust-website/blob/main/docs/FRONTIER-MOONCAKE-20260926.md) |
+| Mooncake vLLM Connectors | 正式数据只归到 connector MOD，避免与核心服务重复计分；退出仍需清理已记录的遗留进程，不影响已保存窗口边界。 | [8b8c7ae7](https://github.com/vLLM-HUST/mooncake-hust/tree/8b8c7ae705bdaf918f5a8fbc7a06cb7eb1d5f3ca) |
+| PegaFlow | 已补齐 Qwen3.5 混合缓存组与 Ascend IPC 路径，完整 Frontier 五点相对统一 Native 的吞吐几何平均为 +6.34%；C1 回退，C2-C16 提升。 | [cd64ecc2](https://github.com/vLLM-HUST/pegaflow-hust/tree/cd64ecc283ff856a44437a9a25659929ef3a0653) |
+| PegaFlow vLLM Connectors | Extension Manager 生命周期与五个 900 秒窗口通过；3,386 次 load、3,050 次 save 成功，失败为零。性能只归到 connector MOD，避免与核心服务重复计分。 | [PR #30 与完整证据](https://github.com/vLLM-HUST/pegaflow-hust/pull/30) |
 | BidKV | 新共同运行时下 C1/C2/C4/C8/C16 与 Native 配对测试全部完成，原始记录校验与设备释放通过，已由 PR #283 发布。未触发抢占，不能宣称抢占收益。 | [a0cba97d](https://github.com/vLLM-HUST/vllm-hust-bidkv/tree/a0cba97d9abdc99908e46616db622f0e0099127f) |
 | DiffSpec | 当前载体要求 EAGLE3/TP4 且关闭 APC、async，不能直接替代本轮 MTP2/APC/async 配置。 | [42e5909f](https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec/tree/42e5909fc6fe276ba0defe1901257a523653aefb) |
 | vSpec | 发现针对 Qwen3.5-35B-A3B 的 EAGLE3 草稿模型；实际 EAGLE3 导入/属性 ABI 检查 13/13 通过；草稿权重下载仍遇 TLS 失败，补丁激活与硬件正确性尚未验证。 | [d4c4f659](https://github.com/vLLM-HUST/vllm-hust-vSpec/tree/d4c4f659495826e64802eedb195de52019282b47) |
-| LatchMoE | 当前启动器拒绝 APC；已执行对应拒绝路径测试。 | [9b2d4acd](https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE/tree/9b2d4acdbfbe6463a22dd0bb8e6ca5bfda47e2c1) |
-| Adaptive Quantized KV | 固定版本的扩展清单声明 import_only，activation.entry_points 为空；尚缺可测运行入口。 | [ddd306fc](https://github.com/vLLM-HUST/vllm-ascend-adaptive-quantized-kv-hust/tree/ddd306fce8d885b9b9cfeb8c947ed576c5269e66) |
+| LatchMoE | 2026-09-29 最新头仍由 launcher 强制关闭并拒绝显式 APC；Qwen3.5 fallback 同时拒绝 speculative state，与统一 APC/MTP2 合同直接冲突。 | [79adc907](https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE/tree/79adc9076ce6f0f9199841809506dbbc6c225907) |
+| Adaptive Quantized KV | PR #4/#5 已补激活门禁和正确性回执合同，但默认包仍为 import_only；Host C8 PR #35 仍是 Draft，尚无统一 Qwen3.5 硬件激活证据。 | [8587845f](https://github.com/vLLM-HUST/vllm-ascend-adaptive-quantized-kv-hust/tree/8587845f29d70256103990ed6492837ddaf5a800)、[PR #4](https://github.com/vLLM-HUST/vllm-ascend-adaptive-quantized-kv-hust/pull/4)、[PR #5](https://github.com/vLLM-HUST/vllm-ascend-adaptive-quantized-kv-hust/pull/5) |
 | Ascend Quant Toolkit | 工具是离线检查点量化；运行时描述器仅校验元数据，不加载模型或设备。缺少量化产物加载和算子选择的宿主接入，不能作为本轮 BF16 在线优化开关。 | [f161daab](https://github.com/vLLM-HUST/vllm-ascend-quant-hust/tree/f161daab91b2b558bc8ee65d2b1bc76cd78e00b6) |
 | Ascend Quant Runtime Descriptor | 工具是离线检查点量化；运行时描述器仅校验元数据，不加载模型或设备。缺少量化产物加载和算子选择的宿主接入，不能作为本轮 BF16 在线优化开关。 | [f161daab](https://github.com/vLLM-HUST/vllm-ascend-quant-hust/tree/f161daab91b2b558bc8ee65d2b1bc76cd78e00b6) |
-| Ascend KV Compression | 当前 provider 拒绝混合模型、MTP、APC、async 和多卡并行组合。 | [7c0d2114](https://github.com/vLLM-HUST/vllm-ascend-kvcompress-hust/tree/7c0d21144d99096736138812f727d6f59a93028a) |
+| Ascend KV Compression | 完整 Frontier C1/C2/C4/C8/C16 已通过，五点吞吐几何平均相对统一 Native 为 -3.55%；APC、async、MTP2、混合缓存组、双 rank commit/ack 与设备释放均有证据。 | [2ca0f933](https://github.com/vLLM-HUST/vllm-ascend-kvcompress-hust/tree/2ca0f9335399a698342285870df1514e9c519bd4) |
 | Prefix Router | 固定版本没有可运行发布；不能以安装或导入代替实测。 | [4e007c4f](https://github.com/vLLM-HUST/vllm-hust-prefix-router/tree/4e007c4fc1bd376a6dccfefbc1fd851019c8ceb6) |
 | KV Tiering | 固定版本完整 Git 树仅含四个文档/维护文件，没有运行实现。 | [3a73c7e1](https://github.com/vLLM-HUST/vllm-hust-kv-tiering/tree/3a73c7e1628801ea5d4f585bcc9d06260161a78c) |
 | KNorm | 固定版本完整 Git 树仅含四个文档/维护文件，没有运行实现。 | [e0e872ab](https://github.com/vLLM-HUST/vllm-hust-knorm/tree/e0e872abfc9fa88659b3e83c1c8b8b2b3de88fc0) |
-| PyramidKV Ascend | 除 import_only 和缺少宿主接入外，固定实现只接受 Llama/Qwen2 全注意力单缓存组，拒绝 MTP、TP2 和 FULL_AND_PIECEWISE；本轮配置被多项独立检查拒绝（源码核查）。 | [77b0862c](https://github.com/vLLM-HUST/vllm-ascend-pyramidkv-hust/tree/77b0862c1e5be8c883fda934cdb383c57cf7ad0d) |
+| PyramidKV Ascend | Draft PR #4 已实现面向 Qwen3.5 hybrid、TP2、APC、MTP2、async、align 和 FULL_AND_PIECEWISE 的外部 method，配对 KVCompress Draft PR #13 时 41 项 CPU 测试通过；但 manifest 仍是 import_only、无 activation entry point，固定 Frontier 宿主版本也不在声明范围，不能启动资格测试。 | [PyramidKV PR #4](https://github.com/vLLM-HUST/vllm-ascend-pyramidkv-hust/pull/4)、[KVCompress PR #13](https://github.com/vLLM-HUST/vllm-ascend-kvcompress-hust/pull/13) |
 | SliceGPT | 固定版本完整 Git 树仅含四个文档/维护文件，没有运行实现。 | [6acf19d9](https://github.com/vLLM-HUST/vllm-hust-slicegpt/tree/6acf19d9cbb3ed6caa3f5e6341b1da41941f9f2e) |
 | Quantized KV Cache | 当前包仅实现 dtype 与打包布局计算；缺少启用中的量化/反量化/注意力算子和宿主分配、传输接入，历史补丁归档不等于当前运行实现。 | [8dd24cdc](https://github.com/vLLM-HUST/vllm-ascend-quantized-kv-cache-hust/tree/8dd24cdce248519c173710993f6c633a96107c0d) |
 | SimLLM | 完整源码树仅含来源校验和非激活描述器；该模块明确不含 SimLLM 实现，没有可测的相似度索引、嵌入或请求改写执行路径。 | [dcdc6edf](https://github.com/vLLM-HUST/vllm-ascend-simllm-hust/tree/dcdc6edf7bdcc68bdf35058888ebfd9752ae3566) |
@@ -74,4 +74,28 @@ Native/BidKV/DLA 的 15 个共同运行时观测已由 [#283](https://github.com
 | `vllm-hust-kv-tiering` / `3a73c7e1…`、`vllm-hust-prefix-router` / `4e007c4f…`、`vllm-hust-knorm` / `e0e872ab…` | 迁移骨架 | README/current tree 仍没有可运行 release；导入成功不算机制测试。 |
 | `vllm-hust-unified-comm` / `f00d1ef4…` | 通信策略载体 | 注册表存在但共同 runtime 没有 collective delegation 接口，当前仍不能执行优化路径。 |
 
-因此，组织全量扫描后的执行顺序不是“只测网站列出的几个”：先完成已通过真实资格测试的 `async-output-row-deferral`；随后是需要固定底座端口验证的 KVCompress 0.8。FreshKV、OPset、量化 KV 和 Tricard 需要单独 cohort；LatchMoE 与不可关闭的 APC 直接冲突；import-only/migration 项目不能制造曲线。每项结论都绑定 current head，后续仓库更新后必须重新检查，不能沿用旧拒绝理由。
+截至 2026-09-28，组织全量扫描后的执行顺序曾是先完成 `async-output-row-deferral`，再验证
+KVCompress 的固定底座端口。后续状态见下方 2026-09-29 再核查；FreshKV、OPset、量化 KV 和
+Tricard 仍需要单独 cohort，import-only/migration 项目不能制造曲线。
+
+## 2026-09-29 current-head 再核查
+
+Legacy017 按当前工作流要求暂缓，不将包级实验当作独立功能 MOD。已完成项目不重跑：KVCompress
+正式五点为 -3.55%，PegaFlow 正式五点为 +6.34%，二者均已合并完整证据并发布网站。
+
+本次重新读取 71 个组织仓库及交接后更新的默认头/开放 PR。没有发现可立即进入 60 秒硬件资格测试的
+新 MOD。最接近的是 PyramidKV Draft PR #4 与共享宿主 KVCompress Draft PR #13：
+
+- PyramidKV `a2f981e348d3` 在配对宿主 `c97dce2fa06a` 下为 `41 passed, 1 skipped`；
+- KVCompress PR #13 为 `195 passed, 1 skipped`；
+- Extension Manager inspect/check 正确返回 `import_only`、无 activation entry point、host version
+  不兼容；因此没有 enable、服务启动或 NPU 性能动作；
+- method compatibility 当前刻意接受 APC-off、no-MTP 和 eager；若要解除 import_only 并用于本
+  cohort，必须由 manifest/Manager profile 或更窄的 release gate 强制 APC、MTP2 与
+  FULL_AND_PIECEWISE，不能只依赖 benchmark 命令约定；
+- 两个 PR 都仍是 Draft，且缺固定 Frontier exact-stack activation、rollback 与真实设备正确性；
+  只有它们完成注册/合并并给出固定底座兼容线后，才应开始 qualification。
+
+LatchMoE `79adc9076ce6` 仍拒绝 APC 和 speculative state；AQK PR #4/#5 仍是门禁与证据合同，Host
+PR #35 仍为 Draft；ADM 的最新提交只索引既有 DP4 实验，DP1 机制仍不生效；CLM 0.1.1 是非阻塞
+报告/控制平面修复，不是吞吐优化候选。以上均不生成零分或性能点。

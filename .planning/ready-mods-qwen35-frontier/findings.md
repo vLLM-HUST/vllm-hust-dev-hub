@@ -53,6 +53,26 @@
 - All four NPUs report healthy with no running NPU processes.
 - Qualification ports 33784, 50055 and 9091 no longer have owned listeners.
 
+## 2026-09-29 current-head re-audit
+
+- PegaFlow and KVCompress are now completed and published. Do not rerun them.
+- Legacy017 is deferred until its package is split into independently owned
+  functional MODs.
+- The nearest new candidate is PyramidKV PR #4 at
+  `a2f981e348d34895561f437171f5525a03a6ca0b`, paired with KVCompress PR #13 at
+  `c97dce2fa06a6963269d6d194faeffb7210c3380`.
+- The paired CPU contract passes: PyramidKV 41 passed / 1 skipped; KVCompress
+  195 passed / 1 skipped. Manager inspect/check still reports PyramidKV as
+  `import_only`, without activation entry points, and outside the fixed host
+  version range. Both PRs remain Draft, so no hardware qualification is valid.
+- The method tests deliberately admit APC-off and no-MTP configurations. Before
+  activation, an exact release profile must enforce APC, MTP2 and
+  FULL_AND_PIECEWISE for this cohort; a benchmark command alone is not a gate.
+- LatchMoE head `79adc9076ce6f0f9199841809506dbbc6c225907` still rejects
+  APC and speculative state. AQK PR #4/#5 add gates and receipts, not runtime
+  activation; its Host PR #35 remains Draft. ADM remains inactive at DP1, and
+  CLM remains a tool/control-plane component.
+
 ## Organization-wide current-head expansion
 
 - The GitHub organization currently exposes 71 repositories. The earlier

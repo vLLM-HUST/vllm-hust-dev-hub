@@ -39,3 +39,18 @@
   group-aware query/save/load semantics plus divergent-prompt and recurrent
   state restoration tests. The fixed configuration can then be retried
   without changing the workload or Native baseline.
+
+## 2026-09-29 continuation
+
+- PegaFlow's general-connector repair, formal five-point run, evidence merge,
+  website publication and production verification are complete.
+- KVCompress's fixed-host port, formal five-point run, evidence merge, website
+  publication and production verification are complete.
+- Re-screened all 71 organization repositories and the default heads/PRs
+  updated after the original handoff.
+- Reproduced the nearest pending pair: PyramidKV PR #4 passes 41 tests with one
+  NPU skip against KVCompress PR #13, whose own suite passes 195 tests with one
+  skip.
+- No NPU qualification was started because PyramidKV remains descriptor-only,
+  both required PRs are Draft, and the fixed host is outside the manifest's
+  declared version range.
