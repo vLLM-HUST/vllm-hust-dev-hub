@@ -26,6 +26,10 @@
 
 ## Current state
 
+- The measured-series completion target and standalone-point classification are
+  recorded in `series-completion-20260930.md`. Chart appearance is not an
+  experiment objective: only identical-setting concurrency observations may be
+  connected.
 - PegaFlow and KVCompress have completed formal five-point campaigns, evidence
   merges, website publication and production verification. Do not rerun them.
 - Legacy017 is deferred until its package is split into independently owned
