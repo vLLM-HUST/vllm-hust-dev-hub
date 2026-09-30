@@ -54,3 +54,19 @@
 - No NPU qualification was started because PyramidKV remains descriptor-only,
   both required PRs are Draft, and the fixed host is outside the manifest's
   declared version range.
+
+## 2026-09-30 measured-series completion
+
+- Audited all 21 standalone Qwen3.5 SWE Prefix Reuse points.
+- Identified five existing Native Rotation2 observations whose shared campaign
+  identity was missing from the chart metadata; website PR #331 repairs that
+  identity without changing results.
+- Classified nine historical topology/capacity/smoke observations for separate
+  setting pages and seven BetterScale one-point configurations for owner-driven
+  compatibility work or fresh matched series.
+- Recorded the formal completion matrix and evidence gate in
+  `series-completion-20260930.md`.
+- The four visible NPUs were idle at audit time. No formal window was started:
+  the current BetterScale route requires runtime commits `752a3a5` / `9bf964c`,
+  while the unified contract is pinned to `d0f22d2` / `03766ac`. Mixing them
+  would create an invalid series.
