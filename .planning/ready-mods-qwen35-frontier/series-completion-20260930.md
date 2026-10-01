@@ -32,7 +32,30 @@ for arbitrary new runs.
 - Preserve both C16 repeats as independent observations.
 - Expected display after deployment: 175 points, 35 measured-series lines, 16 standalone points.
 
-### P1: BetterScale resident State D1
+### P1: fixed official Native v0.18 curve
+
+Add a matched C1/C2/C4/C8/C16 Native curve for vLLM `v0.18.0` plus vLLM-Ascend
+`v0.18.0`. This is the fixed official baseline runtime pair. Other Native curves remain valid
+configuration observations, but must not be labelled as the official baseline:
+
+- vLLM `v0.25.1` (`752a3a504485790a2e8491cacbb35c137339ad34`) plus vLLM-Ascend
+  `v0.25.1rc1` (`9bf964cb4b87c8cd0d6852c41a55b3c29711fa95`)
+- vLLM `v0.25.1+frontier.unified`
+  (`d0f22d2bda562156e4dbf433ce645e1769b4f804`) plus vLLM-Ascend
+  `v0.25.1rc1+2` (`03766ac696fde5ab1980d80ca0b8543d3580c989`)
+
+The vLLM-Ascend `v0.18.0` source registers `Qwen/Qwen3.5-35B-A3B` and includes TP4
+end-to-end coverage, including `FULL_DECODE_ONLY` with MTP3. That establishes model support, not
+qualification for this campaign's TP2, 262K, APC-align, async, MTP2 and
+`FULL_AND_PIECEWISE` combination. Run a clean qualification before any formal window.
+
+The 2026-10-01 evaluation container cannot produce this baseline: it has CANN 9.1 and
+torch/torch-npu 2.10, while the `v0.18.0` release contract requires CANN/NNAL 8.5.1 and
+torch/torch-npu 2.9.0. Use a clean 8.5.1 image with all four 910B2 devices free. Do not replace the
+container's pinned runtime in place, and do not publish a compatibility trial from a different
+software stack as the official baseline.
+
+### P2: BetterScale resident State D1
 
 Produce a fresh C1/C2/C4/C8/C16 series from one clean source and one runtime contract. The existing
 C16 observation remains immutable reference evidence and cannot complete a new-source series.
@@ -45,13 +68,13 @@ Before any NPU window, BetterScale must either:
 The existing BetterScale route is pinned to `752a3a5` / `9bf964c`; mixing those observations with
 the unified Native control is prohibited.
 
-### P2: BetterScale incremental-cache comparison
+### P3: BetterScale incremental-cache comparison
 
 For E16/R20, measure full and incremental modes as paired arms at C1/C2/C4/C8/C16. D1 and D2 are
 separate settings. Alternate arm order across concurrency points and preserve regressions. This is
 20 formal windows after clean qualification, not a request to reuse the older C16 points.
 
-### P3: capacity and topology settings
+### P4: capacity and topology settings
 
 Move E36/R36 C32, TP8, TP8EP8, DP8EP8, MTP0 and historical capacity points to accurately named
 setting pages. Add a capacity sweep only when its owner predeclares a valid concurrency range and
