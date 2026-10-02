@@ -35,7 +35,7 @@ SCHEMASTORE,schemastore,public_dataset,A2,READY_PUBLIC_FROZEN,SchemaStore schema
 SHAREGPT-V3,sharegpt-v3.json,public_dataset,A2/A4,READY_PUBLIC_FROZEN,One physical conversation corpus used by several online profiles
 SONNET,sonnet.txt,benchmark_text,A1/A3,READY_PUBLIC_FROZEN,Fixed benchmark text corpus
 STRUCTEVAL,structeval-data,public_dataset,A2,READY_PUBLIC_FROZEN,Code and zip assets are source/package copies and not separate datasets
-SZYN-OPENCODE-SWEBENCH-VERIFIED-500,suzhou-yunneng-opencode-oss-issues,enterprise_dataset,A2,READY_QUALIFICATION_REQUIRED,SWE-bench Verified task pool and associated local metadata
+SZYN-OPENCODE-SWEBENCH-VERIFIED-500,suzhou-yunneng-opencode-oss-issues,enterprise_dataset,A2,SINGLE_CASE_QUALIFICATION_PASSED_BATCH_PENDING,China Mobile Suzhou / Suzhou Yunneng SWE-bench Verified task pool and associated local metadata
 SYFI-CODING-TRACE,syfi-coding-trace.jsonl.gz,workload_trace,A2/A3,READY_PROVENANCE_REVIEW,One physical trace referenced by tool coding and long-context profiles
 TAU2-BENCH,tau2-bench,public_dataset,A2,READY_PUBLIC_FROZEN,Domain data under the tau2 repository are one benchmark family
 TOOLBENCH,toolbench,public_dataset,A2,READY_PUBLIC_FROZEN,Official full data.zip with G1 G2 G3 instructions test splits tool environment and answers

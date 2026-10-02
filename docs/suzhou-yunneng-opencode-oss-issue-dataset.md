@@ -1,8 +1,8 @@
-# 苏州云能 OpenCode 开源 Issue 解决生产优化数据集
+# 中国移动苏州（苏州云能）OpenCode 开源 Issue 解决生产优化数据集
 
 ## 定位
 
-该数据集由苏州云能组织采集并用于生产优化。输入任务来自真实开源项目 Issue，输出由冻结版本 OpenCode 在真实仓库 checkout 中实际生成。`producer=苏州云能`不改变 Issue、代码和许可证的上游归属；不得将其描述为苏州云能原创 Issue 或真实线上流量。
+该数据集由中国移动苏州（苏州云能）组织采集并用于生产优化。输入任务来自真实开源项目 Issue，输出由冻结版本 OpenCode 在真实仓库 checkout 中实际生成。该归属不改变 Issue、代码和许可证的上游归属；不得将其描述为中国移动苏州（苏州云能）原创 Issue 或真实线上流量。
 
 适用范围为 A2 Tool/Agent 与 Reasoning/Code 扩展、A4 Tool/Reasoning 租户扩展以及长程代码 Agent。结果单列，不替代 BFCL/tau2，也不进入 A1—A4 硬门槛。
 
@@ -35,4 +35,8 @@ SWE-bench执行工具源码冻结于commit `7a21e05772954cc81471ae19d56f436cecf4
 
 OpenCode版本、模型、provider、prompt合同或sandbox变化都产生新的数据集版本。成功、失败、超时和无效patch全部保留，不按结果选择样本。
 
-当前工具和500条任务池已经就绪；批量轨迹采集仍保持inactive，直到明确冻结采集模型/provider和仓库sandbox合同。
+## 单题 qualification（2026-10-02）
+
+冻结任务排序后的首个样本 `django__django-15104` 已在 Qwen3.5-35B-A3B、BF16、TP2、OpenCode 1.18.19、`thinking=false` 配置上完成真实执行。Agent 在退出前看不到 gold patch 与隐藏测试；评测阶段将其唯一源码改动应用到干净 checkout 后，新增目标用例 `1/1` 通过，完整 `migrations.test_autodetector` 模块 `139/139` 通过，生成源码与 gold patch 结果完全一致。完整脱敏证据位于 `results/szyn-opencode-qwen35-20261002/django__django-15104/`。
+
+这是采集链路和 sandbox 合同的单题 qualification，不是 500 题聚合成绩。其余 499 题尚未执行，不能据此发布完整 resolution rate，也不能将该结果混入 900 秒 SWE prefix 吞吐曲线。

@@ -11,12 +11,15 @@ CONFIG = Path("config/suzhou-yunneng-opencode-oss-issue-workload.json")
 
 def test_suzhou_yunneng_opencode_contract_freezes_tool_and_source() -> None:
     contract = json.loads(CONFIG.read_text())
-    assert contract["owner_and_producer"] == "苏州云能"
+    assert contract["owner_and_producer"] == "中国移动苏州（苏州云能）"
     assert contract["purpose"] == "production_optimization"
     assert contract["task_source"]["records"] == 500
     assert contract["collector"]["version"] == "1.18.19"
     assert contract["collector"]["platform"] == "linux-arm64"
-    assert contract["execution"]["collection_model"] is None
+    assert contract["execution"]["status"] == "SINGLE_CASE_QUALIFICATION_PASSED_BATCH_NOT_STARTED"
+    assert contract["execution"]["collection_model"].startswith("Qwen3.5-35B-A3B@")
+    assert contract["execution"]["qualification"]["attempted"] == 1
+    assert contract["execution"]["qualification"]["resolved"] == 1
     assert contract["trace_contract"]["gold_patch_visible_to_agent"] is False
     assert contract["trace_contract"]["retain_all_attempts"] is True
 

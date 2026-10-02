@@ -1,0 +1,32 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "snapshot": false,
+  "model": "vllm-local/qwen35-szyn-native-thinking-off",
+  "provider": {
+    "vllm-local": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Local vLLM-HUST",
+      "options": {
+        "baseURL": "http://127.0.0.1:33821/v1",
+        "apiKey": "<redacted-local-placeholder>"
+      },
+      "models": {
+        "qwen35-szyn-native-thinking-off": {
+          "name": "Qwen3.5-35B-A3B BF16 TP2 native thinking=false",
+          "limit": {
+            "context": 262144,
+            "output": 32768
+          }
+        }
+      }
+    }
+  },
+  "permission": {
+    "*": "allow"
+  },
+  "agent": {},
+  "mode": {},
+  "plugin": [],
+  "command": {},
+  "username": "root"
+}

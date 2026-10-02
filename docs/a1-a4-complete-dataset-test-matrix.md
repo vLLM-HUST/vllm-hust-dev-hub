@@ -80,7 +80,7 @@ A1 不把语义问答数据强行填充成固定 token 形状；否则会改变�
 | A2-T-SYFI | SyFi coding trace | gzip 中全部 session、round 和 tool event | 本地 benchmark Trace；授权凭证待补 | `READY_PROVENANCE_REVIEW` |
 | A2-T-HOTPOT-REACT | HotpotQA/ReAct | 本地 100 条 ReAct 资产及官方 HotpotQA 完整 split 分别执行 | HotpotQA CC-BY-SA-4.0 | `READY_LOCAL_SUBSET_AND_OFFICIAL_FULL` |
 | A2-T-AGENT-CACHE | agent-cache-pressure workload | registry 生成的全部请求 | benchmark 仓库生成器 | `GENERATOR_READY` |
-| SZYN-OPENCODE-SWEBENCH-VERIFIED-500 | 苏州云能 OpenCode 开源 Issue 解决生产优化数据集 | 500 个真实开源 Issue；实际执行后保留完整 agent/tool/patch/test/失败轨迹 | SWE-bench Verified + OpenCode；逐仓库保留上游许可 | `TASK_POOL_READY_TRACE_COLLECTION_PENDING`（生产优化扩展，不替代 BFCL/tau2 硬门槛） |
+| SZYN-OPENCODE-SWEBENCH-VERIFIED-500 | 中国移动苏州（苏州云能）OpenCode 开源 Issue 解决生产优化数据集 | 500 个真实开源 Issue；实际执行后保留完整 agent/tool/patch/test/失败轨迹 | SWE-bench Verified + OpenCode；逐仓库保留上游许可 | `SINGLE_CASE_QUALIFICATION_PASSED_BATCH_PENDING`（1/1 qualification 通过；生产优化扩展，不替代 BFCL/tau2 硬门槛） |
 
 BFCL v3 的 25 个任务分组不得合并为一个抽样测试：`simple`、`multiple`、`parallel`、`parallel_multiple`、`irrelevance`、`chatable`、`java`、`javascript`、`rest`、`sql`、`exec_simple`、`exec_multiple`、`exec_parallel`、`exec_parallel_multiple`、`live_simple`、`live_multiple`、`live_parallel`、`live_parallel_multiple`、`live_relevance`、`live_irrelevance`、`multi_turn_base`、`multi_turn_composite`、`multi_turn_long_context`、`multi_turn_miss_func`、`multi_turn_miss_param`。
 
@@ -121,7 +121,7 @@ BFCL v3 的 25 个任务分组不得合并为一个抽样测试：`simple`、`mu
 | A2-C-SYFI | SyFi coding trace | 全部 session/round | 本地 Trace | `READY_PROVENANCE_REVIEW` |
 | PAIO-CODE-EVAL-1000 | `code_eval_ttft_1000.jsonl` | 1,000 条全部请求 | 同一物理资产的 Code 扩展引用 | `ASSET_VERIFIED_EXTENSION_ONLY` |
 | A2-C-NGRAM | ngram-instructcoder-online | InstructCoder 全部记录 | benchmark 仓库 + InstructCoder | `DATA_READY_FEATURE_VERIFY_REQUIRED` |
-| SZYN-OPENCODE-SWEBENCH-VERIFIED-500 | OpenCode issue-resolution | 500 个冻结任务，按 case_key 顺序执行并逐项目报告 | 苏州云能生产优化数据集；Issue 内容归属各上游项目 | `TASK_POOL_READY_TRACE_COLLECTION_PENDING` |
+| SZYN-OPENCODE-SWEBENCH-VERIFIED-500 | OpenCode issue-resolution | 500 个冻结任务，按 case_key 顺序执行并逐项目报告 | 中国移动苏州（苏州云能）生产优化数据集；Issue 内容归属各上游项目 | `SINGLE_CASE_QUALIFICATION_PASSED_BATCH_PENDING` |
 
 ### A2-V：多模态对话
 
@@ -191,7 +191,7 @@ A4 不是重新抽样四份小数据，而是把 A2 已冻结的完整请求流�
 
 BurstGPT 和 SyFi 的到达时间、会话边界及 burst 信息作为 A4 调度 trace 全量重放；它们不覆盖上述语义数据集的来源身份。VisionArena 只在参与比较的 B0/B1 模型均正式支持同一图像输入协议时纳入 A4；当前文本模型记为 `MODEL_MODALITY_NOT_APPLICABLE`。
 
-`SZYN-OPENCODE-SWEBENCH-VERIFIED-500`作为苏州云能生产优化扩展，可用于 A2 Tool/Agent、A2 Reasoning/Code、A4 Tool/Reasoning 租户及长程代码 Agent；其真实开源 Issue 与实际 OpenCode 执行轨迹分别保留 provenance。它不是苏州云能原始 issue 内容或真实线上流量，不进入 A1—A4 硬门槛，也不替代 BFCL/tau2。
+`SZYN-OPENCODE-SWEBENCH-VERIFIED-500`作为中国移动苏州（苏州云能）生产优化扩展，可用于 A2 Tool/Agent、A2 Reasoning/Code、A4 Tool/Reasoning 租户及长程代码 Agent；其真实开源 Issue 与实际 OpenCode 执行轨迹分别保留 provenance。它不是中国移动苏州（苏州云能）原始 issue 内容或真实线上流量，不进入 A1—A4 硬门槛，也不替代 BFCL/tau2。2026-10-02 已完成首个确定性样本的单题 qualification；完整 500 题批量仍待执行。
 
 A4 还必须分别执行 `shared-prefix-multi-tenant-assistant`、`session-affine-bursty`、`multi-nic-throughput`、`unified-comm-online`、`eplb-expert-rebalance-online` 和 `moe-alltoall-online`。若当前单卡稠密模型与某项硬件/模型前提不匹配，结果为明确的 `HARDWARE_OR_MODEL_NOT_APPLICABLE`，不得伪造性能值。
 

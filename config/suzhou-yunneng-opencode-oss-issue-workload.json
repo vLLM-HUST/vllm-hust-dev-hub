@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "asset_id": "SZYN-OPENCODE-SWEBENCH-VERIFIED-500",
-  "display_name": "苏州云能 OpenCode 开源 Issue 解决生产优化数据集",
-  "owner_and_producer": "苏州云能",
+  "display_name": "中国移动苏州（苏州云能）OpenCode 开源 Issue 解决生产优化数据集",
+  "owner_and_producer": "中国移动苏州（苏州云能）",
   "purpose": "production_optimization",
   "source_content_ownership": "retained_per_upstream_repository_and_SWE_bench_provenance",
   "source_kind": "real_open_source_issue_with_generated_agent_execution_trace",
@@ -65,9 +65,19 @@
     "report_each_repository_and_case_separately": true
   },
   "execution": {
-    "status": "INACTIVE_UNTIL_COLLECTION_MODEL_AND_SANDBOX_CONTRACT_FROZEN",
-    "collection_model": null,
-    "provider": null,
-    "reason": "OpenCode and the task pool are frozen; the collection model changes trace identity and must be explicitly selected before batch execution."
+    "status": "SINGLE_CASE_QUALIFICATION_PASSED_BATCH_NOT_STARTED",
+    "collection_model": "Qwen3.5-35B-A3B@712cf74392b05026a6db2bf213d343747d1f6d45",
+    "provider": "vLLM OpenAI-compatible API",
+    "qualification": {
+      "configuration": "BF16_TP2_PP1_APC_ASYNC_MAMBA_ALIGN_MTP2_FULL_AND_PIECEWISE_THINKING_FALSE",
+      "case": "django__django-15104",
+      "attempted": 1,
+      "resolved": 1,
+      "fail_to_pass": "1/1",
+      "pass_to_pass_module": "139/139",
+      "agent_patch_matches_gold_source": true,
+      "evidence": "results/szyn-opencode-qwen35-20261002/django__django-15104"
+    },
+    "reason": "The frozen collector and sandbox path passed one deterministic hidden-test qualification case. The remaining 499 tasks have not run, so no 500-task aggregate score exists."
   }
 }
