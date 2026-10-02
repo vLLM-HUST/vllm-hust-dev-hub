@@ -1,0 +1,32 @@
+{
+  "model": "qwen35-szyn-native-thinking-off",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Call get_current_case exactly once with case_id set to smoke-case. Do not answer in prose."
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_current_case",
+        "description": "Return the selected qualification case.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "case_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "case_id"
+          ]
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "temperature": 0,
+  "max_tokens": 256
+}

@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "single_case_qualification_not_dataset_aggregate",
+  "asset_id": "SZYN-OPENCODE-SWEBENCH-VERIFIED-500",
+  "attribution": {
+    "organization": "China Mobile",
+    "producer": "China Mobile Suzhou / Suzhou Yunneng"
+  },
+  "selection": {
+    "rule": "first_record_after_case_key_sort",
+    "case_key": "008912e30670480254ecdbac870fcb7ccbf0b1d1435af30b0fe92671c489fc26",
+    "instance_id": "django__django-15104",
+    "repository": "django/django",
+    "base_commit": "a7e7043c8746933dafce652507d3b821801cdc7d"
+  },
+  "task_pool": {
+    "source_revision": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+    "source_parquet_sha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
+    "ordered_tasks_sha256": "9b9ee6a71f19bd178ab07d68622478757fc36aadc3c1b9c50f5afe8fad28c0ed",
+    "manifest_sha256": "84a2ad4e3931d93bd8406d048bcf12c37cc771886812d04fc74f54b8bde7f3fa"
+  },
+  "collector": {
+    "name": "OpenCode",
+    "version": "1.18.19",
+    "commit": "2b72179c663cadcb54f54d9f19221b3fb3d11fb6",
+    "binary_sha256": "c34a30f5567f989d9a089cc4a0bf5860d81273fc6644de96671bd5cbe5dd31ec"
+  },
+  "model": {
+    "name": "Qwen3.5-35B-A3B",
+    "revision": "712cf74392b05026a6db2bf213d343747d1f6d45",
+    "dtype": "bfloat16",
+    "tensor_parallel_size": 2,
+    "pipeline_parallel_size": 1,
+    "max_model_len": 262144,
+    "max_num_seqs": 16,
+    "max_num_batched_tokens": 4096,
+    "prefix_caching": true,
+    "async_scheduling": true,
+    "mamba_cache_mode": "align",
+    "mtp_draft_tokens": 2,
+    "thinking": false,
+    "temperature": 0,
+    "graph_mode": "FULL_AND_PIECEWISE",
+    "kv_cache_memory_bytes_per_device": 26038239232
+  },
+  "runtime": {
+    "vllm_commit": "0fc695fc6d1d82e9a5ac6835ac8e4e1c83703665",
+    "vllm_ascend_commit": "1cdb8c4db6e50f36f1fb3283b3e3dd618f6821e8",
+    "accelerator": "Ascend 910B2",
+    "device_count": 2
+  },
+  "result": {
+    "attempted": 1,
+    "resolved": 1,
+    "resolution_rate": 1.0,
+    "fail_to_pass": "1/1 passed",
+    "pass_to_pass_module": "139/139 passed",
+    "gold_source_comparison": "exact",
+    "wall_time_seconds": 161.091326281,
+    "prompt_tokens": 649311,
+    "generation_tokens": 3809,
+    "successful_model_requests": 26,
+    "failed_model_requests": 0,
+    "mtp_draft_tokens": 2630,
+    "mtp_accepted_tokens": 2491,
+    "prefix_cache_query_tokens": 649311,
+    "prefix_cache_hit_tokens": 544768
+  },
+  "sandbox": {
+    "kind": "isolated_git_checkout",
+    "network": "available_for_dependency_installation",
+    "gold_patch_visible_to_agent": false,
+    "hidden_tests_visible_to_agent": false,
+    "retain_failed_attempts": true
+  }
+}

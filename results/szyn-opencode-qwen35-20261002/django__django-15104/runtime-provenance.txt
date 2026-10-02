@@ -1,0 +1,6 @@
+vllm_commit=0fc695fc6d1d82e9a5ac6835ac8e4e1c83703665
+vllm_ascend_commit=1cdb8c4db6e50f36f1fb3283b3e3dd618f6821e8
+model_revision=712cf74392b05026a6db2bf213d343747d1f6d45
+opencode_version=1.18.19
+opencode_binary_sha256=c34a30f5567f989d9a089cc4a0bf5860d81273fc6644de96671bd5cbe5dd31ec
+python=Python 3.12.13
