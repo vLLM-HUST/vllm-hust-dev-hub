@@ -23,6 +23,12 @@ def test_image_name_uses_official_swebench_encoding() -> None:
     )
 
 
+def test_skopeo_platform_args_override_x86_on_arm_hosts() -> None:
+    module = load_module()
+    assert module.skopeo_platform_args("x86_64") == ["--override-arch", "amd64"]
+    assert module.skopeo_platform_args("arm64") == []
+
+
 def test_guest_runner_handles_nonempty_and_empty_patches() -> None:
     module = load_module()
     nonempty = module.guest_runner("abc123", False)

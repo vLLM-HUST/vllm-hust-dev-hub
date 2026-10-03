@@ -190,13 +190,38 @@ def run_logged(
             return None, True, time.monotonic() - started
 
 
-def inspect_digest(image: str) -> str:
+def skopeo_platform_args(arch: str) -> list[str]:
+    return ["--override-arch", "amd64"] if arch == "x86_64" else []
+
+
+def inspect_digest(image: str, arch: str) -> str:
     return subprocess.run(
-        ["skopeo", "inspect", "--format", "{{.Digest}}", f"docker://{image}"],
+        [
+            "skopeo",
+            "inspect",
+            *skopeo_platform_args(arch),
+            "--format",
+            "{{.Digest}}",
+            f"docker://{image}",
+        ],
         check=True,
         capture_output=True,
         text=True,
     ).stdout.strip()
+
+
+def select_image(instance_id: str, preferred_arch: str) -> tuple[str, str, str]:
+    candidates = [preferred_arch]
+    if preferred_arch != "x86_64":
+        candidates.append("x86_64")
+    errors = []
+    for arch in candidates:
+        image = image_name(instance_id, arch)
+        try:
+            return arch, image, inspect_digest(image, arch)
+        except subprocess.CalledProcessError as exc:
+            errors.append(f"{arch}: exit {exc.returncode}")
+    raise RuntimeError("no official SWE-bench image available; " + "; ".join(errors))
 
 
 def prepare_image(
@@ -217,6 +242,7 @@ def prepare_image(
             "copy",
             "--retry-times",
             "3",
+            *skopeo_platform_args(arch),
             f"docker://{image}",
             f"oci:{oci_layout}:{tag}",
         ],
@@ -373,9 +399,8 @@ def grade_one(
             raise ValueError("agent patch hash does not match collection terminal")
 
         test_spec = make_spec(instance, swebench_source)
-        arch = str(test_spec.arch)
-        image = image_name(instance_id, arch)
-        digest = inspect_digest(image)
+        preferred_arch = str(test_spec.arch)
+        arch, image, digest = select_image(instance_id, preferred_arch)
         prepare_image(
             instance_id=instance_id,
             arch=arch,
@@ -426,7 +451,12 @@ def grade_one(
             terminal["status"] = (
                 "resolved" if report[instance_id]["resolved"] else "unresolved"
             )
-        terminal["image"] = {"architecture": arch, "digest": digest, "name": image}
+        terminal["image"] = {
+            "preferred_architecture": preferred_arch,
+            "executed_architecture": arch,
+            "digest": digest,
+            "name": image,
+        }
     except Exception as exc:  # noqa: BLE001 - preserve a terminal record per task
         terminal["status"] = "grader_error"
         terminal["error_type"] = type(exc).__name__
