@@ -70,6 +70,18 @@
     "workspace_isolation": "one directory per task",
     "collector_concurrency": 4
   },
+  "grader": {
+    "implementation": "official-swebench-v2.1.7-over-oci-proot",
+    "swebench_commit": "5f5a7df799663adba4b191eca3d675faf3621fe2",
+    "dataset_parquet_sha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
+    "harness_script_sha256": "79ab808db401982dd6f36b2bafbc846fe5921ec393770c2748a08ed1ce1cf299",
+    "proot_commit": "25dc6a3134891f98a79f57ce1c2c1b23ff15cad1",
+    "proot_binary_sha256": "4760e19f3b2cd1e59d56cdfa90e69b0939776f86dd30191eb6cbb7059b7eeece",
+    "qemu_x86_64_static_sha256": "0502c5dbab0849e49d173a07752e8ee78b7b3d9a168d2e3450ee35285cb226b0",
+    "image_registry": "docker.io/swebench",
+    "image_digest_recorded_per_task": true,
+    "official_eval_script_recorded_per_task": true
+  },
   "scoring": {
     "grader_timeout_seconds": 1800,
     "gold_patch_is_not_applied": true,
