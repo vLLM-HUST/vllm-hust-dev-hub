@@ -267,10 +267,50 @@ def test_inspect_image_repository_accepts_swebench_setup_commit(
         check=True,
     )
 
-    state = module.inspect_image_repository(tmp_path / "rootfs", base)
+    state = module.inspect_image_repository(tmp_path / "rootfs", base, ["build/"])
     assert state["relation"] == "swebench-setup-commit"
     assert state["head_parent"] == base
     assert state["worktree_clean"] is True
+    assert state["removed_untracked_paths"] == []
+
+
+def test_inspect_image_repository_removes_only_declared_untracked_path(
+    tmp_path: Path,
+) -> None:
+    module = load_module()
+    repository = tmp_path / "rootfs" / "testbed"
+    repository.mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", str(repository)], check=True)
+    subprocess.run(
+        ["git", "-C", str(repository), "config", "user.email", "test@example.com"],
+        check=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(repository), "config", "user.name", "Test"], check=True
+    )
+    (repository / "module.py").write_text("base\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repository), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(repository), "commit", "-qm", "base"], check=True)
+    base = subprocess.run(
+        ["git", "-C", str(repository), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    build = repository / "build"
+    build.mkdir()
+    (build / "generated.txt").write_text("generated\n", encoding="utf-8")
+
+    state = module.inspect_image_repository(tmp_path / "rootfs", base, ["build/"])
+
+    assert state["removed_untracked_paths"] == ["build/"]
+    assert not build.exists()
+    assert subprocess.run(
+        ["git", "-C", str(repository), "status", "--porcelain=v1"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout == ""
 
 
 def test_normalize_patch_excludes_only_matching_diff_sections() -> None:

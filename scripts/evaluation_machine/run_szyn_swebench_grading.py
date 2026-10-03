@@ -429,7 +429,11 @@ def normalize_patch(patch: str, exclude_patterns: list[str]) -> tuple[str, list[
     return "".join(normalized), excluded
 
 
-def inspect_image_repository(rootfs: Path, base_commit: str) -> dict[str, Any]:
+def inspect_image_repository(
+    rootfs: Path,
+    base_commit: str,
+    allowed_untracked_paths: list[str],
+) -> dict[str, Any]:
     repository = rootfs / "testbed"
 
     def git(*arguments: str, check: bool = True) -> str:
@@ -451,14 +455,33 @@ def inspect_image_repository(rootfs: Path, base_commit: str) -> dict[str, Any]:
         raise ValueError(
             f"official image HEAD {head} is not based directly on {base_commit}"
         )
+    removed_untracked_paths: list[str] = []
     if status:
-        raise ValueError("official image repository is not clean before evaluation")
+        lines = status.splitlines()
+        observed = [line[3:] for line in lines if line.startswith("?? ")]
+        if len(observed) != len(lines) or any(
+            path not in allowed_untracked_paths for path in observed
+        ):
+            raise ValueError("official image repository is not clean before evaluation")
+        repository_root = repository.resolve()
+        for relative in observed:
+            target = (repository / relative.rstrip("/")).resolve()
+            if not target.is_relative_to(repository_root) or target == repository_root:
+                raise ValueError("unsafe official image cleanup path")
+            if target.is_dir():
+                shutil.rmtree(target)
+            elif target.exists():
+                target.unlink()
+            removed_untracked_paths.append(relative)
+        if git("status", "--porcelain=v1"):
+            raise ValueError("official image cleanup did not produce a clean repository")
     return {
         "base_commit": base_commit,
         "head": head,
         "head_parent": parent or None,
         "relation": relation,
         "worktree_clean": True,
+        "removed_untracked_paths": removed_untracked_paths,
     }
 
 
@@ -767,7 +790,13 @@ def _grade_one_locked(
             )
         rootfs = bundle / "rootfs"
         image_repository = inspect_image_repository(
-            rootfs, str(instance["base_commit"])
+            rootfs,
+            str(instance["base_commit"]),
+            list(
+                contract["grader"]["official_image_repository"][
+                    "allowed_untracked_paths"
+                ]
+            ),
         )
         terminal["image_repository"] = image_repository
 

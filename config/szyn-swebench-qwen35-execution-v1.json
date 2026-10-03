@@ -79,12 +79,13 @@
     "implementation": "official-swebench-v2.1.7-over-oci-native-proot-or-fex",
     "swebench_commit": "5f5a7df799663adba4b191eca3d675faf3621fe2",
     "dataset_parquet_sha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
-    "harness_script_sha256": "07e552175471a8c9c366c9a93c2ec0c3467d9d250543ba1aea5efa89dec297b6",
+    "harness_script_sha256": "205a7a2b54977808dc2f8b2db3c31c7dd28e241b155541daf68e56f476962ba6",
     "compatible_harness_sha256s": [
       "c693c39cbc7042ae59d1774fed0076a5d78155d8e232f729798026d0b3eea639",
-      "07e552175471a8c9c366c9a93c2ec0c3467d9d250543ba1aea5efa89dec297b6"
+      "07e552175471a8c9c366c9a93c2ec0c3467d9d250543ba1aea5efa89dec297b6",
+      "205a7a2b54977808dc2f8b2db3c31c7dd28e241b155541daf68e56f476962ba6"
     ],
-    "compatible_harness_scope": "The earlier hash has identical patch application, execution, and scoring logic; the current hash only serializes shared OCI layout copy and unpack operations.",
+    "compatible_harness_scope": "Earlier hashes have identical patch application, execution, and scoring logic. The second hash serializes shared OCI layout operations; the current hash additionally removes only explicitly declared untracked official-image build artifacts before enforcing a clean worktree.",
     "oci_layout_writer_concurrency": 1,
     "proot_commit": "25dc6a3134891f98a79f57ce1c2c1b23ff15cad1",
     "proot_binary_sha256": "4760e19f3b2cd1e59d56cdfa90e69b0939776f86dd30191eb6cbb7059b7eeece",
@@ -105,6 +106,8 @@
     },
     "official_image_repository": {
       "accepted_base_relation": "head-equals-base-or-head-parent-equals-base",
+      "allowed_untracked_paths": ["build/"],
+      "cleanup_mode": "remove-only-declared-untracked-paths-before-clean-check",
       "require_clean_worktree": true,
       "preserve_swebench_setup_commit": true
     },
