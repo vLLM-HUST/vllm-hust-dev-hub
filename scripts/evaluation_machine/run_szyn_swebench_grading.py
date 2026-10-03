@@ -12,6 +12,8 @@ import shutil
 import signal
 import subprocess
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -93,6 +95,18 @@ def verify_inputs(
             raise ValueError(f"{field} mismatch: {actual}")
 
     grader = contract["grader"]
+    retry_policy = grader["registry_retry_policy"]
+    for field in (
+        "digest_inspect_attempts",
+        "copy_outer_attempts",
+        "copy_inner_attempts",
+    ):
+        if int(retry_policy[field]) < 1:
+            raise ValueError(f"registry retry policy {field} must be positive")
+    if not retry_policy["backoff_seconds"] or any(
+        int(delay) < 0 for delay in retry_policy["backoff_seconds"]
+    ):
+        raise ValueError("registry retry backoff must be a nonempty nonnegative list")
     checks = {
         "dataset_parquet_sha256": sha256(dataset),
         "proot_binary_sha256": sha256(proot),
@@ -208,6 +222,7 @@ def inspect_digest(
     arch: str,
     *,
     attempts: int = 8,
+    backoff_seconds: list[int] | tuple[int, ...] = (5, 10, 20, 40, 60),
     sleep: Any = time.sleep,
 ) -> str:
     command = [
@@ -241,14 +256,18 @@ def inspect_digest(
         except subprocess.TimeoutExpired:
             last_error = "registry inspect timed out after 120 seconds"
         if attempt + 1 < attempts:
-            sleep(min(5 * (2**attempt), 60))
+            sleep(backoff_seconds[min(attempt, len(backoff_seconds) - 1)])
     raise RuntimeError(
         f"registry inspect failed after {attempts} attempts for {image}: "
         f"{last_error.splitlines()[-1] if last_error else 'no diagnostic'}"
     )
 
 
-def select_image(instance_id: str, preferred_arch: str) -> tuple[str, str, str]:
+def select_image(
+    instance_id: str,
+    preferred_arch: str,
+    retry_policy: dict[str, Any],
+) -> tuple[str, str, str]:
     candidates = [preferred_arch]
     if preferred_arch != "x86_64":
         candidates.append("x86_64")
@@ -256,7 +275,16 @@ def select_image(instance_id: str, preferred_arch: str) -> tuple[str, str, str]:
     for arch in candidates:
         image = image_name(instance_id, arch)
         try:
-            return arch, image, inspect_digest(image, arch)
+            return (
+                arch,
+                image,
+                inspect_digest(
+                    image,
+                    arch,
+                    attempts=int(retry_policy["digest_inspect_attempts"]),
+                    backoff_seconds=retry_policy["backoff_seconds"],
+                ),
+            )
         except ImageUnavailableError:
             errors.append(f"{arch}: manifest unavailable")
     raise RuntimeError("no official SWE-bench image available; " + "; ".join(errors))
@@ -271,18 +299,22 @@ def prepare_image(
     oci_layout: Path,
     bundle: Path,
     result_dir: Path,
+    retry_policy: dict[str, Any],
 ) -> None:
     tag = image_tag(instance_id)
     oci_layout.parent.mkdir(parents=True, exist_ok=True)
     copy_code: int | None = None
     copy_timeout = False
-    for attempt in range(6):
+    outer_attempts = int(retry_policy["copy_outer_attempts"])
+    inner_attempts = int(retry_policy["copy_inner_attempts"])
+    backoff_seconds = retry_policy["backoff_seconds"]
+    for attempt in range(outer_attempts):
         copy_code, copy_timeout, _ = run_logged(
             [
                 "skopeo",
                 "copy",
                 "--retry-times",
-                "3",
+                str(inner_attempts),
                 *skopeo_platform_args(arch),
                 f"docker://{image}",
                 f"oci:{oci_layout}:{tag}",
@@ -293,11 +325,11 @@ def prepare_image(
         )
         if not copy_timeout and copy_code == 0:
             break
-        if attempt < 5:
-            time.sleep(min(5 * (2**attempt), 60))
+        if attempt + 1 < outer_attempts:
+            time.sleep(backoff_seconds[min(attempt, len(backoff_seconds) - 1)])
     else:
         raise RuntimeError(
-            f"image copy failed after 6 attempts: "
+            f"image copy failed after {outer_attempts} attempts: "
             f"timeout={copy_timeout}, exit={copy_code}"
         )
     if bundle.exists():
@@ -553,7 +585,49 @@ def wait_for_collection(result_dir: Path, wait_seconds: int) -> dict[str, Any] |
     return load_json(terminal)
 
 
+@contextmanager
+def task_lock(result_dir: Path) -> Iterator[None]:
+    result_dir.mkdir(parents=True, exist_ok=True)
+    with (result_dir / ".grader.lock").open("a+b") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
 def grade_one(
+    task: dict[str, Any],
+    *,
+    instance: dict[str, Any],
+    contract: dict[str, Any],
+    results_root: Path,
+    work_root: Path,
+    oci_layout: Path,
+    swebench_source: Path,
+    proot: Path,
+    fex: Path,
+    fex_server: Path,
+    wait_seconds: int,
+) -> dict[str, Any] | None:
+    result_dir = results_root / str(task["instance_id"])
+    with task_lock(result_dir):
+        return _grade_one_locked(
+            task,
+            instance=instance,
+            contract=contract,
+            results_root=results_root,
+            work_root=work_root,
+            oci_layout=oci_layout,
+            swebench_source=swebench_source,
+            proot=proot,
+            fex=fex,
+            fex_server=fex_server,
+            wait_seconds=wait_seconds,
+        )
+
+
+def _grade_one_locked(
     task: dict[str, Any],
     *,
     instance: dict[str, Any],
@@ -605,7 +679,8 @@ def grade_one(
 
         test_spec = make_spec(instance, swebench_source)
         preferred_arch = str(test_spec.arch)
-        arch, image, digest = select_image(instance_id, preferred_arch)
+        retry_policy = contract["grader"]["registry_retry_policy"]
+        arch, image, digest = select_image(instance_id, preferred_arch, retry_policy)
         prepare_image(
             instance_id=instance_id,
             arch=arch,
@@ -614,6 +689,7 @@ def grade_one(
             oci_layout=oci_layout,
             bundle=bundle,
             result_dir=result_dir,
+            retry_policy=retry_policy,
         )
         rootfs = bundle / "rootfs"
         image_repository = inspect_image_repository(

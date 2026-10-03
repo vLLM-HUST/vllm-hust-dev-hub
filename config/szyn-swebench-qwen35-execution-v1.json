@@ -4,6 +4,11 @@
   "asset_id": "SZYN-OPENCODE-SWEBENCH-VERIFIED-500",
   "declared_denominator": 500,
   "preserved_qualification_instance": "django__django-15104",
+  "preserved_qualification": {
+    "evidence_path": "results/szyn-opencode-qwen35-20261002/django__django-15104",
+    "qualification_contract_sha256": "900eee57dbc0f0cceaed4370943c9e7d398e78fdf47d2359ad9f61b93b3d6efa",
+    "sha256sums_sha256": "ec241ff8eb5f1061f16ead2460375ac48a65c6761f497c31af34a0c7a9fdaeb7"
+  },
   "task_pool": {
     "dataset": "princeton-nlp/SWE-bench_Verified",
     "dataset_revision": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
@@ -74,7 +79,7 @@
     "implementation": "official-swebench-v2.1.7-over-oci-native-proot-or-fex",
     "swebench_commit": "5f5a7df799663adba4b191eca3d675faf3621fe2",
     "dataset_parquet_sha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
-    "harness_script_sha256": "722e0aeb03cfa949845eb5d3ffce5da7d61739683f2dfd4b29555a3acaec91ab",
+    "harness_script_sha256": "0e1f2cdbdf9f4be9622d406a1022e02b2c863a05b4dd059376a2c749f7dfa947",
     "proot_commit": "25dc6a3134891f98a79f57ce1c2c1b23ff15cad1",
     "proot_binary_sha256": "4760e19f3b2cd1e59d56cdfa90e69b0939776f86dd30191eb6cbb7059b7eeece",
     "fex_package_version": "2609.1-1~j",
@@ -108,6 +113,7 @@
     "official_eval_script_recorded_per_task": true
   },
   "scoring": {
+    "summary_script_sha256": "3be658946f4aee38cbdfed2ea7b51c65fc73f539a34de069b538eae62eb4168c",
     "grader_timeout_seconds": 1800,
     "gold_patch_is_not_applied": true,
     "test_patch_is_applied_after_agent_exit": true,

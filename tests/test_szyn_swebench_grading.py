@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import fcntl
 import importlib.util
 import json
 import subprocess
@@ -63,6 +64,39 @@ def test_inspect_digest_does_not_retry_missing_manifest() -> None:
         else:
             raise AssertionError("missing manifest was not classified as unavailable")
     assert run.call_count == 1
+
+
+def test_select_image_consumes_contract_retry_policy() -> None:
+    module = load_module()
+    policy = {
+        "digest_inspect_attempts": 7,
+        "backoff_seconds": [3, 9],
+    }
+    with mock.patch.object(
+        module, "inspect_digest", return_value="sha256:abc"
+    ) as inspect:
+        result = module.select_image("django__django-15104", "arm64", policy)
+    assert result[0] == "arm64"
+    inspect.assert_called_once_with(
+        module.image_name("django__django-15104", "arm64"),
+        "arm64",
+        attempts=7,
+        backoff_seconds=[3, 9],
+    )
+
+
+def test_task_lock_excludes_second_grader(tmp_path: Path) -> None:
+    module = load_module()
+    with (
+        module.task_lock(tmp_path),
+        (tmp_path / ".grader.lock").open("a+b") as contender,
+    ):
+        try:
+            fcntl.flock(contender, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            pass
+        else:
+            raise AssertionError("a second grader acquired the task lock")
 
 
 def test_fex_guest_uses_single_thread_math_libraries() -> None:
