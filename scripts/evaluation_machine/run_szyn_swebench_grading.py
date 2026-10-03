@@ -170,9 +170,10 @@ def run_logged(
     timeout: int,
     cwd: Path | None = None,
     env: dict[str, str] | None = None,
+    append: bool = False,
 ) -> tuple[int | None, bool, float]:
     started = time.monotonic()
-    with log.open("wb") as output:
+    with log.open("ab" if append else "wb") as output:
         process = subprocess.Popen(
             command,
             cwd=cwd,
@@ -198,20 +199,53 @@ def skopeo_platform_args(arch: str) -> list[str]:
     return ["--override-arch", "amd64"] if arch == "x86_64" else []
 
 
-def inspect_digest(image: str, arch: str) -> str:
-    return subprocess.run(
-        [
-            "skopeo",
-            "inspect",
-            *skopeo_platform_args(arch),
-            "--format",
-            "{{.Digest}}",
-            f"docker://{image}",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
+class ImageUnavailableError(RuntimeError):
+    pass
+
+
+def inspect_digest(
+    image: str,
+    arch: str,
+    *,
+    attempts: int = 8,
+    sleep: Any = time.sleep,
+) -> str:
+    command = [
+        "skopeo",
+        "inspect",
+        *skopeo_platform_args(arch),
+        "--format",
+        "{{.Digest}}",
+        f"docker://{image}",
+    ]
+    last_error = "unknown registry error"
+    for attempt in range(attempts):
+        try:
+            completed = subprocess.run(
+                command,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+            if completed.returncode == 0:
+                return completed.stdout.strip()
+            stderr = completed.stderr.strip()
+            unavailable = any(
+                marker in stderr.lower()
+                for marker in ("manifest unknown", "name unknown", "not found")
+            )
+            if unavailable:
+                raise ImageUnavailableError(f"official image unavailable: {image}")
+            last_error = f"registry transport exit code {completed.returncode}"
+        except subprocess.TimeoutExpired:
+            last_error = "registry inspect timed out after 120 seconds"
+        if attempt + 1 < attempts:
+            sleep(min(5 * (2**attempt), 60))
+    raise RuntimeError(
+        f"registry inspect failed after {attempts} attempts for {image}: "
+        f"{last_error.splitlines()[-1] if last_error else 'no diagnostic'}"
+    )
 
 
 def select_image(instance_id: str, preferred_arch: str) -> tuple[str, str, str]:
@@ -223,8 +257,8 @@ def select_image(instance_id: str, preferred_arch: str) -> tuple[str, str, str]:
         image = image_name(instance_id, arch)
         try:
             return arch, image, inspect_digest(image, arch)
-        except subprocess.CalledProcessError as exc:
-            errors.append(f"{arch}: exit {exc.returncode}")
+        except ImageUnavailableError:
+            errors.append(f"{arch}: manifest unavailable")
     raise RuntimeError("no official SWE-bench image available; " + "; ".join(errors))
 
 
@@ -240,22 +274,31 @@ def prepare_image(
 ) -> None:
     tag = image_tag(instance_id)
     oci_layout.parent.mkdir(parents=True, exist_ok=True)
-    copy_code, copy_timeout, _ = run_logged(
-        [
-            "skopeo",
-            "copy",
-            "--retry-times",
-            "3",
-            *skopeo_platform_args(arch),
-            f"docker://{image}",
-            f"oci:{oci_layout}:{tag}",
-        ],
-        log=result_dir / "image-copy.log",
-        timeout=3600,
-    )
-    if copy_timeout or copy_code != 0:
+    copy_code: int | None = None
+    copy_timeout = False
+    for attempt in range(6):
+        copy_code, copy_timeout, _ = run_logged(
+            [
+                "skopeo",
+                "copy",
+                "--retry-times",
+                "3",
+                *skopeo_platform_args(arch),
+                f"docker://{image}",
+                f"oci:{oci_layout}:{tag}",
+            ],
+            log=result_dir / "image-copy.log",
+            timeout=3600,
+            append=attempt > 0,
+        )
+        if not copy_timeout and copy_code == 0:
+            break
+        if attempt < 5:
+            time.sleep(min(5 * (2**attempt), 60))
+    else:
         raise RuntimeError(
-            f"image copy failed: timeout={copy_timeout}, exit={copy_code}"
+            f"image copy failed after 6 attempts: "
+            f"timeout={copy_timeout}, exit={copy_code}"
         )
     if bundle.exists():
         shutil.rmtree(bundle)

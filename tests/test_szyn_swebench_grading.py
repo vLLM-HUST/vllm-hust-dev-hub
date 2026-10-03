@@ -4,6 +4,7 @@ import importlib.util
 import json
 import subprocess
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "evaluation_machine" / "run_szyn_swebench_grading.py"
@@ -28,6 +29,40 @@ def test_skopeo_platform_args_override_x86_on_arm_hosts() -> None:
     module = load_module()
     assert module.skopeo_platform_args("x86_64") == ["--override-arch", "amd64"]
     assert module.skopeo_platform_args("arm64") == []
+
+
+def test_inspect_digest_retries_transient_registry_failure() -> None:
+    module = load_module()
+    transient = subprocess.CompletedProcess([], 1, "", "unexpected EOF")
+    success = subprocess.CompletedProcess([], 0, "sha256:abc\n", "")
+    sleeps: list[int] = []
+    with mock.patch.object(module.subprocess, "run", side_effect=[transient, success]):
+        digest = module.inspect_digest(
+            "example.invalid/image:tag",
+            "arm64",
+            attempts=2,
+            sleep=sleeps.append,
+        )
+    assert digest == "sha256:abc"
+    assert sleeps == [5]
+
+
+def test_inspect_digest_does_not_retry_missing_manifest() -> None:
+    module = load_module()
+    missing = subprocess.CompletedProcess([], 1, "", "manifest unknown")
+    with mock.patch.object(module.subprocess, "run", return_value=missing) as run:
+        try:
+            module.inspect_digest(
+                "example.invalid/image:tag",
+                "arm64",
+                attempts=8,
+                sleep=lambda _: None,
+            )
+        except module.ImageUnavailableError:
+            pass
+        else:
+            raise AssertionError("missing manifest was not classified as unavailable")
+    assert run.call_count == 1
 
 
 def test_fex_guest_uses_single_thread_math_libraries() -> None:

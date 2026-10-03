@@ -74,7 +74,7 @@
     "implementation": "official-swebench-v2.1.7-over-oci-native-proot-or-fex",
     "swebench_commit": "5f5a7df799663adba4b191eca3d675faf3621fe2",
     "dataset_parquet_sha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
-    "harness_script_sha256": "ae5eb3fe62da1043b8bac39083143a437a089198d071acad687ac25d0fd8e69f",
+    "harness_script_sha256": "722e0aeb03cfa949845eb5d3ffce5da7d61739683f2dfd4b29555a3acaec91ab",
     "proot_commit": "25dc6a3134891f98a79f57ce1c2c1b23ff15cad1",
     "proot_binary_sha256": "4760e19f3b2cd1e59d56cdfa90e69b0939776f86dd30191eb6cbb7059b7eeece",
     "fex_package_version": "2609.1-1~j",
@@ -96,6 +96,12 @@
       "accepted_base_relation": "head-equals-base-or-head-parent-equals-base",
       "require_clean_worktree": true,
       "preserve_swebench_setup_commit": true
+    },
+    "registry_retry_policy": {
+      "digest_inspect_attempts": 8,
+      "copy_outer_attempts": 6,
+      "copy_inner_attempts": 3,
+      "backoff_seconds": [5, 10, 20, 40, 60]
     },
     "image_registry": "docker.io/swebench",
     "image_digest_recorded_per_task": true,
