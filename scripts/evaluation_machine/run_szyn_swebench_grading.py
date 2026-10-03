@@ -312,14 +312,51 @@ def normalize_patch(patch: str, exclude_patterns: list[str]) -> tuple[str, list[
     return "".join(normalized), excluded
 
 
-def guest_runner(base_commit: str, patch_is_empty: bool) -> str:
-    quoted_commit = shlex.quote(base_commit)
+def inspect_image_repository(rootfs: Path, base_commit: str) -> dict[str, Any]:
+    repository = rootfs / "testbed"
+
+    def git(*arguments: str, check: bool = True) -> str:
+        return subprocess.run(
+            ["git", "-C", str(repository), *arguments],
+            check=check,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
+    head = git("rev-parse", "HEAD")
+    parent = git("rev-parse", "HEAD^", check=False)
+    status = git("status", "--porcelain=v1")
+    if head == base_commit:
+        relation = "direct-base-commit"
+    elif parent == base_commit:
+        relation = "swebench-setup-commit"
+    else:
+        raise ValueError(
+            f"official image HEAD {head} is not based directly on {base_commit}"
+        )
+    if status:
+        raise ValueError("official image repository is not clean before evaluation")
+    return {
+        "base_commit": base_commit,
+        "head": head,
+        "head_parent": parent or None,
+        "relation": relation,
+        "worktree_clean": True,
+    }
+
+
+def guest_runner(expected_image_head: str, patch_is_empty: bool) -> str:
+    quoted_head = shlex.quote(expected_image_head)
     apply = "true" if patch_is_empty else "git apply -v /grader/agent.patch"
     return f"""#!/bin/bash
 set -o pipefail
 cd /testbed
-git reset --hard {quoted_commit}
-git clean -fd
+expected_image_head={quoted_head}
+actual_image_head=$(git rev-parse HEAD)
+if [ "$actual_image_head" != "$expected_image_head" ]; then
+  echo ">>>>> Image HEAD Mismatch: expected $expected_image_head, found $actual_image_head"
+  exit 41
+fi
 if {apply}; then
   echo ">>>>> Applied Patch (pred)"
 elif patch --batch --fuzz=5 -p1 -i /grader/agent.patch; then
@@ -536,6 +573,10 @@ def grade_one(
             result_dir=result_dir,
         )
         rootfs = bundle / "rootfs"
+        image_repository = inspect_image_repository(
+            rootfs, str(instance["base_commit"])
+        )
+        terminal["image_repository"] = image_repository
 
         grader_dir = rootfs / "grader"
         grader_dir.mkdir()
@@ -557,7 +598,7 @@ def grade_one(
         (result_dir / "eval.sh").write_text(eval_script, encoding="utf-8")
         (grader_dir / "agent.patch").write_text(patch, encoding="utf-8")
         (grader_dir / "eval.sh").write_text(eval_script, encoding="utf-8")
-        runner = guest_runner(str(instance["base_commit"]), not patch.strip())
+        runner = guest_runner(image_repository["head"], not patch.strip())
         (grader_dir / "run.sh").write_text(runner, encoding="utf-8")
 
         test_output = result_dir / "test-output.txt"
@@ -577,6 +618,9 @@ def grade_one(
             terminal["status"] = "grader_timeout"
         elif returncode == 40:
             terminal["status"] = "invalid_patch"
+        elif returncode == 41:
+            terminal["status"] = "grader_error"
+            terminal["error"] = "official image HEAD changed before evaluation"
         else:
             report = grade_report(
                 test_spec=test_spec,

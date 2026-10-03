@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,6 +43,47 @@ def test_guest_runner_handles_nonempty_and_empty_patches() -> None:
     assert "git apply -v /grader/agent.patch" in nonempty
     assert "if true; then" in empty
     assert ">>>>> Applied Patch (pred)" in nonempty
+    assert "git reset" not in nonempty
+    assert "git clean" not in nonempty
+    assert "actual_image_head=$(git rev-parse HEAD)" in nonempty
+    assert '!= "$expected_image_head"' in nonempty
+
+
+def test_inspect_image_repository_accepts_swebench_setup_commit(
+    tmp_path: Path,
+) -> None:
+    module = load_module()
+    repository = tmp_path / "rootfs" / "testbed"
+    repository.mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", str(repository)], check=True)
+    subprocess.run(
+        ["git", "-C", str(repository), "config", "user.email", "test@example.com"],
+        check=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(repository), "config", "user.name", "Test"],
+        check=True,
+    )
+    (repository / "module.py").write_text("base\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repository), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(repository), "commit", "-qm", "base"], check=True)
+    base = subprocess.run(
+        ["git", "-C", str(repository), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    (repository / "tox.ini").write_text("pytest -rA\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repository), "add", "."], check=True)
+    subprocess.run(
+        ["git", "-C", str(repository), "commit", "-qm", "SWE-bench"],
+        check=True,
+    )
+
+    state = module.inspect_image_repository(tmp_path / "rootfs", base)
+    assert state["relation"] == "swebench-setup-commit"
+    assert state["head_parent"] == base
+    assert state["worktree_clean"] is True
 
 
 def test_normalize_patch_excludes_only_matching_diff_sections() -> None:
