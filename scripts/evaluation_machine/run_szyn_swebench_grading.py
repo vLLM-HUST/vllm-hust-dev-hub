@@ -372,6 +372,18 @@ def prepare_image(
     )
 
 
+@contextmanager
+def oci_layout_lock(oci_layout: Path) -> Iterator[None]:
+    oci_layout.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = oci_layout.parent / f".{oci_layout.name}.lock"
+    with lock_path.open("a+b") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
 def patch_destination_path(header: str) -> str:
     try:
         fields = shlex.split(header)
@@ -742,16 +754,17 @@ def _grade_one_locked(
         preferred_arch = str(test_spec.arch)
         retry_policy = contract["grader"]["registry_retry_policy"]
         arch, image, digest = select_image(instance_id, preferred_arch, retry_policy)
-        prepare_image(
-            instance_id=instance_id,
-            arch=arch,
-            image=image,
-            digest=digest,
-            oci_layout=oci_layout,
-            bundle=bundle,
-            result_dir=result_dir,
-            retry_policy=retry_policy,
-        )
+        with oci_layout_lock(oci_layout):
+            prepare_image(
+                instance_id=instance_id,
+                arch=arch,
+                image=image,
+                digest=digest,
+                oci_layout=oci_layout,
+                bundle=bundle,
+                result_dir=result_dir,
+                retry_policy=retry_policy,
+            )
         rootfs = bundle / "rootfs"
         image_repository = inspect_image_repository(
             rootfs, str(instance["base_commit"])

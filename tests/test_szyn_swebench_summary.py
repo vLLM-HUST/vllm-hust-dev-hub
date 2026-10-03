@@ -156,3 +156,34 @@ def test_task_pool_hash_is_verified_before_parsing(tmp_path: Path) -> None:
     task_pool.write_text('{"instance_id":"wrong"}\n', encoding="utf-8")
     with pytest.raises(ValueError, match="task pool hash mismatch"):
         module.load_task_pool(task_pool, "0" * 64)
+
+
+def test_declared_compatible_grader_hash_is_accepted(tmp_path: Path) -> None:
+    module = load_module()
+    contract = module.load_json(
+        ROOT / "config" / "szyn-swebench-qwen35-execution-v1.json"
+    )
+    old_hash = contract["grader"]["compatible_harness_sha256s"][0]
+    task_rows = tasks()
+    instance_id = task_rows[1]["instance_id"]
+    result_dir = tmp_path / instance_id
+    result_dir.mkdir()
+    (result_dir / "grader-terminal.json").write_text(
+        json.dumps(
+            {
+                "instance_id": instance_id,
+                "execution_id": contract["execution_id"],
+                "grader_harness_sha256": old_hash,
+                "status": "resolved",
+            }
+        ),
+        encoding="utf-8",
+    )
+    result = module.summarize(
+        contract=contract,
+        tasks=task_rows,
+        formal_results=tmp_path,
+        qualification_root=ROOT / contract["preserved_qualification"]["evidence_path"],
+    )
+    assert instance_id not in result["invalid_formal_instances"]
+    assert result["formal_status_counts"] == {"resolved": 1}

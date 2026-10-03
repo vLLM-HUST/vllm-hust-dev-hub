@@ -120,6 +120,9 @@ def summarize(
         raise ValueError("preserved qualification resolved count must be 1")
 
     allowed = set(contract["scoring"]["terminal_states"])
+    accepted_harnesses = set(contract["grader"]["compatible_harness_sha256s"])
+    if contract["grader"]["harness_script_sha256"] not in accepted_harnesses:
+        raise ValueError("current grader harness is absent from compatibility set")
     formal_ids = task_ids[1:]
     counts: dict[str, int] = {}
     missing: list[str] = []
@@ -136,9 +139,7 @@ def summarize(
         if terminal.get("execution_id") != contract["execution_id"]:
             invalid[instance_id] = "execution ID mismatch"
             continue
-        if terminal.get("grader_harness_sha256") != contract["grader"][
-            "harness_script_sha256"
-        ]:
+        if terminal.get("grader_harness_sha256") not in accepted_harnesses:
             invalid[instance_id] = "grader harness hash mismatch"
             continue
         status = str(terminal.get("status") or "missing")

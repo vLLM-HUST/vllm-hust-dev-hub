@@ -160,6 +160,15 @@ def test_task_lock_excludes_second_grader(tmp_path: Path) -> None:
             raise AssertionError("a second grader acquired the task lock")
 
 
+def test_oci_layout_lock_excludes_concurrent_writer(tmp_path: Path) -> None:
+    module = load_module()
+    layout = tmp_path / "images"
+    lock_path = tmp_path / ".images.lock"
+    with module.oci_layout_lock(layout), lock_path.open("a+b") as contender:
+        with pytest.raises(BlockingIOError):
+            fcntl.flock(contender, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
 def test_select_tasks_assigns_disjoint_deterministic_shards() -> None:
     module = load_module()
     tasks = [{"instance_id": str(index)} for index in range(10)]

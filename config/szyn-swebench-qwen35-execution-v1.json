@@ -79,7 +79,13 @@
     "implementation": "official-swebench-v2.1.7-over-oci-native-proot-or-fex",
     "swebench_commit": "5f5a7df799663adba4b191eca3d675faf3621fe2",
     "dataset_parquet_sha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
-    "harness_script_sha256": "c693c39cbc7042ae59d1774fed0076a5d78155d8e232f729798026d0b3eea639",
+    "harness_script_sha256": "07e552175471a8c9c366c9a93c2ec0c3467d9d250543ba1aea5efa89dec297b6",
+    "compatible_harness_sha256s": [
+      "c693c39cbc7042ae59d1774fed0076a5d78155d8e232f729798026d0b3eea639",
+      "07e552175471a8c9c366c9a93c2ec0c3467d9d250543ba1aea5efa89dec297b6"
+    ],
+    "compatible_harness_scope": "The earlier hash has identical patch application, execution, and scoring logic; the current hash only serializes shared OCI layout copy and unpack operations.",
+    "oci_layout_writer_concurrency": 1,
     "proot_commit": "25dc6a3134891f98a79f57ce1c2c1b23ff15cad1",
     "proot_binary_sha256": "4760e19f3b2cd1e59d56cdfa90e69b0939776f86dd30191eb6cbb7059b7eeece",
     "fex_package_version": "2609.1-1~j",
@@ -113,7 +119,7 @@
     "official_eval_script_recorded_per_task": true
   },
   "scoring": {
-    "summary_script_sha256": "939536224d0eafdcc13b830ea64a3e0367b4745a4ff5e92dc981d2b4b2fb390f",
+    "summary_script_sha256": "ff13f37c12257ec6ed2300df61f2e48db7d97a710ad990de844fd8e6ec78b149",
     "grader_timeout_seconds": 1800,
     "gold_patch_is_not_applied": true,
     "test_patch_is_applied_after_agent_exit": true,
