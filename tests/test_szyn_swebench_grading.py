@@ -160,6 +160,53 @@ def test_task_lock_excludes_second_grader(tmp_path: Path) -> None:
             raise AssertionError("a second grader acquired the task lock")
 
 
+def test_select_tasks_assigns_disjoint_deterministic_shards() -> None:
+    module = load_module()
+    tasks = [{"instance_id": str(index)} for index in range(10)]
+    shards = [
+        module.select_tasks(
+            tasks,
+            start_index=1,
+            limit=None,
+            instance_id=None,
+            shard_count=3,
+            shard_index=index,
+        )
+        for index in range(3)
+    ]
+    assert [[task["instance_id"] for task in shard] for shard in shards] == [
+        ["1", "4", "7"],
+        ["2", "5", "8"],
+        ["3", "6", "9"],
+    ]
+    assert {task["instance_id"] for shard in shards for task in shard} == {
+        str(index) for index in range(1, 10)
+    }
+
+
+def test_select_tasks_rejects_invalid_shard_options() -> None:
+    module = load_module()
+    tasks = [{"instance_id": "one"}]
+    with pytest.raises(ValueError, match="shard count must be positive"):
+        module.select_tasks(
+            tasks,
+            start_index=0,
+            limit=None,
+            instance_id=None,
+            shard_count=0,
+            shard_index=0,
+        )
+    with pytest.raises(ValueError, match="cannot be combined with sharding"):
+        module.select_tasks(
+            tasks,
+            start_index=0,
+            limit=None,
+            instance_id="one",
+            shard_count=2,
+            shard_index=0,
+        )
+
+
 def test_fex_guest_uses_single_thread_math_libraries() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
     assert '"OPENBLAS_NUM_THREADS": "1"' in source

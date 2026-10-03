@@ -600,6 +600,36 @@ def wait_for_collection(result_dir: Path, wait_seconds: int) -> dict[str, Any] |
     return load_json(terminal)
 
 
+def select_tasks(
+    tasks: list[dict[str, Any]],
+    *,
+    start_index: int,
+    limit: int | None,
+    instance_id: str | None,
+    shard_count: int,
+    shard_index: int,
+) -> list[dict[str, Any]]:
+    if shard_count < 1:
+        raise ValueError("shard count must be positive")
+    if not 0 <= shard_index < shard_count:
+        raise ValueError("shard index must be between zero and shard count minus one")
+    if instance_id:
+        if shard_count != 1 or shard_index != 0:
+            raise ValueError("instance selection cannot be combined with sharding")
+        selected = [task for task in tasks if task["instance_id"] == instance_id]
+        if not selected:
+            raise ValueError(f"unknown instance ID: {instance_id}")
+        return selected
+    selected = tasks[start_index:]
+    if limit is not None:
+        selected = selected[:limit]
+    return [
+        task
+        for offset, task in enumerate(selected)
+        if offset % shard_count == shard_index
+    ]
+
+
 @contextmanager
 def task_lock(result_dir: Path) -> Iterator[None]:
     result_dir.mkdir(parents=True, exist_ok=True)
@@ -826,6 +856,8 @@ def main() -> None:
     parser.add_argument("--start-index", type=int, default=1)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--instance-id")
+    parser.add_argument("--shard-count", type=int, default=1)
+    parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--wait-seconds", type=int, default=0)
     args = parser.parse_args()
 
@@ -841,14 +873,14 @@ def main() -> None:
         fex_server=args.fex_server,
     )
     tasks = load_tasks(args.task_pool / "ordered-tasks.jsonl")
-    if args.instance_id:
-        selected = [task for task in tasks if task["instance_id"] == args.instance_id]
-        if not selected:
-            raise ValueError(f"unknown instance ID: {args.instance_id}")
-    else:
-        selected = tasks[args.start_index :]
-        if args.limit is not None:
-            selected = selected[: args.limit]
+    selected = select_tasks(
+        tasks,
+        start_index=args.start_index,
+        limit=args.limit,
+        instance_id=args.instance_id,
+        shard_count=args.shard_count,
+        shard_index=args.shard_index,
+    )
     instances = load_instances(args.dataset)
     args.results_root.mkdir(parents=True, exist_ok=True)
     args.work_root.mkdir(parents=True, exist_ok=True)
