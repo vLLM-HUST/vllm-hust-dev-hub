@@ -79,7 +79,7 @@
     "implementation": "official-swebench-v2.1.7-over-oci-native-proot-or-fex",
     "swebench_commit": "5f5a7df799663adba4b191eca3d675faf3621fe2",
     "dataset_parquet_sha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
-    "harness_script_sha256": "0e1f2cdbdf9f4be9622d406a1022e02b2c863a05b4dd059376a2c749f7dfa947",
+    "harness_script_sha256": "e8e5e8cd2e656134cbcd304fcec9c3b66e2117174e03892fcf72da1b8cc599e4",
     "proot_commit": "25dc6a3134891f98a79f57ce1c2c1b23ff15cad1",
     "proot_binary_sha256": "4760e19f3b2cd1e59d56cdfa90e69b0939776f86dd30191eb6cbb7059b7eeece",
     "fex_package_version": "2609.1-1~j",

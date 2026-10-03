@@ -66,6 +66,50 @@ def test_inspect_digest_does_not_retry_missing_manifest() -> None:
     assert run.call_count == 1
 
 
+def test_inspect_digest_treats_docker_hub_denial_as_unavailable() -> None:
+    module = load_module()
+    denied = subprocess.CompletedProcess(
+        [],
+        1,
+        "",
+        "denied: requested access to the resource is denied\n"
+        "unauthorized: authentication required",
+    )
+    with mock.patch.object(module.subprocess, "run", return_value=denied) as run:
+        try:
+            module.inspect_digest(
+                "docker.io/swebench/missing-arm-image:latest",
+                "arm64",
+                attempts=8,
+                sleep=lambda _: None,
+            )
+        except module.ImageUnavailableError:
+            pass
+        else:
+            raise AssertionError("Docker Hub denial was not classified as unavailable")
+    assert run.call_count == 1
+
+
+def test_select_image_falls_back_from_unavailable_arm_to_x86() -> None:
+    module = load_module()
+    policy = {
+        "digest_inspect_attempts": 8,
+        "backoff_seconds": [5],
+    }
+    with mock.patch.object(
+        module,
+        "inspect_digest",
+        side_effect=[module.ImageUnavailableError("missing"), "sha256:x86"],
+    ) as inspect:
+        result = module.select_image("django__django-10914", "arm64", policy)
+    assert result == (
+        "x86_64",
+        module.image_name("django__django-10914", "x86_64"),
+        "sha256:x86",
+    )
+    assert inspect.call_count == 2
+
+
 def test_select_image_consumes_contract_retry_policy() -> None:
     module = load_module()
     policy = {

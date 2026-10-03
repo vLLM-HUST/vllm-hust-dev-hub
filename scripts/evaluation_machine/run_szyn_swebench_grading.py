@@ -248,7 +248,13 @@ def inspect_digest(
             stderr = completed.stderr.strip()
             unavailable = any(
                 marker in stderr.lower()
-                for marker in ("manifest unknown", "name unknown", "not found")
+                for marker in (
+                    "manifest unknown",
+                    "name unknown",
+                    "not found",
+                    "requested access to the resource is denied",
+                    "unauthorized: authentication required",
+                )
             )
             if unavailable:
                 raise ImageUnavailableError(f"official image unavailable: {image}")
