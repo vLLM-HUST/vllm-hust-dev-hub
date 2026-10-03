@@ -113,7 +113,7 @@
     "official_eval_script_recorded_per_task": true
   },
   "scoring": {
-    "summary_script_sha256": "3be658946f4aee38cbdfed2ea7b51c65fc73f539a34de069b538eae62eb4168c",
+    "summary_script_sha256": "5e3018f5e607d688b27481ee3c1fc8f65f45941008a895095561e0dee3c646cb",
     "grader_timeout_seconds": 1800,
     "gold_patch_is_not_applied": true,
     "test_patch_is_applied_after_agent_exit": true,

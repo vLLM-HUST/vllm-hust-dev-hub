@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Any
 
 
+EXPECTED_DENOMINATOR = 500
+INFRASTRUCTURE_FAILURE_STATES = {"grader_error", "grader_timeout"}
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -20,6 +24,19 @@ def load_json(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise TypeError(f"{path} must contain an object")
     return value
+
+
+def load_task_pool(path: Path, expected_sha256: str) -> list[dict[str, Any]]:
+    if sha256(path) != expected_sha256:
+        raise ValueError("task pool hash mismatch")
+    tasks = [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    if not all(isinstance(task, dict) for task in tasks):
+        raise TypeError("task pool rows must be objects")
+    return tasks
 
 
 def verify_sha256_manifest(root: Path) -> None:
@@ -40,9 +57,18 @@ def summarize(
     qualification_root: Path,
 ) -> dict[str, Any]:
     denominator = int(contract["declared_denominator"])
+    if denominator != EXPECTED_DENOMINATOR:
+        raise ValueError(
+            f"declared denominator must be {EXPECTED_DENOMINATOR}, found {denominator}"
+        )
     qualification_id = str(contract["preserved_qualification_instance"])
-    if len(tasks) != denominator:
-        raise ValueError(f"expected {denominator} tasks, found {len(tasks)}")
+    if len(tasks) != EXPECTED_DENOMINATOR:
+        raise ValueError(
+            f"expected {EXPECTED_DENOMINATOR} tasks, found {len(tasks)}"
+        )
+    task_ids = [str(task["instance_id"]) for task in tasks]
+    if len(set(task_ids)) != EXPECTED_DENOMINATOR:
+        raise ValueError("task pool instance IDs must be unique")
     if str(tasks[0]["instance_id"]) != qualification_id:
         raise ValueError("preserved qualification is not task index 0")
 
@@ -94,7 +120,7 @@ def summarize(
         raise ValueError("preserved qualification resolved count must be 1")
 
     allowed = set(contract["scoring"]["terminal_states"])
-    formal_ids = [str(task["instance_id"]) for task in tasks[1:]]
+    formal_ids = task_ids[1:]
     counts: dict[str, int] = {}
     missing: list[str] = []
     invalid: dict[str, str] = {}
@@ -118,7 +144,9 @@ def summarize(
 
     formal_count = sum(counts.values())
     complete = formal_count == denominator - 1 and not missing and not invalid
-    infrastructure_errors = counts.get("grader_error", 0)
+    infrastructure_errors = sum(
+        counts.get(status, 0) for status in INFRASTRUCTURE_FAILURE_STATES
+    )
     publishable = complete and infrastructure_errors == 0
     resolved = 1 + counts.get("resolved", 0)
     return {
@@ -143,7 +171,9 @@ def summarize(
         "publication_blockers": {
             "missing": len(missing),
             "invalid": len(invalid),
-            "grader_error": infrastructure_errors,
+            "grader_error": counts.get("grader_error", 0),
+            "grader_timeout": counts.get("grader_timeout", 0),
+            "infrastructure_failure_total": infrastructure_errors,
         },
     }
 
@@ -163,10 +193,10 @@ def main() -> None:
         raise ValueError("summary script hash mismatch")
     summary = summarize(
         contract=contract,
-        tasks=[
-            json.loads(line)
-            for line in args.task_pool.read_text(encoding="utf-8").splitlines()
-        ],
+        tasks=load_task_pool(
+            args.task_pool,
+            str(contract["task_pool"]["ordered_tasks_sha256"]),
+        ),
         formal_results=args.formal_results,
         qualification_root=args.qualification_root,
     )
