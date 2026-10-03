@@ -702,6 +702,7 @@ def _grade_one_locked(
         "schema_version": "szyn-swebench-grader-terminal/v1",
         "execution_id": contract["execution_id"],
         "instance_id": instance_id,
+        "grader_harness_sha256": sha256(Path(__file__)),
         "started_at": started_at,
         "collection_status": collection.get("collection_status"),
     }

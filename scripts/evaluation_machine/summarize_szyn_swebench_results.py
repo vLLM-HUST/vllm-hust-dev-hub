@@ -136,6 +136,11 @@ def summarize(
         if terminal.get("execution_id") != contract["execution_id"]:
             invalid[instance_id] = "execution ID mismatch"
             continue
+        if terminal.get("grader_harness_sha256") != contract["grader"][
+            "harness_script_sha256"
+        ]:
+            invalid[instance_id] = "grader harness hash mismatch"
+            continue
         status = str(terminal.get("status") or "missing")
         if status not in allowed:
             invalid[instance_id] = f"unknown terminal status: {status}"

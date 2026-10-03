@@ -79,7 +79,7 @@
     "implementation": "official-swebench-v2.1.7-over-oci-native-proot-or-fex",
     "swebench_commit": "5f5a7df799663adba4b191eca3d675faf3621fe2",
     "dataset_parquet_sha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
-    "harness_script_sha256": "f48111062f5b63c3eb24fb8411136181ccf573da8b634de9dee8aa6cf90fd3ad",
+    "harness_script_sha256": "9c988524756c31bce78c97892adae4643f1f3edd3692bc9f62eb0ad12b87b851",
     "proot_commit": "25dc6a3134891f98a79f57ce1c2c1b23ff15cad1",
     "proot_binary_sha256": "4760e19f3b2cd1e59d56cdfa90e69b0939776f86dd30191eb6cbb7059b7eeece",
     "fex_package_version": "2609.1-1~j",
@@ -113,7 +113,7 @@
     "official_eval_script_recorded_per_task": true
   },
   "scoring": {
-    "summary_script_sha256": "5e3018f5e607d688b27481ee3c1fc8f65f45941008a895095561e0dee3c646cb",
+    "summary_script_sha256": "939536224d0eafdcc13b830ea64a3e0367b4745a4ff5e92dc981d2b4b2fb390f",
     "grader_timeout_seconds": 1800,
     "gold_patch_is_not_applied": true,
     "test_patch_is_applied_after_agent_exit": true,

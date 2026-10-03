@@ -61,6 +61,9 @@ def test_grader_error_blocks_publication(tmp_path: Path) -> None:
             {
                 "instance_id": instance_id,
                 "execution_id": contract["execution_id"],
+                "grader_harness_sha256": contract["grader"][
+                    "harness_script_sha256"
+                ],
                 "status": "grader_error",
             }
         ),
@@ -93,6 +96,9 @@ def test_grader_timeout_blocks_publication(tmp_path: Path) -> None:
                 {
                     "instance_id": instance_id,
                     "execution_id": contract["execution_id"],
+                    "grader_harness_sha256": contract["grader"][
+                        "harness_script_sha256"
+                    ],
                     "status": status,
                 }
             ),
