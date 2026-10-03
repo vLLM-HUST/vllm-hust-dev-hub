@@ -1,0 +1,38 @@
+{
+  "artifacts": {
+    "collection-terminal.json": {
+      "bytes": 1340,
+      "sha256": "c56f1dd8867e5af9aa45328a2eea4c48a64513aad01f42672841f26fa2dc0293"
+    },
+    "eval.sh": {
+      "bytes": 1768,
+      "sha256": "ea8b23c62e7b9a9d6a651fded68bc90372e81887e42c629238673de08c12eb98"
+    },
+    "fex-server.log": {
+      "bytes": 87,
+      "sha256": "88be4e77cee7a995ba1884c9d7b42b6f9572bb38f83da10760014a4ec701d7e4"
+    },
+    "image-copy.log": {
+      "bytes": 1026,
+      "sha256": "afcc5590c691b513286ec3596ef362f841b3771b87ce52b764ccd3b954af737a"
+    },
+    "image-source.json": {
+      "bytes": 249,
+      "sha256": "a67aaf5aa792c656d2de1003d4fc469e4921973125c9bbb94a4704130601a63c"
+    },
+    "image-unpack.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "collection_status": "collected_ungraded",
+  "error": "FEXServer exited before readiness: 1",
+  "error_type": "RuntimeError",
+  "execution_id": "szyn-qwen35-thinking-off-tp2-20261003",
+  "finished_at": "2026-10-03T14:26:14.314851Z",
+  "instance_id": "scikit-learn__scikit-learn-10844",
+  "schema_version": "szyn-swebench-grader-terminal/v1",
+  "started_at": "2026-10-03T14:24:39.414299Z",
+  "status": "grader_error",
+  "wall_time_seconds": 94.900698472
+}
