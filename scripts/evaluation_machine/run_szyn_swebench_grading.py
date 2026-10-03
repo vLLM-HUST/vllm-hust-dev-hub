@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
@@ -77,7 +78,8 @@ def verify_inputs(
     dataset: Path,
     swebench_source: Path,
     proot: Path,
-    qemu: Path,
+    fex: Path,
+    fex_server: Path,
 ) -> None:
     expected_pool = contract["task_pool"]
     for field, name in (
@@ -93,7 +95,8 @@ def verify_inputs(
     checks = {
         "dataset_parquet_sha256": sha256(dataset),
         "proot_binary_sha256": sha256(proot),
-        "qemu_x86_64_static_sha256": sha256(qemu),
+        "fex_binary_sha256": sha256(fex),
+        "fex_server_binary_sha256": sha256(fex_server),
         "harness_script_sha256": sha256(Path(__file__)),
     }
     for field, actual in checks.items():
@@ -275,16 +278,6 @@ def prepare_image(
     )
 
 
-def repair_x86_loader(rootfs: Path) -> None:
-    loader_link = rootfs / "lib64"
-    if not loader_link.is_symlink():
-        return
-    source = rootfs / "lib" / "x86_64-linux-gnu" / "ld-linux-x86-64.so.2"
-    loader_link.unlink()
-    loader_link.mkdir()
-    shutil.copy2(source, loader_link / "ld-linux-x86-64.so.2")
-
-
 def guest_runner(base_commit: str, patch_is_empty: bool) -> str:
     quoted_commit = shlex.quote(base_commit)
     apply = "true" if patch_is_empty else "git apply -v /grader/agent.patch"
@@ -310,13 +303,22 @@ def execute_guest(
     rootfs: Path,
     arch: str,
     proot: Path,
-    qemu: Path,
+    fex: Path,
+    fex_server: Path,
     test_output: Path,
+    server_output: Path,
     timeout: int,
 ) -> tuple[int | None, bool, float]:
-    command = [str(proot), "-R", str(rootfs)]
     if arch == "x86_64" and platform.machine() not in {"x86_64", "amd64"}:
-        command.extend(["-q", str(qemu)])
+        return execute_fex_guest(
+            rootfs=rootfs,
+            fex=fex,
+            fex_server=fex_server,
+            test_output=test_output,
+            server_output=server_output,
+            timeout=timeout,
+        )
+    command = [str(proot), "-R", str(rootfs)]
     command.extend(["-w", "/testbed", "/bin/bash", "/grader/run.sh"])
     environment = {
         "HOME": "/root",
@@ -332,6 +334,94 @@ def execute_guest(
         timeout=timeout,
         env=environment,
     )
+
+
+def execute_fex_guest(
+    *,
+    rootfs: Path,
+    fex: Path,
+    fex_server: Path,
+    test_output: Path,
+    server_output: Path,
+    timeout: int,
+) -> tuple[int | None, bool, float]:
+    mappings = {
+        Path("/testbed"): rootfs / "testbed",
+        Path("/grader"): rootfs / "grader",
+        Path("/opt/miniconda3"): rootfs / "opt" / "miniconda3",
+    }
+    guest_path = ":".join(
+        str(rootfs / path)
+        for path in (
+            "usr/local/sbin",
+            "usr/local/bin",
+            "usr/sbin",
+            "usr/bin",
+            "sbin",
+            "bin",
+        )
+    )
+    socket = rootfs / "grader" / "fex-server.socket"
+    environment = {
+        "FEX_ROOTFS": str(rootfs),
+        "FEX_SERVERSOCKETPATH": str(socket),
+        "HOME": str(rootfs / "root"),
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "MKL_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "PATH": f"{fex.parent}:{guest_path}",
+        "TERM": "dumb",
+        "TZ": "Etc/UTC",
+    }
+    lock_path = Path("/tmp/szyn-swebench-fex.lock")
+    with lock_path.open("a+b") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        created_links: list[Path] = []
+        server: subprocess.Popen[bytes] | None = None
+        try:
+            for link, target in mappings.items():
+                if link.exists() or link.is_symlink():
+                    raise RuntimeError(f"FEX mapping path already exists: {link}")
+                link.symlink_to(target, target_is_directory=True)
+                created_links.append(link)
+            with server_output.open("wb") as output:
+                server = subprocess.Popen(
+                    [str(fex_server), "--foreground", "-p"],
+                    env=environment,
+                    stdout=output,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True,
+                )
+                deadline = time.monotonic() + 15
+                while not socket.exists():
+                    if server.poll() is not None:
+                        raise RuntimeError(
+                            f"FEXServer exited before readiness: {server.returncode}"
+                        )
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError(
+                            "FEXServer socket was not ready in 15 seconds"
+                        )
+                    time.sleep(0.1)
+                return run_logged(
+                    [str(fex), "/bin/bash", "/grader/run.sh"],
+                    log=test_output,
+                    timeout=timeout,
+                    env=environment,
+                )
+        finally:
+            if server is not None and server.poll() is None:
+                os.killpg(server.pid, signal.SIGTERM)
+                try:
+                    server.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    os.killpg(server.pid, signal.SIGKILL)
+                    server.wait()
+            for link in reversed(created_links):
+                if link.is_symlink():
+                    link.unlink()
 
 
 def collection_patch(result_dir: Path, terminal: dict[str, Any]) -> Path:
@@ -359,7 +449,8 @@ def grade_one(
     oci_layout: Path,
     swebench_source: Path,
     proot: Path,
-    qemu: Path,
+    fex: Path,
+    fex_server: Path,
     wait_seconds: int,
 ) -> dict[str, Any] | None:
     instance_id = str(task["instance_id"])
@@ -411,8 +502,6 @@ def grade_one(
             result_dir=result_dir,
         )
         rootfs = bundle / "rootfs"
-        if arch == "x86_64" and platform.machine() not in {"x86_64", "amd64"}:
-            repair_x86_loader(rootfs)
 
         grader_dir = rootfs / "grader"
         grader_dir.mkdir()
@@ -429,8 +518,10 @@ def grade_one(
             rootfs=rootfs,
             arch=arch,
             proot=proot,
-            qemu=qemu,
+            fex=fex,
+            fex_server=fex_server,
             test_output=test_output,
+            server_output=result_dir / "fex-server.log",
             timeout=int(contract["scoring"]["grader_timeout_seconds"]),
         )
         terminal["grader_exit_code"] = returncode
@@ -457,6 +548,11 @@ def grade_one(
             "digest": digest,
             "name": image,
         }
+        terminal["execution_backend"] = (
+            "fex-2609.1"
+            if arch == "x86_64" and platform.machine() not in {"x86_64", "amd64"}
+            else "native-proot"
+        )
     except Exception as exc:  # noqa: BLE001 - preserve a terminal record per task
         terminal["status"] = "grader_error"
         terminal["error_type"] = type(exc).__name__
@@ -471,6 +567,7 @@ def grade_one(
             [
                 "collection-terminal.json",
                 "eval.sh",
+                "fex-server.log",
                 "image-copy.log",
                 "image-source.json",
                 "image-unpack.log",
@@ -492,7 +589,8 @@ def main() -> None:
     parser.add_argument("--oci-layout", type=Path, required=True)
     parser.add_argument("--swebench-source", type=Path, required=True)
     parser.add_argument("--proot", type=Path, required=True)
-    parser.add_argument("--qemu", type=Path, required=True)
+    parser.add_argument("--fex", type=Path, required=True)
+    parser.add_argument("--fex-server", type=Path, required=True)
     parser.add_argument("--start-index", type=int, default=1)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--instance-id")
@@ -507,7 +605,8 @@ def main() -> None:
         dataset=args.dataset,
         swebench_source=args.swebench_source,
         proot=args.proot,
-        qemu=args.qemu,
+        fex=args.fex,
+        fex_server=args.fex_server,
     )
     tasks = load_tasks(args.task_pool / "ordered-tasks.jsonl")
     if args.instance_id:
@@ -534,7 +633,8 @@ def main() -> None:
             oci_layout=args.oci_layout,
             swebench_source=args.swebench_source,
             proot=args.proot,
-            qemu=args.qemu,
+            fex=args.fex,
+            fex_server=args.fex_server,
             wait_seconds=args.wait_seconds,
         )
         if outcome is None:

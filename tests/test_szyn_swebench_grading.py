@@ -29,6 +29,12 @@ def test_skopeo_platform_args_override_x86_on_arm_hosts() -> None:
     assert module.skopeo_platform_args("arm64") == []
 
 
+def test_fex_guest_uses_single_thread_math_libraries() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert '"OPENBLAS_NUM_THREADS": "1"' in source
+    assert '"OMP_NUM_THREADS": "1"' in source
+
+
 def test_guest_runner_handles_nonempty_and_empty_patches() -> None:
     module = load_module()
     nonempty = module.guest_runner("abc123", False)

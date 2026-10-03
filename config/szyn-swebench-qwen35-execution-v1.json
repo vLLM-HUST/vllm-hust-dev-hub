@@ -71,13 +71,16 @@
     "collector_concurrency": 4
   },
   "grader": {
-    "implementation": "official-swebench-v2.1.7-over-oci-proot",
+    "implementation": "official-swebench-v2.1.7-over-oci-native-proot-or-fex",
     "swebench_commit": "5f5a7df799663adba4b191eca3d675faf3621fe2",
     "dataset_parquet_sha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
-    "harness_script_sha256": "91937fb3e9f73456d58219e9456bc471d4fae9b7ab46a29872539704d792e35f",
+    "harness_script_sha256": "620fb24bfb8e7cd9a9891067c7ff023f5522a38892c11adf54e454108ac7d90b",
     "proot_commit": "25dc6a3134891f98a79f57ce1c2c1b23ff15cad1",
     "proot_binary_sha256": "4760e19f3b2cd1e59d56cdfa90e69b0939776f86dd30191eb6cbb7059b7eeece",
-    "qemu_x86_64_static_sha256": "0502c5dbab0849e49d173a07752e8ee78b7b3d9a168d2e3450ee35285cb226b0",
+    "fex_package_version": "2609.1-1~j",
+    "fex_binary_sha256": "0e2b0f13aac0ee644a9525e01c7b72b5a0b4bc0efe24b01ef93a07de0ac087ca",
+    "fex_server_binary_sha256": "ad294a753567018b81173c3817365153a42aabfb9febb0fc980087555c33431a",
+    "x86_math_thread_limit": 1,
     "image_registry": "docker.io/swebench",
     "image_digest_recorded_per_task": true,
     "official_eval_script_recorded_per_task": true
