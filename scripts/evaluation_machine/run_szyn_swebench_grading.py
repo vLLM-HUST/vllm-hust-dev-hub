@@ -207,6 +207,15 @@ def run_logged(
                 os.killpg(process.pid, signal.SIGKILL)
                 process.wait()
             return None, True, time.monotonic() - started
+        except BaseException:
+            if process.poll() is None:
+                os.killpg(process.pid, signal.SIGTERM)
+                try:
+                    process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    os.killpg(process.pid, signal.SIGKILL)
+                    process.wait()
+            raise
 
 
 def skopeo_platform_args(arch: str) -> list[str]:
@@ -773,6 +782,12 @@ def _grade_one_locked(
         terminal["status"] = "grader_error"
         terminal["error_type"] = type(exc).__name__
         terminal["error"] = str(exc)
+    except BaseException as exc:
+        terminal["status"] = "grader_error"
+        terminal["error_type"] = type(exc).__name__
+        terminal["error"] = str(exc) or "grader interrupted"
+        terminal["interrupted"] = True
+        raise
     finally:
         if bundle.exists():
             shutil.rmtree(bundle, ignore_errors=True)

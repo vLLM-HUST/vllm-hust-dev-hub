@@ -7,6 +7,8 @@ import subprocess
 from pathlib import Path
 from unittest import mock
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "evaluation_machine" / "run_szyn_swebench_grading.py"
 
@@ -30,6 +32,21 @@ def test_skopeo_platform_args_override_x86_on_arm_hosts() -> None:
     module = load_module()
     assert module.skopeo_platform_args("x86_64") == ["--override-arch", "amd64"]
     assert module.skopeo_platform_args("arm64") == []
+
+
+def test_run_logged_terminates_process_group_when_interrupted(tmp_path: Path) -> None:
+    module = load_module()
+    process = mock.Mock()
+    process.pid = 12345
+    process.wait.side_effect = [KeyboardInterrupt, 0]
+    process.poll.return_value = None
+    with (
+        mock.patch.object(module.subprocess, "Popen", return_value=process),
+        mock.patch.object(module.os, "killpg") as killpg,
+        pytest.raises(KeyboardInterrupt),
+    ):
+        module.run_logged(["command"], log=tmp_path / "command.log", timeout=30)
+    killpg.assert_called_once_with(12345, module.signal.SIGTERM)
 
 
 def test_inspect_digest_retries_transient_registry_failure() -> None:
@@ -147,6 +164,7 @@ def test_fex_guest_uses_single_thread_math_libraries() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
     assert '"OPENBLAS_NUM_THREADS": "1"' in source
     assert '"OMP_NUM_THREADS": "1"' in source
+    assert 'terminal["interrupted"] = True' in source
 
 
 def test_guest_runner_handles_nonempty_and_empty_patches() -> None:
