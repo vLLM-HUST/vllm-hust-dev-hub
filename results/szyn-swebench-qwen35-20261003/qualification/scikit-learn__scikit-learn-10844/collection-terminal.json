@@ -1,0 +1,39 @@
+{
+  "artifacts": {
+    "agent.patch": {
+      "bytes": 627,
+      "sha256": "f5b366cf856fdf5a47b8dbed73da80a257557228cc3fa7507f7fd365600326d5"
+    },
+    "export-stderr.log": {
+      "bytes": 50,
+      "sha256": "424015ffc3ede6c48788dbeff6cc12d1db5d6849dd28dc9ad787e79b25149aea"
+    },
+    "opencode-events.jsonl": {
+      "bytes": 68072,
+      "sha256": "a493f4df78eaaa8d32cb76598a19c64d2b012ffbc762719318fd6bbb64f952b8"
+    },
+    "opencode-session-export.sanitized.json": {
+      "bytes": 55926,
+      "sha256": "d73862501e78ebe6499f35dd6efce8e052d6a5ee807fbb417cdbcd9b362d8ec2"
+    },
+    "opencode-stderr.log": {
+      "bytes": 30174,
+      "sha256": "819d15bd53d08adfeb38b6bbaa8ba289112125c7b260c4ba65145bbda9f321e8"
+    },
+    "task-input.json": {
+      "bytes": 5970,
+      "sha256": "e173a4d08bc5fec3dc39ec63cb705fed6b273896c66e4006c0dd96bea340c420"
+    }
+  },
+  "attempt": 1,
+  "collection_status": "collected_ungraded",
+  "collector_exit_code": 0,
+  "execution_id": "szyn-qwen35-thinking-off-tp2-20261003",
+  "export_exit_code": 0,
+  "finished_at": "2026-10-03T13:49:51.771264Z",
+  "instance_id": "scikit-learn__scikit-learn-10844",
+  "schema_version": "szyn-swebench-collection-terminal/v1",
+  "session_id": "ses_efdfb18e0ffeju7PUsfpHM5TTA",
+  "started_at": "2026-10-03T13:47:09.827099Z",
+  "wall_time_seconds": 161.944208614
+}
