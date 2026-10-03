@@ -8,10 +8,6 @@
       "bytes": 1768,
       "sha256": "ea8b23c62e7b9a9d6a651fded68bc90372e81887e42c629238673de08c12eb98"
     },
-    "evaluated-agent.patch": {
-      "bytes": 627,
-      "sha256": "f5b366cf856fdf5a47b8dbed73da80a257557228cc3fa7507f7fd365600326d5"
-    },
     "fex-server.log": {
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -33,44 +29,25 @@
       "sha256": "c866c28bdfb673f74c156b913e41cd0e3e5b418dcc047fc254533dd771bed343"
     },
     "test-output.txt": {
-      "bytes": 28686,
-      "sha256": "0f98f9c2c5f105f625fb4da190e01624ce2d935dee673e659331ea754025f5e2"
+      "bytes": 163953,
+      "sha256": "ce00339e1f2803a31c4c53ec1557c91b2452cdccc76941aa6836a7746a7a957a"
     }
   },
   "collection_status": "collected_ungraded",
   "execution_backend": "fex-2609.1",
   "execution_id": "szyn-qwen35-thinking-off-tp2-20261003",
-  "finished_at": "2026-10-03T15:49:30.508624Z",
+  "finished_at": "2026-10-03T14:44:43.316380Z",
   "grader_exit_code": 0,
-  "grader_runtime_seconds": 25.916646596044302,
+  "grader_runtime_seconds": 833.0268246140331,
   "image": {
     "digest": "sha256:2cb7669b05e488e4cf5ab5905ccd225c71fb2804cdb4072bb3fa0704e0816e76",
     "executed_architecture": "x86_64",
     "name": "docker.io/swebench/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-10844:latest",
     "preferred_architecture": "x86_64"
   },
-  "image_repository": {
-    "base_commit": "97523985b39ecde369d83352d7c3baf403b60a22",
-    "head": "974b94e4ebe0d8a319a2a4d71f18d0b4ff0e8a09",
-    "head_parent": "97523985b39ecde369d83352d7c3baf403b60a22",
-    "relation": "swebench-setup-commit",
-    "worktree_clean": true
-  },
   "instance_id": "scikit-learn__scikit-learn-10844",
-  "patch_normalization": {
-    "evaluated_patch_sha256": "f5b366cf856fdf5a47b8dbed73da80a257557228cc3fa7507f7fd365600326d5",
-    "exclude_patterns": [
-      "*.egg-info/*",
-      "*.so",
-      "*.so.*",
-      "opencode.json"
-    ],
-    "excluded_paths": [],
-    "mode": "exclude-untracked-runtime-generated-artifacts-v1",
-    "raw_patch_sha256": "f5b366cf856fdf5a47b8dbed73da80a257557228cc3fa7507f7fd365600326d5"
-  },
   "schema_version": "szyn-swebench-grader-terminal/v1",
-  "started_at": "2026-10-03T15:47:28.413457Z",
+  "started_at": "2026-10-03T14:29:11.506859Z",
   "status": "resolved",
-  "wall_time_seconds": 122.095311336
+  "wall_time_seconds": 931.809656501
 }
