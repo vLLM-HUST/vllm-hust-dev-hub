@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import fnmatch
 import hashlib
 import json
 import os
@@ -278,6 +279,39 @@ def prepare_image(
     )
 
 
+def normalize_patch(patch: str, exclude_patterns: list[str]) -> tuple[str, list[str]]:
+    preamble: list[str] = []
+    sections: list[tuple[str, list[str]]] = []
+    current_path: str | None = None
+    current_lines: list[str] = []
+    for line in patch.splitlines(keepends=True):
+        if line.startswith("diff --git "):
+            if current_path is not None:
+                sections.append((current_path, current_lines))
+            fields = shlex.split(line)
+            if len(fields) != 4 or not fields[3].startswith("b/"):
+                raise ValueError(f"cannot parse patch header: {line.rstrip()}")
+            current_path = fields[3][2:]
+            current_lines = [line]
+        elif current_path is None:
+            preamble.append(line)
+        else:
+            current_lines.append(line)
+    if current_path is not None:
+        sections.append((current_path, current_lines))
+
+    excluded = [
+        path
+        for path, _ in sections
+        if any(fnmatch.fnmatchcase(path, pattern) for pattern in exclude_patterns)
+    ]
+    excluded_set = set(excluded)
+    normalized = preamble + [
+        line for path, lines in sections if path not in excluded_set for line in lines
+    ]
+    return "".join(normalized), excluded
+
+
 def guest_runner(base_commit: str, patch_is_empty: bool) -> str:
     quoted_commit = shlex.quote(base_commit)
     apply = "true" if patch_is_empty else "git apply -v /grader/agent.patch"
@@ -505,7 +539,20 @@ def grade_one(
 
         grader_dir = rootfs / "grader"
         grader_dir.mkdir()
-        patch = patch_path.read_text(encoding="utf-8", errors="replace")
+        raw_patch = patch_path.read_text(encoding="utf-8", errors="replace")
+        normalization = contract["grader"]["patch_normalization"]
+        patch, excluded_paths = normalize_patch(
+            raw_patch, list(normalization["exclude_patterns"])
+        )
+        evaluated_patch = result_dir / "evaluated-agent.patch"
+        evaluated_patch.write_text(patch, encoding="utf-8")
+        terminal["patch_normalization"] = {
+            "mode": normalization["mode"],
+            "exclude_patterns": normalization["exclude_patterns"],
+            "excluded_paths": excluded_paths,
+            "raw_patch_sha256": sha256(patch_path),
+            "evaluated_patch_sha256": sha256(evaluated_patch),
+        }
         eval_script = str(test_spec.eval_script)
         (result_dir / "eval.sh").write_text(eval_script, encoding="utf-8")
         (grader_dir / "agent.patch").write_text(patch, encoding="utf-8")
@@ -566,6 +613,7 @@ def grade_one(
             result_dir,
             [
                 "collection-terminal.json",
+                "evaluated-agent.patch",
                 "eval.sh",
                 "fex-server.log",
                 "image-copy.log",

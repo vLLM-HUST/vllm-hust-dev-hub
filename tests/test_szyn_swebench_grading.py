@@ -44,6 +44,37 @@ def test_guest_runner_handles_nonempty_and_empty_patches() -> None:
     assert ">>>>> Applied Patch (pred)" in nonempty
 
 
+def test_normalize_patch_excludes_only_matching_diff_sections() -> None:
+    module = load_module()
+    patch = """diff --git a/pkg/core.py b/pkg/core.py
+--- a/pkg/core.py
++++ b/pkg/core.py
+@@ -1 +1 @@
+-old
++new
+diff --git a/case/pkg.egg-info/PKG-INFO b/pkg.egg-info/PKG-INFO
+new file mode 100644
+--- /dev/null
++++ b/pkg.egg-info/PKG-INFO
+@@ -0,0 +1 @@
++generated
+diff --git a/case/pkg/native.cpython-312-aarch64-linux-gnu.so b/pkg/native.cpython-312-aarch64-linux-gnu.so
+new file mode 100755
+--- /dev/null
++++ b/pkg/native.cpython-312-aarch64-linux-gnu.so
+@@ -0,0 +1 @@
++generated
+"""
+    normalized, excluded = module.normalize_patch(patch, ["*.egg-info/*", "*.so"])
+    assert excluded == [
+        "pkg.egg-info/PKG-INFO",
+        "pkg/native.cpython-312-aarch64-linux-gnu.so",
+    ]
+    assert "pkg/core.py" in normalized
+    assert "egg-info" not in normalized
+    assert ".so" not in normalized
+
+
 def test_artifact_manifest_hashes_only_existing_files(tmp_path: Path) -> None:
     module = load_module()
     (tmp_path / "present.txt").write_text("evidence\n", encoding="utf-8")
