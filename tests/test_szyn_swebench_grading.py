@@ -295,6 +295,27 @@ new file mode 100755
     assert ".so" not in normalized
 
 
+def test_normalize_patch_accepts_unquoted_paths_with_spaces() -> None:
+    module = load_module()
+    patch = """diff --git a/case/templates/ssi include.html b/templates/ssi include.html
+new file mode 100644
+--- /dev/null
++++ b/templates/ssi include.html
+@@ -0,0 +1 @@
++content
+"""
+    normalized, excluded = module.normalize_patch(patch, ["*.egg-info/*"])
+    assert normalized == patch
+    assert excluded == []
+
+
+def test_grader_hash_is_frozen_when_module_loads(tmp_path: Path) -> None:
+    module = load_module()
+    original = module.GRADER_HARNESS_SHA256
+    with mock.patch.object(module, "sha256", return_value="changed-on-disk"):
+        assert module.GRADER_HARNESS_SHA256 == original
+
+
 def test_artifact_manifest_hashes_only_existing_files(tmp_path: Path) -> None:
     module = load_module()
     (tmp_path / "present.txt").write_text("evidence\n", encoding="utf-8")

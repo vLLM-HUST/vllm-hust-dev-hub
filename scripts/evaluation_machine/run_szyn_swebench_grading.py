@@ -31,6 +31,9 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+GRADER_HARNESS_SHA256 = sha256(Path(__file__))
+
+
 def load_json(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
@@ -369,6 +372,21 @@ def prepare_image(
     )
 
 
+def patch_destination_path(header: str) -> str:
+    try:
+        fields = shlex.split(header)
+    except ValueError:
+        fields = []
+    if len(fields) == 4 and fields[3].startswith("b/"):
+        return fields[3][2:]
+
+    unquoted = header.rstrip("\r\n")
+    marker = unquoted.rfind(" b/")
+    if unquoted.startswith("diff --git a/") and marker > len("diff --git a/"):
+        return unquoted[marker + 3 :]
+    raise ValueError(f"cannot parse patch header: {header.rstrip()}")
+
+
 def normalize_patch(patch: str, exclude_patterns: list[str]) -> tuple[str, list[str]]:
     preamble: list[str] = []
     sections: list[tuple[str, list[str]]] = []
@@ -378,10 +396,7 @@ def normalize_patch(patch: str, exclude_patterns: list[str]) -> tuple[str, list[
         if line.startswith("diff --git "):
             if current_path is not None:
                 sections.append((current_path, current_lines))
-            fields = shlex.split(line)
-            if len(fields) != 4 or not fields[3].startswith("b/"):
-                raise ValueError(f"cannot parse patch header: {line.rstrip()}")
-            current_path = fields[3][2:]
+            current_path = patch_destination_path(line)
             current_lines = [line]
         elif current_path is None:
             preamble.append(line)
@@ -702,7 +717,7 @@ def _grade_one_locked(
         "schema_version": "szyn-swebench-grader-terminal/v1",
         "execution_id": contract["execution_id"],
         "instance_id": instance_id,
-        "grader_harness_sha256": sha256(Path(__file__)),
+        "grader_harness_sha256": GRADER_HARNESS_SHA256,
         "started_at": started_at,
         "collection_status": collection.get("collection_status"),
     }
