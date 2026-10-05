@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 EXPECTED_DENOMINATOR = 500
 INFRASTRUCTURE_FAILURE_STATES = {"grader_error", "grader_timeout"}
 
@@ -61,69 +60,79 @@ def summarize(
         raise ValueError(
             f"declared denominator must be {EXPECTED_DENOMINATOR}, found {denominator}"
         )
-    qualification_id = str(contract["preserved_qualification_instance"])
+    qualification_id = contract.get("preserved_qualification_instance")
     if len(tasks) != EXPECTED_DENOMINATOR:
-        raise ValueError(
-            f"expected {EXPECTED_DENOMINATOR} tasks, found {len(tasks)}"
-        )
+        raise ValueError(f"expected {EXPECTED_DENOMINATOR} tasks, found {len(tasks)}")
     task_ids = [str(task["instance_id"]) for task in tasks]
     if len(set(task_ids)) != EXPECTED_DENOMINATOR:
         raise ValueError("task pool instance IDs must be unique")
-    if str(tasks[0]["instance_id"]) != qualification_id:
-        raise ValueError("preserved qualification is not task index 0")
-
-    qualification_config = contract["preserved_qualification"]
-    qualification_contract_path = qualification_root / "qualification-contract.json"
-    manifest_path = qualification_root / "SHA256SUMS"
-    if (
-        sha256(qualification_contract_path)
-        != qualification_config["qualification_contract_sha256"]
-    ):
-        raise ValueError("preserved qualification contract hash mismatch")
-    if sha256(manifest_path) != qualification_config["sha256sums_sha256"]:
-        raise ValueError("preserved qualification manifest hash mismatch")
-    verify_sha256_manifest(qualification_root)
-    qualification = load_json(qualification_contract_path)
-    if qualification["status"] != "passed":
-        raise ValueError("preserved qualification did not pass")
-    if qualification["selection"]["instance_id"] != qualification_id:
-        raise ValueError("preserved qualification instance mismatch")
-    if qualification["asset_id"] != contract["asset_id"]:
-        raise ValueError("preserved qualification asset mismatch")
-    if (
-        qualification["task_pool"]["source_parquet_sha256"]
-        != contract["grader"]["dataset_parquet_sha256"]
-    ):
-        raise ValueError("preserved qualification dataset mismatch")
-    if (
-        qualification["task_pool"]["ordered_tasks_sha256"]
-        != contract["task_pool"]["ordered_tasks_sha256"]
-    ):
-        raise ValueError("preserved qualification task order mismatch")
-    if (
-        qualification["task_pool"]["manifest_sha256"]
-        != contract["task_pool"]["task_pool_manifest_sha256"]
-    ):
-        raise ValueError("preserved qualification task manifest mismatch")
-    if qualification["model"]["revision"] != contract["model"]["revision"]:
-        raise ValueError("preserved qualification model revision mismatch")
-    if qualification["runtime"]["vllm_commit"] != contract["runtime"]["vllm_commit"]:
-        raise ValueError("preserved qualification vLLM commit mismatch")
-    if (
-        qualification["runtime"]["vllm_ascend_commit"]
-        != contract["runtime"]["vllm_ascend_commit"]
-    ):
-        raise ValueError("preserved qualification vLLM-Ascend commit mismatch")
-    if int(qualification["result"]["attempted"]) != 1:
-        raise ValueError("preserved qualification attempted count must be 1")
-    if int(qualification["result"]["resolved"]) != 1:
-        raise ValueError("preserved qualification resolved count must be 1")
+    qualification_summary = None
+    resolved_offset = 0
+    if qualification_id is not None:
+        qualification_id = str(qualification_id)
+        if str(tasks[0]["instance_id"]) != qualification_id:
+            raise ValueError("preserved qualification is not task index 0")
+        qualification_config = contract["preserved_qualification"]
+        qualification_contract_path = qualification_root / "qualification-contract.json"
+        manifest_path = qualification_root / "SHA256SUMS"
+        if (
+            sha256(qualification_contract_path)
+            != qualification_config["qualification_contract_sha256"]
+        ):
+            raise ValueError("preserved qualification contract hash mismatch")
+        if sha256(manifest_path) != qualification_config["sha256sums_sha256"]:
+            raise ValueError("preserved qualification manifest hash mismatch")
+        verify_sha256_manifest(qualification_root)
+        qualification = load_json(qualification_contract_path)
+        if qualification["status"] != "passed":
+            raise ValueError("preserved qualification did not pass")
+        if qualification["selection"]["instance_id"] != qualification_id:
+            raise ValueError("preserved qualification instance mismatch")
+        if qualification["asset_id"] != contract["asset_id"]:
+            raise ValueError("preserved qualification asset mismatch")
+        if (
+            qualification["task_pool"]["source_parquet_sha256"]
+            != contract["grader"]["dataset_parquet_sha256"]
+        ):
+            raise ValueError("preserved qualification dataset mismatch")
+        if (
+            qualification["task_pool"]["ordered_tasks_sha256"]
+            != contract["task_pool"]["ordered_tasks_sha256"]
+        ):
+            raise ValueError("preserved qualification task order mismatch")
+        if (
+            qualification["task_pool"]["manifest_sha256"]
+            != contract["task_pool"]["task_pool_manifest_sha256"]
+        ):
+            raise ValueError("preserved qualification task manifest mismatch")
+        if qualification["model"]["revision"] != contract["model"]["revision"]:
+            raise ValueError("preserved qualification model revision mismatch")
+        if (
+            qualification["runtime"]["vllm_commit"]
+            != contract["runtime"]["vllm_commit"]
+        ):
+            raise ValueError("preserved qualification vLLM commit mismatch")
+        if (
+            qualification["runtime"]["vllm_ascend_commit"]
+            != contract["runtime"]["vllm_ascend_commit"]
+        ):
+            raise ValueError("preserved qualification vLLM-Ascend commit mismatch")
+        if int(qualification["result"]["attempted"]) != 1:
+            raise ValueError("preserved qualification attempted count must be 1")
+        if int(qualification["result"]["resolved"]) != 1:
+            raise ValueError("preserved qualification resolved count must be 1")
+        qualification_summary = {
+            "instance_id": qualification_id,
+            "resolved": 1,
+            "evidence_path": qualification_config["evidence_path"],
+        }
+        resolved_offset = 1
 
     allowed = set(contract["scoring"]["terminal_states"])
     accepted_harnesses = set(contract["grader"]["compatible_harness_sha256s"])
     if contract["grader"]["harness_script_sha256"] not in accepted_harnesses:
         raise ValueError("current grader harness is absent from compatibility set")
-    formal_ids = task_ids[1:]
+    formal_ids = task_ids[1:] if qualification_id is not None else task_ids
     counts: dict[str, int] = {}
     missing: list[str] = []
     invalid: dict[str, str] = {}
@@ -149,23 +158,19 @@ def summarize(
         counts[status] = counts.get(status, 0) + 1
 
     formal_count = sum(counts.values())
-    complete = formal_count == denominator - 1 and not missing and not invalid
+    complete = formal_count == len(formal_ids) and not missing and not invalid
     infrastructure_errors = sum(
         counts.get(status, 0) for status in INFRASTRUCTURE_FAILURE_STATES
     )
     publishable = complete and infrastructure_errors == 0
-    resolved = 1 + counts.get("resolved", 0)
+    resolved = resolved_offset + counts.get("resolved", 0)
     return {
         "schema_version": "szyn-swebench-verified-500-summary/v1",
         "execution_id": contract["execution_id"],
         "asset_id": contract["asset_id"],
         "declared_denominator": denominator,
-        "preserved_qualification": {
-            "instance_id": qualification_id,
-            "resolved": 1,
-            "evidence_path": qualification_config["evidence_path"],
-        },
-        "formal_expected": denominator - 1,
+        "preserved_qualification": qualification_summary,
+        "formal_expected": len(formal_ids),
         "formal_terminal_count": formal_count,
         "formal_status_counts": dict(sorted(counts.items())),
         "missing_formal_instances": missing,

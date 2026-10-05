@@ -47,6 +47,29 @@ def test_real_preserved_qualification_is_task_zero_and_hash_valid() -> None:
     assert result["publishable"] is False
 
 
+def test_full_rerun_does_not_reuse_preserved_qualification(tmp_path: Path) -> None:
+    module = load_module()
+    contract = module.load_json(
+        ROOT / "config" / "szyn-swebench-qwen35-execution-v1.json"
+    )
+    contract = deepcopy(contract)
+    contract["preserved_qualification_instance"] = None
+    contract.pop("preserved_qualification")
+    contract["execution_id"] = "sandbox-isolated-full-rerun"
+
+    result = module.summarize(
+        contract=contract,
+        tasks=tasks(),
+        formal_results=tmp_path,
+        qualification_root=ROOT / "unused",
+    )
+
+    assert result["preserved_qualification"] is None
+    assert result["formal_expected"] == 500
+    assert result["formal_terminal_count"] == 0
+    assert len(result["missing_formal_instances"]) == 500
+
+
 def test_grader_error_blocks_publication(tmp_path: Path) -> None:
     module = load_module()
     contract = module.load_json(
@@ -61,9 +84,7 @@ def test_grader_error_blocks_publication(tmp_path: Path) -> None:
             {
                 "instance_id": instance_id,
                 "execution_id": contract["execution_id"],
-                "grader_harness_sha256": contract["grader"][
-                    "harness_script_sha256"
-                ],
+                "grader_harness_sha256": contract["grader"]["harness_script_sha256"],
                 "status": "grader_error",
             }
         ),
@@ -90,7 +111,11 @@ def test_grader_timeout_blocks_publication(tmp_path: Path) -> None:
         instance_id = task["instance_id"]
         result_dir = tmp_path / instance_id
         result_dir.mkdir()
-        status = "grader_timeout" if instance_id == task_rows[1]["instance_id"] else "resolved"
+        status = (
+            "grader_timeout"
+            if instance_id == task_rows[1]["instance_id"]
+            else "resolved"
+        )
         (result_dir / "grader-terminal.json").write_text(
             json.dumps(
                 {

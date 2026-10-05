@@ -141,6 +141,13 @@ def chown_tree(root: Path, uid: int, gid: int) -> None:
         os.chown(path, uid, gid, follow_symlinks=False)
 
 
+def seal_reference_tree(root: Path) -> None:
+    """Keep the diff-only reference tree inaccessible to the agent UID."""
+    if not root.is_dir():
+        raise ValueError(f"reference tree does not exist: {root}")
+    root.chmod(0o700)
+
+
 def sandbox_environment(
     temporary: Path, state_root: Path, uid: int, gid: int
 ) -> dict[str, str]:
@@ -324,6 +331,7 @@ def collect_one(
             contract["runtime"]["endpoint"],
             contract["runtime"]["served_model_name"],
         )
+        seal_reference_tree(pristine)
         sandbox_uid = int(contract["sandbox"]["process_uid_base"])
         sandbox_uid += int(state_root.name.removeprefix("worker-"))
         sandbox_gid = int(contract["sandbox"]["process_gid"])
@@ -397,6 +405,12 @@ def collect_one(
             path.name: {"bytes": path.stat().st_size, "sha256": sha256(path)}
             for path in sorted(attempt_dir.iterdir())
             if path.is_file()
+        }
+        terminal["sandbox"] = {
+            "agent_uid": sandbox_uid,
+            "agent_gid": sandbox_gid,
+            "reference_tree_agent_readable": False,
+            "reference_tree_mode": "0700",
         }
     except Exception as exc:  # noqa: BLE001 - one broken task must not stop the batch
         terminal["collection_status"] = "infrastructure_error"

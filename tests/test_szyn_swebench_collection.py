@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
+import stat
+import subprocess
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "evaluation_machine" / "run_szyn_swebench_collection.py"
@@ -18,15 +23,16 @@ def load_module():
 
 def test_execution_contract_freezes_denominator_and_runtime() -> None:
     contract = json.loads(
-        (ROOT / "config" / "szyn-swebench-qwen35-execution-v1.json").read_text()
+        (ROOT / "config" / "szyn-swebench-qwen35-execution-v2.json").read_text()
     )
     assert contract["declared_denominator"] == 500
-    assert contract["preserved_qualification_instance"] == "django__django-15104"
+    assert contract["preserved_qualification_instance"] is None
     assert contract["collector"]["automatic_agent_retries"] == 0
     assert contract["model"]["thinking"] is False
     assert contract["sandbox"]["process_uid_base"] == 65000
     assert contract["sandbox"]["process_uid_count"] == 4
     assert contract["sandbox"]["host_root_credentials_readable"] is False
+    assert contract["sandbox"]["reference_tree_agent_readable"] is False
     assert contract["runtime"]["vllm_commit"] == (
         "0fc695fc6d1d82e9a5ac6835ac8e4e1c83703665"
     )
@@ -80,3 +86,22 @@ def test_sandbox_command_drops_root_identity() -> None:
         "--",
         "id",
     ]
+
+
+def test_reference_tree_is_inaccessible_to_agent_uid(tmp_path: Path) -> None:
+    module = load_module()
+    reference = tmp_path / "pristine"
+    reference.mkdir(mode=0o755)
+    sentinel = reference / "sentinel.py"
+    sentinel.write_text("frozen base\n", encoding="utf-8")
+
+    module.seal_reference_tree(reference)
+
+    assert stat.S_IMODE(reference.stat().st_mode) == 0o700
+    if os.geteuid() != 0:
+        pytest.skip("setpriv identity assertion requires root")
+    completed = subprocess.run(
+        module.sandbox_command(["test", "-r", str(sentinel)], 65534, 65534),
+        check=False,
+    )
+    assert completed.returncode != 0
