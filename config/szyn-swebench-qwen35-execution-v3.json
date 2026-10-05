@@ -1,6 +1,6 @@
 {
-  "schema_version": "szyn-swebench-execution/v2",
-  "execution_id": "szyn-qwen35-thinking-off-tp2-sandbox-isolated-20261005",
+  "schema_version": "szyn-swebench-execution/v3",
+  "execution_id": "szyn-qwen35-thinking-off-tp2-reference-separated-20261005",
   "asset_id": "SZYN-OPENCODE-SWEBENCH-VERIFIED-500",
   "declared_denominator": 500,
   "preserved_qualification_instance": null,
@@ -16,7 +16,7 @@
     "version": "1.18.19",
     "commit": "2b72179c663cadcb54f54d9f19221b3fb3d11fb6",
     "binary_sha256": "c34a30f5567f989d9a089cc4a0bf5860d81273fc6644de96671bd5cbe5dd31ec",
-    "harness_script_sha256": "2a68e59b3476f04ab2f90fb1b254daa7962e90a10b141e7c8ac7082e235ba85f",
+    "harness_script_sha256": "2604fb638cbc9552a0c9ec90f3664f75212b06e87fecc4fc594d8e467673418f",
     "automatic_agent_retries": 0,
     "infrastructure_retry_limit": 1,
     "agent_timeout_seconds": 1800
@@ -69,6 +69,8 @@
     "test_patch_visible_to_agent": false,
     "reference_tree_agent_readable": false,
     "reference_tree_mode": "0700",
+    "reference_tree_location": "separate-root-only-parent",
+    "reference_tree_name_visible_in_agent_workspace": false,
     "reference_tree_purpose": "post-agent-diff-only",
     "workspace_isolation": "one directory per task",
     "collector_concurrency": 4

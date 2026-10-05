@@ -23,7 +23,7 @@ def load_module():
 
 def test_execution_contract_freezes_denominator_and_runtime() -> None:
     contract = json.loads(
-        (ROOT / "config" / "szyn-swebench-qwen35-execution-v2.json").read_text()
+        (ROOT / "config" / "szyn-swebench-qwen35-execution-v3.json").read_text()
     )
     assert contract["declared_denominator"] == 500
     assert contract["preserved_qualification_instance"] is None
@@ -58,10 +58,10 @@ def test_atomic_json_replaces_partial_output(tmp_path: Path) -> None:
 
 def test_create_patch_uses_repository_relative_paths(tmp_path: Path) -> None:
     module = load_module()
-    pristine = tmp_path / "pristine"
-    case = tmp_path / "case"
-    pristine.mkdir()
-    case.mkdir()
+    pristine = tmp_path / "root-only-reference" / "pristine"
+    case = tmp_path / "agent-work" / "case"
+    pristine.mkdir(parents=True)
+    case.mkdir(parents=True)
     (pristine / "module.py").write_text("old\n", encoding="utf-8")
     (case / "module.py").write_text("new\n", encoding="utf-8")
     (case / ".git").mkdir()
@@ -105,3 +105,22 @@ def test_reference_tree_is_inaccessible_to_agent_uid(tmp_path: Path) -> None:
         check=False,
     )
     assert completed.returncode != 0
+
+
+def test_reference_tree_is_outside_agent_workspace_hierarchy(tmp_path: Path) -> None:
+    module = load_module()
+    work_root = tmp_path / "agent-work"
+    reference_root = tmp_path / "root-only-reference"
+
+    temporary, reference_temporary = module.create_task_roots(
+        work_root, reference_root, "example-task"
+    )
+    pristine = reference_temporary / "pristine"
+    pristine.mkdir()
+    module.seal_reference_tree(pristine)
+
+    assert temporary.parent == work_root
+    assert reference_temporary.parent == reference_root
+    assert reference_root not in temporary.parents
+    assert "pristine" not in {path.name for path in temporary.iterdir()}
+    assert stat.S_IMODE(reference_root.stat().st_mode) == 0o700

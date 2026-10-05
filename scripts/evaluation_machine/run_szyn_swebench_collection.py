@@ -148,6 +148,21 @@ def seal_reference_tree(root: Path) -> None:
     root.chmod(0o700)
 
 
+def create_task_roots(
+    work_root: Path, reference_root: Path, instance_id: str
+) -> tuple[Path, Path]:
+    work_root.mkdir(parents=True, exist_ok=True)
+    reference_root.mkdir(parents=True, mode=0o700, exist_ok=True)
+    reference_root.chmod(0o700)
+    temporary = Path(tempfile.mkdtemp(prefix=f"{instance_id}-", dir=work_root))
+    temporary.chmod(0o755)
+    reference_temporary = Path(
+        tempfile.mkdtemp(prefix=f"{instance_id}-", dir=reference_root)
+    )
+    reference_temporary.chmod(0o700)
+    return temporary, reference_temporary
+
+
 def sandbox_environment(
     temporary: Path, state_root: Path, uid: int, gid: int
 ) -> dict[str, str]:
@@ -266,10 +281,10 @@ def create_patch(pristine: Path, case: Path, output: Path) -> int:
                 "--no-renames",
                 "--src-prefix=a/",
                 "--dst-prefix=b/",
-                pristine.name,
-                case.name,
+                str(pristine),
+                str(case),
             ],
-            cwd=pristine.parent,
+            cwd="/",
             stdout=stream,
             stderr=subprocess.STDOUT,
             check=False,
@@ -278,8 +293,10 @@ def create_patch(pristine: Path, case: Path, output: Path) -> int:
         patch = stream.read()
     if completed.returncode not in (0, 1):
         raise subprocess.CalledProcessError(completed.returncode, completed.args)
-    patch = patch.replace(f"a/{pristine.name}/".encode(), b"a/")
-    patch = patch.replace(f"b/{case.name}/".encode(), b"b/")
+    pristine_prefix = f"a/{pristine.as_posix().lstrip('/')}/".encode()
+    case_prefix = f"b/{case.as_posix().lstrip('/')}/".encode()
+    patch = patch.replace(pristine_prefix, b"a/")
+    patch = patch.replace(case_prefix, b"b/")
     output.write_bytes(patch)
     return completed.returncode
 
@@ -291,6 +308,7 @@ def collect_one(
     opencode: Path,
     mirror_root: Path,
     work_root: Path,
+    reference_root: Path,
     output_root: Path,
     state_root: Path,
     attempt: int,
@@ -313,9 +331,10 @@ def collect_one(
         "attempt": attempt,
         "started_at": started_at,
     }
-    temporary = Path(tempfile.mkdtemp(prefix=f"{instance_id}-", dir=work_root))
-    temporary.chmod(0o755)
-    pristine = temporary / "pristine"
+    temporary, reference_temporary = create_task_roots(
+        work_root, reference_root, instance_id
+    )
+    pristine = reference_temporary / "pristine"
     case = temporary / "case"
     try:
         mirror = mirror_path(mirror_root, task["repo"])
@@ -411,6 +430,7 @@ def collect_one(
             "agent_gid": sandbox_gid,
             "reference_tree_agent_readable": False,
             "reference_tree_mode": "0700",
+            "reference_tree_location": "separate-root-only-parent",
         }
     except Exception as exc:  # noqa: BLE001 - one broken task must not stop the batch
         terminal["collection_status"] = "infrastructure_error"
@@ -421,6 +441,7 @@ def collect_one(
         terminal["wall_time_seconds"] = (time.time_ns() - started_ns) / 1_000_000_000
         atomic_json(terminal_path, terminal)
         shutil.rmtree(temporary, ignore_errors=True)
+        shutil.rmtree(reference_temporary, ignore_errors=True)
     return terminal
 
 
@@ -432,6 +453,7 @@ def collect_partition(
     opencode: Path,
     mirror_root: Path,
     work_root: Path,
+    reference_root: Path,
     output_root: Path,
     state_root: Path,
     attempt: int,
@@ -444,6 +466,7 @@ def collect_partition(
             opencode=opencode,
             mirror_root=mirror_root,
             work_root=work_root,
+            reference_root=reference_root,
             output_root=output_root,
             state_root=state_root / f"worker-{worker_index}",
             attempt=attempt,
@@ -471,6 +494,7 @@ def main() -> None:
     parser.add_argument("--opencode", type=Path, required=True)
     parser.add_argument("--mirror-root", type=Path, required=True)
     parser.add_argument("--work-root", type=Path, required=True)
+    parser.add_argument("--reference-root", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--state-root", type=Path, required=True)
     parser.add_argument("--workers", type=int, default=1)
@@ -506,6 +530,7 @@ def main() -> None:
                 opencode=args.opencode,
                 mirror_root=args.mirror_root,
                 work_root=args.work_root,
+                reference_root=args.reference_root,
                 output_root=args.output_root,
                 state_root=args.state_root,
                 attempt=args.attempt,
