@@ -1,0 +1,30 @@
+{
+  "asset_id": "SZYN-OPENCODE-SWEBENCH-VERIFIED-500",
+  "complete": true,
+  "declared_denominator": 500,
+  "execution_id": "szyn-qwen35-thinking-off-tp2-reference-separated-20261005",
+  "formal_expected": 500,
+  "formal_status_counts": {
+    "agent_error": 3,
+    "agent_timeout": 67,
+    "grader_timeout": 1,
+    "invalid_patch": 53,
+    "resolved": 232,
+    "unresolved": 144
+  },
+  "formal_terminal_count": 500,
+  "invalid_formal_instances": {},
+  "missing_formal_instances": [],
+  "preserved_qualification": null,
+  "publication_blockers": {
+    "grader_error": 0,
+    "grader_timeout": 1,
+    "infrastructure_failure_total": 1,
+    "invalid": 0,
+    "missing": 0
+  },
+  "publishable": false,
+  "resolution_rate": 0.464,
+  "resolved": 232,
+  "schema_version": "szyn-swebench-verified-500-summary/v1"
+}

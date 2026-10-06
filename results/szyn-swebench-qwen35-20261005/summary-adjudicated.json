@@ -1,0 +1,41 @@
+{
+  "adjudicated_publishable": true,
+  "adjudicated_status_counts": {
+    "agent_error": 3,
+    "agent_timeout": 67,
+    "invalid_patch": 53,
+    "resolved": 232,
+    "unresolved": 145
+  },
+  "adjudications": [
+    {
+      "agent_patch_sha256": "6fb07990cc1e59e5fe30da6847a3d5cba2c0dabef353fe2cb13016972fb36461",
+      "causal_explanation": "The candidate's new numeric user-defined-literal suffix loop treats BaseParser.current_char's EOF sentinel as alphabetic. At end of a numeric literal, the loop increments pos forever while current_char remains EOF. The official test_expressions test hangs at full CPU; two unchanged-contract grader attempts time out, while an empty-patch control on the identical official image completes normally in 17 seconds.",
+      "control_terminal_sha256": "63f632eafe62c3de0a735c76255dd5c609fdf24e48157fa96688ab986e6b4e33",
+      "control_test_output_sha256": "dfee85e2d951febacb1c3602356a7e9136067a4aeb1c788c3cc855a49558e007",
+      "current_terminal_sha256": "d6212ecc1ac7b69a0f9de4ab203c91e8776b7a86590dc39f4da39e30bf950551",
+      "current_test_output_sha256": "f79c5ba2a3309bfb578a5c78263dbf4f487865bf73cd23f0ced0030fbaa92f66",
+      "eof_sentinel": "EOF",
+      "first_terminal_sha256": "bc9a7f1ebbb05b1501a5a0d1550ba0a2efad7fe7720ab2ffeb6aa3a44aa4c2a9",
+      "instance_id": "sphinx-doc__sphinx-7590",
+      "reason_code": "candidate_infinite_loop_at_eof"
+    }
+  ],
+  "asset_id": "SZYN-OPENCODE-SWEBENCH-VERIFIED-500",
+  "declared_denominator": 500,
+  "execution_id": "szyn-qwen35-thinking-off-tp2-reference-separated-20261005",
+  "limitation": "Post-run causal adjudication; original grader terminals and pinned v3 summary remain unchanged.",
+  "raw_publishable": false,
+  "raw_status_counts": {
+    "agent_error": 3,
+    "agent_timeout": 67,
+    "grader_timeout": 1,
+    "invalid_patch": 53,
+    "resolved": 232,
+    "unresolved": 144
+  },
+  "raw_summary_sha256": "ee3e78dd9eafd82188af87d406e04e37729e5e05f488e656839e5845120c8fc9",
+  "resolution_rate": 0.464,
+  "resolved": 232,
+  "schema_version": "szyn-swebench-verified-500-adjudicated/v1"
+}
