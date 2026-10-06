@@ -1,0 +1,13 @@
+{
+  "assigned_npus": [
+    2
+  ],
+  "bundle_sha256": "00c2e0997a76f1a88025cd7be54fbb95d61602dacf8695edf6268e8d7a1fcaa1",
+  "job_id": "eval-20261006T212429Z-51ac8c7bedde",
+  "repeat_count": 3,
+  "request_sha256": "e60d08e878583418ea3b03b47d9b516f0984dba168966cc846a5791acd98f027",
+  "schedule_sha256": "ca399e3aac03db4d0e4dee3780127369c3884d2e4d08cc01af9dd0af4a43cdf6",
+  "schema_version": "evaluation-112-admission-attestation/v1",
+  "status": "VERIFIED",
+  "target_id": "specialty-ascend-vllm-0.23.0-vllm-ascend-0.25.1rc1-random-online-qwen25-14b-fp16-tp1-fixed-1rps-910b2"
+}

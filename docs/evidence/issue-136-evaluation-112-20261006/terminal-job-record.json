@@ -1,0 +1,37 @@
+{
+  "artifact_path": "/root/issue-214-136-formal-20261007/evaluation-112-v5/artifacts/eval-20261006T212429Z-51ac8c7bedde",
+  "artifact_sha256": "00c2e0997a76f1a88025cd7be54fbb95d61602dacf8695edf6268e8d7a1fcaa1",
+  "assigned_npus": [
+    2
+  ],
+  "cancel_requested": 0,
+  "created_at": 1791321869,
+  "error": null,
+  "exit_code": 0,
+  "finished_at": null,
+  "id": "eval-20261006T212429Z-51ac8c7bedde",
+  "idempotency_key": "issue-136-fixed-tp1-v5",
+  "priority": 10,
+  "request": {
+    "core_commit": "c696cc916ef30c7eb57c3e90a9f278e82e6e0bc7",
+    "metadata": {
+      "purpose": "live 112 adapter with registered target binding and fixed-load TP1 formal evidence"
+    },
+    "npu_count": 1,
+    "plugin_commit": "7c8ec865a12f7b6a14d53b61e7f61b5e811dd483",
+    "plugin_repository": "vLLM-HUST/vllm-ascend-hust",
+    "priority": "required",
+    "repeat_count": 3,
+    "repository": "vLLM-HUST/vllm-hust",
+    "requested_by": "codex-issue-136-closure",
+    "schema_version": 1,
+    "source_url": "https://github.com/vLLM-HUST/vllm-hust-benchmark/pull/239",
+    "target_id": "specialty-ascend-vllm-0.23.0-vllm-ascend-0.25.1rc1-random-online-qwen25-14b-fp16-tp1-fixed-1rps-910b2",
+    "target_registry_version": "1.3.8"
+  },
+  "request_sha256": "e60d08e878583418ea3b03b47d9b516f0984dba168966cc846a5791acd98f027",
+  "started_at": 1791321870,
+  "status": "succeeded",
+  "updated_at": 1791321870,
+  "worker_id": "coder-admin-shuhao-profiling-598489547-5xhv8:3355862"
+}

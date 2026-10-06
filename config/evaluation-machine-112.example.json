@@ -13,5 +13,11 @@
   "npu_process_command": ["npu-smi", "info"],
   "runner_command": [
     "/opt/vllm-hust-evaluation/bin/run-official-request"
+  ],
+  "admission_command": [
+    "/opt/vllm-hust-evaluation/venv/bin/python",
+    "/opt/vllm-hust-evaluation/benchmark/scripts/verify-112-evaluation-bundle.py",
+    "--schedule",
+    "/etc/vllm-hust-evaluation/schedule.json"
   ]
 }
