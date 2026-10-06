@@ -1,0 +1,140 @@
+{
+  "schema_version": "szyn-swebench-execution/v3",
+  "execution_id": "szyn-qwen35-thinking-off-tp2-reference-separated-20261005",
+  "asset_id": "SZYN-OPENCODE-SWEBENCH-VERIFIED-500",
+  "declared_denominator": 500,
+  "preserved_qualification_instance": null,
+  "task_pool": {
+    "dataset": "princeton-nlp/SWE-bench_Verified",
+    "dataset_revision": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+    "ordered_tasks_sha256": "9b9ee6a71f19bd178ab07d68622478757fc36aadc3c1b9c50f5afe8fad28c0ed",
+    "hidden_oracle_hashes_sha256": "425255e9eb15d7186557213151b36dace33274f335a227ad2913fde14153e386",
+    "task_pool_manifest_sha256": "84a2ad4e3931d93bd8406d048bcf12c37cc771886812d04fc74f54b8bde7f3fa"
+  },
+  "collector": {
+    "name": "OpenCode",
+    "version": "1.18.19",
+    "commit": "2b72179c663cadcb54f54d9f19221b3fb3d11fb6",
+    "binary_sha256": "c34a30f5567f989d9a089cc4a0bf5860d81273fc6644de96671bd5cbe5dd31ec",
+    "harness_script_sha256": "2604fb638cbc9552a0c9ec90f3664f75212b06e87fecc4fc594d8e467673418f",
+    "automatic_agent_retries": 0,
+    "infrastructure_retry_limit": 1,
+    "agent_timeout_seconds": 1800
+  },
+  "model": {
+    "name": "Qwen3.5-35B-A3B",
+    "revision": "712cf74392b05026a6db2bf213d343747d1f6d45",
+    "dtype": "bfloat16",
+    "tensor_parallel_size": 2,
+    "pipeline_parallel_size": 1,
+    "max_model_len": 262144,
+    "max_num_seqs": 16,
+    "max_num_batched_tokens": 4096,
+    "prefix_caching": true,
+    "async_scheduling": true,
+    "mamba_cache_mode": "align",
+    "mtp_draft_tokens": 2,
+    "thinking": false,
+    "temperature": 0,
+    "graph_mode": "FULL_AND_PIECEWISE",
+    "kv_cache_memory_bytes_per_device": 26038239232
+  },
+  "runtime": {
+    "vllm_commit": "0fc695fc6d1d82e9a5ac6835ac8e4e1c83703665",
+    "vllm_ascend_commit": "1cdb8c4db6e50f36f1fb3283b3e3dd618f6821e8",
+    "vllm_runtime_version_environment": "VLLM_VERSION=0.23.0",
+    "vllm_build_version_override_environment": "VLLM_VERSION_OVERRIDE=0.23.0",
+    "vllm_ascend_native_build": {
+      "provenance": "qualification-container build artifact from 2026-09-22",
+      "extension_sha256": "fc7a8e195bd94b86ced26ae3d5f1446365e48f2d4e9f21b9e1a5fba0b6f8900c",
+      "kernel_sha256": "6a9fc72a66a6055eb522a251fa48632b0ba257f22fb8f91a2deedc05e03e8b6a",
+      "build_info_sha256": "83607d975c588a345986a7c60ec6c62d72237079d4b8ae7f6fe46dbf1bce9f04",
+      "custom_op_tree_manifest_sha256": "2f309b8caf070a685ced67879fe95eed23b987e19435b2a89dd542d285416e61"
+    },
+    "accelerator": "Ascend 910B2",
+    "device_count": 2,
+    "served_model_name": "qwen35-szyn-native-thinking-off",
+    "endpoint": "http://127.0.0.1:33821/v1"
+  },
+  "sandbox": {
+    "kind": "git-archive-without-git-metadata",
+    "process_uid_base": 65000,
+    "process_uid_count": 4,
+    "process_gid": 65534,
+    "host_environment": "explicit-allowlist",
+    "host_root_credentials_readable": false,
+    "python_install_target": "ephemeral-per-task",
+    "network": "available_to_agent",
+    "gold_patch_visible_to_agent": false,
+    "test_patch_visible_to_agent": false,
+    "reference_tree_agent_readable": false,
+    "reference_tree_mode": "0700",
+    "reference_tree_location": "separate-root-only-parent",
+    "reference_tree_name_visible_in_agent_workspace": false,
+    "reference_tree_purpose": "post-agent-diff-only",
+    "workspace_isolation": "one directory per task",
+    "collector_concurrency": 4
+  },
+  "grader": {
+    "implementation": "official-swebench-v2.1.7-over-oci-native-proot-or-fex",
+    "swebench_commit": "5f5a7df799663adba4b191eca3d675faf3621fe2",
+    "dataset_parquet_sha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
+    "harness_script_sha256": "205a7a2b54977808dc2f8b2db3c31c7dd28e241b155541daf68e56f476962ba6",
+    "compatible_harness_sha256s": [
+      "c693c39cbc7042ae59d1774fed0076a5d78155d8e232f729798026d0b3eea639",
+      "07e552175471a8c9c366c9a93c2ec0c3467d9d250543ba1aea5efa89dec297b6",
+      "205a7a2b54977808dc2f8b2db3c31c7dd28e241b155541daf68e56f476962ba6"
+    ],
+    "compatible_harness_scope": "Earlier hashes have identical patch application, execution, and scoring logic. The second hash serializes shared OCI layout operations; the current hash additionally removes only explicitly declared untracked official-image build artifacts before enforcing a clean worktree.",
+    "oci_layout_writer_concurrency": 1,
+    "proot_commit": "25dc6a3134891f98a79f57ce1c2c1b23ff15cad1",
+    "proot_binary_sha256": "4760e19f3b2cd1e59d56cdfa90e69b0939776f86dd30191eb6cbb7059b7eeece",
+    "fex_package_version": "2609.1-1~j",
+    "fex_binary_sha256": "0e2b0f13aac0ee644a9525e01c7b72b5a0b4bc0efe24b01ef93a07de0ac087ca",
+    "fex_server_binary_sha256": "ad294a753567018b81173c3817365153a42aabfb9febb0fc980087555c33431a",
+    "x86_math_thread_limit": 1,
+    "patch_normalization": {
+      "mode": "exclude-untracked-runtime-generated-artifacts-v1",
+      "exclude_patterns": [
+        "*.egg-info/*",
+        "*.so",
+        "*.so.*",
+        "opencode.json"
+      ],
+      "raw_patch_preserved": true,
+      "evaluated_patch_recorded_per_task": true
+    },
+    "official_image_repository": {
+      "accepted_base_relation": "head-equals-base-or-head-parent-equals-base",
+      "allowed_untracked_paths": ["build/"],
+      "cleanup_mode": "remove-only-declared-untracked-paths-before-clean-check",
+      "require_clean_worktree": true,
+      "preserve_swebench_setup_commit": true
+    },
+    "registry_retry_policy": {
+      "digest_inspect_attempts": 8,
+      "copy_outer_attempts": 6,
+      "copy_inner_attempts": 3,
+      "backoff_seconds": [5, 10, 20, 40, 60]
+    },
+    "image_registry": "docker.io/swebench",
+    "image_digest_recorded_per_task": true,
+    "official_eval_script_recorded_per_task": true
+  },
+  "scoring": {
+    "summary_script_sha256": "243336865efb119a2658c159f59be162a2aea2663d358068dccf04547052be56",
+    "grader_timeout_seconds": 1800,
+    "gold_patch_is_not_applied": true,
+    "test_patch_is_applied_after_agent_exit": true,
+    "resolved_rule": "all FAIL_TO_PASS pass and all PASS_TO_PASS pass",
+    "terminal_states": [
+      "resolved",
+      "unresolved",
+      "agent_timeout",
+      "agent_error",
+      "invalid_patch",
+      "grader_timeout",
+      "grader_error"
+    ]
+  }
+}
