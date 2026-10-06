@@ -101,6 +101,8 @@ class JobStore:
             raise KeyError(job_id)
         result = dict(row)
         result["request"] = json.loads(result.pop("request_json"))
+        if result["assigned_npus"] is not None:
+            result["assigned_npus"] = json.loads(result["assigned_npus"])
         return result
 
     def cancel(self, job_id: str) -> dict[str, Any]:

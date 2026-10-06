@@ -80,12 +80,84 @@ def sha256_tree(root: Path) -> str:
     return digest.hexdigest()
 
 
+def verify_admission(
+    config: dict[str, Any],
+    job: dict[str, Any],
+    final_dir: Path,
+    tree_sha: str,
+    exit_code: int,
+) -> tuple[Path, Path]:
+    command = config.get("admission_command")
+    if (
+        not isinstance(command, list)
+        or not command
+        or any(not isinstance(value, str) or not value for value in command)
+    ):
+        raise ValueError("admission_command must be a non-empty string array")
+    state_dir = Path(config["state_dir"])
+    admission_dir = state_dir / "admission" / job["id"]
+    admission_dir.mkdir(parents=True, exist_ok=False)
+    job_record = admission_dir / "terminal-job-record.json"
+    pending_attestation = admission_dir / "attestation.json.pending"
+    final_attestation = admission_dir / "attestation.json"
+    log_path = admission_dir / "verifier.log"
+    terminal = {
+        **job,
+        "status": "succeeded",
+        "exit_code": exit_code,
+        "artifact_path": str(final_dir),
+        "artifact_sha256": tree_sha,
+        "error": None,
+    }
+    job_record.write_text(json.dumps(terminal, indent=2, sort_keys=True) + "\n")
+    verifier = [
+        *command,
+        "--bundle",
+        str(final_dir),
+        "--job-record",
+        str(job_record),
+        "--attestation",
+        str(pending_attestation),
+    ]
+    environment = {"PATH": os.defpath, "LANG": "C.UTF-8"}
+    with log_path.open("wb") as log:
+        result = subprocess.run(
+            verifier,
+            env=environment,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            check=False,
+            timeout=int(config.get("admission_timeout_seconds", 300)),
+        )
+    if result.returncode != 0:
+        raise RuntimeError(f"admission verifier exited with {result.returncode}")
+    if not pending_attestation.is_file() or final_attestation.exists():
+        raise RuntimeError("admission verifier did not produce a new attestation")
+    try:
+        attestation = json.loads(pending_attestation.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError("admission verifier produced invalid JSON") from exc
+    if not isinstance(attestation, dict) or any(
+        (
+            attestation.get("schema_version")
+            != "evaluation-112-admission-attestation/v1",
+            attestation.get("status") != "VERIFIED",
+            attestation.get("job_id") != job["id"],
+            attestation.get("bundle_sha256") != tree_sha,
+        )
+    ):
+        raise RuntimeError("admission verifier produced a mismatched attestation")
+    return pending_attestation, final_attestation
+
+
 def run_job(
     config: dict[str, Any], store: JobStore, job: dict[str, Any], npus: list[int]
 ) -> None:
     output_root = Path(config["artifact_dir"])
     final_dir = output_root / job["id"]
     final_dir.parent.mkdir(parents=True, exist_ok=True)
+    if final_dir.exists():
+        raise RuntimeError(f"refusing to overwrite evaluation artifact: {final_dir}")
     with tempfile.TemporaryDirectory(
         prefix=f"{job['id']}.", dir=output_root
     ) as temporary:
@@ -136,16 +208,29 @@ def run_job(
         (work / "BUNDLE_SHA256").write_text(tree_sha + "\n")
         shutil.move(work, final_dir)
     cancelled = store.get(job["id"])["cancel_requested"]
+    status = "cancelled" if cancelled else ("succeeded" if exit_code == 0 else "failed")
+    error = None if exit_code == 0 else f"runner exited with {exit_code}"
+    pending_attestation: Path | None = None
+    final_attestation: Path | None = None
+    if status == "succeeded":
+        try:
+            pending_attestation, final_attestation = verify_admission(
+                config, store.get(job["id"]), final_dir, tree_sha, exit_code
+            )
+        except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
+            status = "failed"
+            error = f"admission failed: {exc}"
     store.finish(
         job["id"],
-        status="cancelled"
-        if cancelled
-        else ("succeeded" if exit_code == 0 else "failed"),
+        status=status,
         exit_code=exit_code,
         artifact_path=str(final_dir),
         artifact_sha256=tree_sha,
-        error=None if exit_code == 0 else f"runner exited with {exit_code}",
+        error=error,
     )
+    if status == "succeeded":
+        assert pending_attestation is not None and final_attestation is not None
+        pending_attestation.replace(final_attestation)
 
 
 def main() -> None:

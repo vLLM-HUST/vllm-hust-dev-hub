@@ -14,6 +14,8 @@
 - worker 使用每卡文件锁，并在分配前检查 NPU 进程。维护文件
   `/data/vllm-hust-evaluation/state/MAINTENANCE` 会停止接收和调度新任务。
 - artifact 写入独立 job 目录，包含 canonical request、runner log、worker identity 和 bundle SHA256。
+- worker 封包后必须调用 benchmark 仓的独立 verifier；runner exit 0 仍是 `UNVERIFIED`，
+  verifier 失败会令 API job 失败，不能静默降级。
 - 历史 Actions runner 目录不删除；凭据和服务被可恢复地禁用，并写入独占标记。
 
 ## 请求流程
@@ -23,7 +25,10 @@
 3. API 以幂等方式写入 SQLite 队列。
 4. worker 按 `release > required > normal > diagnostic` 调度，获取资源锁后启动官方 runner。
 5. runner 解析 registry，不接受请求方命令；完成后生成 raw、日志、resolved spec、runtime/input provenance、repeat suite 和 checksums。
-6. CI 轮询状态或接收后续回调；只有 verified evidence bundle 可以进入 leaderboard snapshot 和网站。
+6. verifier 重算 bundle 树哈希并核对 terminal job、schedule、三次重复和每份 artifact，
+   然后只在 state 目录写 bundle 外部 attestation。
+7. CI 轮询状态或接收后续回调；只有 API `succeeded` 且存在匹配 job ID 和 bundle
+   SHA256 的 `VERIFIED` attestation 才可以进入 leaderboard snapshot 和网站。
 
 ## 生产部署
 
@@ -35,3 +40,10 @@ worker 的 `runner_command` 必须指向 benchmark 仓提供的 fail-closed adap
 `EVALUATION_REQUEST_FILE`、`EVALUATION_ASSIGNED_NPUS` 和 `EVALUATION_OUTPUT_DIR`，并在启动前
 复核 #218 snapshot 完整性、#220 target version、#247 scheduled spec/model 和 #221 runtime
 provenance 门禁。
+
+`admission_command` 同样由管理员静态配置。worker 在命令尾部追加 `--bundle`、
+`--job-record` 和 `--attestation`；请求方不能控制这些路径。verifier 先写
+`attestation.json.pending`，worker 成功提交 terminal SQLite 状态后才原子改名为
+`attestation.json`。bundle 在写入 `BUNDLE_SHA256` 后不再修改，验真日志、候选 job record
+和 attestation 均保存在 `state/admission/<job-id>/`。缺少 attestation 必须按未验真处理，
+即使 API 曾因进程崩溃留下 `succeeded` 状态也不例外。
