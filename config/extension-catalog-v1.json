@@ -1,9 +1,9 @@
 {
   "schema": "vllm-hust.extension-catalog/v1",
-  "generated_at": "2026-09-07T00:00:00Z",
+  "generated_at": "2026-10-07T00:00:00Z",
   "source": {
     "ref": "extension-manager/main",
-    "commit": "cf1ea71e3e2cb81ab06267ef05eddb3e580ea20b"
+    "commit": "4be9d2c502f8a41797bb068993eb91add29f3401"
   },
   "policy": {
     "availability": "Passed function and recovery plus immutable installation determine availability.",
@@ -340,7 +340,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-knorm",
       "source": {
         "ref": "main",
-        "commit": "e0e872abfc9fa88659b3e83c1c8b8b2b3de88fc0"
+        "commit": "563173e1c42c9c62e96fef7611caaff35b5e9e63"
       },
       "maturity": "preview",
       "availability": "preview",
@@ -368,7 +368,7 @@
       },
       "functional_qualification": {
         "status": "unverified",
-        "scope": "Documentation-only scaffold; no package, license file, or runtime.",
+        "scope": "ECPA 0.3 bundle and clean-wheel packaging are present; operator correctness, long-context behavior, and recovery remain unverified.",
         "recovery": "unverified",
         "evidence": []
       },
@@ -403,7 +403,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-kv-tiering",
       "source": {
         "ref": "main",
-        "commit": "3a73c7e1628801ea5d4f585bcc9d06260161a78c"
+        "commit": "03f17227b4dde195382017981a52e874250a855e"
       },
       "maturity": "preview",
       "availability": "preview",
@@ -431,7 +431,7 @@
       },
       "functional_qualification": {
         "status": "unverified",
-        "scope": "Documentation-only scaffold; storage consistency unverified.",
+        "scope": "ECPA 0.3 custom Provider and clean-wheel packaging are present; storage consistency, host activation, and recovery remain unverified.",
         "recovery": "unverified",
         "evidence": []
       },
@@ -896,7 +896,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-prefix-router",
       "source": {
         "ref": "main",
-        "commit": "4e007c4fc1bd376a6dccfefbc1fd851019c8ceb6"
+        "commit": "8115ed5077e15b98538e5e1e0a184ec76cdab2de"
       },
       "maturity": "preview",
       "availability": "preview",
@@ -924,7 +924,7 @@
       },
       "functional_qualification": {
         "status": "unverified",
-        "scope": "Documentation-only scaffold; no package, license file, or failover.",
+        "scope": "ECPA 0.3 external-service descriptor and clean-wheel packaging are present; the user-owned service lifecycle and failover remain unverified.",
         "recovery": "unverified",
         "evidence": []
       },
@@ -959,7 +959,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-ascend-pyramidkv-hust",
       "source": {
         "ref": "main",
-        "commit": "77b0862c1e5be8c883fda934cdb383c57cf7ad0d"
+        "commit": "84c7ecb15fe744a07bcb35aa53d51556b714912a"
       },
       "maturity": "preview",
       "availability": "preview",
@@ -987,7 +987,7 @@
       },
       "functional_qualification": {
         "status": "unverified",
-        "scope": "Layer policy, model structure, quality, graph, recovery unverified.",
+        "scope": "ECPA 0.3 Provider and clean-wheel packaging are present; layer policy, model quality, graph behavior, and recovery remain unverified.",
         "recovery": "unverified",
         "evidence": []
       },
@@ -1274,7 +1274,7 @@
       "repository": "https://github.com/vLLM-HUST/vllm-hust-slicegpt",
       "source": {
         "ref": "main",
-        "commit": "6acf19d9cbb3ed6caa3f5e6341b1da41941f9f2e"
+        "commit": "fc157ab2838a084940490ecdff0e32a817d93a8e"
       },
       "maturity": "preview",
       "availability": "preview",
@@ -1302,7 +1302,7 @@
       },
       "functional_qualification": {
         "status": "unverified",
-        "scope": "Documentation-only scaffold; compressed model artifact absent.",
+        "scope": "ECPA 0.3 import-only bundle and clean-wheel packaging are present; a qualified compressed model artifact and recovery evidence are absent.",
         "recovery": "unverified",
         "evidence": []
       },

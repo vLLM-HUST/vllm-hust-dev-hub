@@ -14,7 +14,7 @@ from pathlib import Path
 
 CORE = "0.28.1rc1.dev319@762f85b311fbab0bcf8921dd216f5093cd58b9b8"
 ASCEND = "0.25.1rc1@4e57439e58ed3d78e675f9fd7b4614fb183c5394"
-SCHEMA_COMMIT = "cf1ea71e3e2cb81ab06267ef05eddb3e580ea20b"
+SCHEMA_COMMIT = "4be9d2c502f8a41797bb068993eb91add29f3401"
 
 
 def requirements(
@@ -444,8 +444,11 @@ def catalog() -> dict[str, object]:
                 "knorm",
                 "KNorm",
                 "https://github.com/vLLM-HUST/vllm-hust-knorm",
-                "e0e872abfc9fa88659b3e83c1c8b8b2b3de88fc0",
-                scope="Documentation-only scaffold; no package, license file, or runtime.",
+                "563173e1c42c9c62e96fef7611caaff35b5e9e63",
+                scope=(
+                    "ECPA 0.3 bundle and clean-wheel packaging are present; operator "
+                    "correctness, long-context behavior, and recovery remain unverified."
+                ),
                 scenario="Normalization and KV-compression interaction research.",
                 benefit="No resource benefit demonstrated.",
                 cost="Unknown operator, quality, and long-context risk.",
@@ -454,8 +457,11 @@ def catalog() -> dict[str, object]:
                 "kv-tiering",
                 "KV Tiering",
                 "https://github.com/vLLM-HUST/vllm-hust-kv-tiering",
-                "3a73c7e1628801ea5d4f585bcc9d06260161a78c",
-                scope="Documentation-only scaffold; storage consistency unverified.",
+                "03f17227b4dde195382017981a52e874250a855e",
+                scope=(
+                    "ECPA 0.3 custom Provider and clean-wheel packaging are present; "
+                    "storage consistency, host activation, and recovery remain unverified."
+                ),
                 scenario="KV migration across device, CPU, and storage tiers.",
                 benefit="Potential effective KV capacity increase; unmeasured.",
                 cost="Transfer latency, storage durability, and data-lifecycle risk.",
@@ -495,8 +501,11 @@ def catalog() -> dict[str, object]:
                 "prefix-router",
                 "Prefix Router",
                 "https://github.com/vLLM-HUST/vllm-hust-prefix-router",
-                "4e007c4fc1bd376a6dccfefbc1fd851019c8ceb6",
-                scope="Documentation-only scaffold; no package, license file, or failover.",
+                "8115ed5077e15b98538e5e1e0a184ec76cdab2de",
+                scope=(
+                    "ECPA 0.3 external-service descriptor and clean-wheel packaging are "
+                    "present; the user-owned service lifecycle and failover remain unverified."
+                ),
                 scenario="Multi-replica prefix-affinity routing.",
                 benefit="Potential prefix-cache hit increase; unmeasured.",
                 cost="Load skew, stale cache events, and failover risk.",
@@ -505,8 +514,11 @@ def catalog() -> dict[str, object]:
                 "pyramidkv",
                 "PyramidKV",
                 "https://github.com/vLLM-HUST/vllm-ascend-pyramidkv-hust",
-                "77b0862c1e5be8c883fda934cdb383c57cf7ad0d",
-                scope="Layer policy, model structure, quality, graph, recovery unverified.",
+                "84c7ecb15fe744a07bcb35aa53d51556b714912a",
+                scope=(
+                    "ECPA 0.3 Provider and clean-wheel packaging are present; layer policy, "
+                    "model quality, graph behavior, and recovery remain unverified."
+                ),
                 scenario="Layered KV retention for long context.",
                 benefit="Potential KV capacity reduction; unmeasured.",
                 cost="Quality and graph-shape risk.",
@@ -555,8 +567,11 @@ def catalog() -> dict[str, object]:
                 "slicegpt",
                 "SliceGPT",
                 "https://github.com/vLLM-HUST/vllm-hust-slicegpt",
-                "6acf19d9cbb3ed6caa3f5e6341b1da41941f9f2e",
-                scope="Documentation-only scaffold; compressed model artifact absent.",
+                "fc157ab2838a084940490ecdff0e32a817d93a8e",
+                scope=(
+                    "ECPA 0.3 import-only bundle and clean-wheel packaging are present; "
+                    "a qualified compressed model artifact and recovery evidence are absent."
+                ),
                 scenario="Compressed-model capacity, quality, and performance tradeoff.",
                 benefit="Potential model HBM reduction; unmeasured.",
                 cost="Model conversion, quality, loader, and missing-license risk.",
@@ -618,7 +633,7 @@ def catalog() -> dict[str, object]:
     entries.sort(key=lambda item: str(item["id"]))
     return {
         "schema": "vllm-hust.extension-catalog/v1",
-        "generated_at": "2026-09-07T00:00:00Z",
+        "generated_at": "2026-10-07T00:00:00Z",
         "source": {"ref": "extension-manager/main", "commit": SCHEMA_COMMIT},
         "policy": {
             "availability": (

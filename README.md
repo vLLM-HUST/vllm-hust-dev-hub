@@ -31,6 +31,12 @@ resource tradeoffs, conflicts, and rollback separate. Regenerate it with
 `python3 scripts/generate_extension_catalog.py`; unverified entries remain
 visible previews and cannot be enabled.
 
+Re-listing and activation are separate reviews. A merged, immutable ECPA 0.3
+package may be restored to the visible preview catalog once its repository and
+commit are pinned. It remains non-executable until current-baseline functional
+and recovery evidence admits an installation descriptor. Packaging, discovery,
+or import success alone never changes an entry to `available`.
+
 Agent workflow note: on any prepared dev-hub Ascend development machine,
 use this repo's `./manage.sh` as the first-choice entrypoint for launching,
 restarting, health-checking, and testing the prepared vLLM-HUST service. Avoid
