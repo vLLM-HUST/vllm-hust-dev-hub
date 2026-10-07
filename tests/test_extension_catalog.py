@@ -93,3 +93,26 @@ def test_diffspec_pins_exact_draft_hash() -> None:
             "required": True,
         }
     ]
+
+
+def test_relisted_ecpa_03_previews_pin_merged_commits_without_activation() -> None:
+    catalog = load_catalog()
+    assert catalog["source"] == {
+        "ref": "extension-manager/main",
+        "commit": "4be9d2c502f8a41797bb068993eb91add29f3401",
+    }
+    entries = {entry["id"]: entry for entry in catalog["extensions"]}
+    expected = {
+        "knorm": "563173e1c42c9c62e96fef7611caaff35b5e9e63",
+        "kv-tiering": "03f17227b4dde195382017981a52e874250a855e",
+        "prefix-router": "8115ed5077e15b98538e5e1e0a184ec76cdab2de",
+        "pyramidkv": "84c7ecb15fe744a07bcb35aa53d51556b714912a",
+        "slicegpt": "fc157ab2838a084940490ecdff0e32a817d93a8e",
+    }
+    for identifier, commit in expected.items():
+        entry = entries[identifier]
+        assert entry["source"]["commit"] == commit
+        assert "ECPA 0.3" in entry["functional_qualification"]["scope"]
+        assert entry["availability"] == "preview"
+        assert entry["installation"] is None
+        assert entry["enablement"]["allowed"] is False
