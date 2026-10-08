@@ -1,0 +1,736 @@
+diff --git a/docs/design/preemption_policy.md b/docs/design/preemption_policy.md
+new file mode 100644
+index 0000000000..ed0f2cfdd2
+--- /dev/null
++++ b/docs/design/preemption_policy.md
+@@ -0,0 +1,27 @@
++# Request preemption policy extension
++
++V1 can delegate the choice of a request to preempt without exposing mutable
++scheduler objects. Configure `--preemption-policy package.module:PolicyClass`.
++The class must implement:
++
++```python
++def select_victim(self, context: PreemptionContext) -> str | None:
++    ...
++```
++
++`PreemptionContext` and its candidate records are frozen snapshots. The return
++value must be one of the candidate request IDs; returning `None` delegates that
++decision to the built-in FCFS or priority policy. A class may optionally define
++`from_vllm_config(vllm_config)` for construction from engine configuration.
++
++Construction and contract errors fail engine startup. A runtime exception or
++invalid request ID permanently disables the external policy in that engine
++process and restores the built-in policy, so repeated scheduling cannot keep
++executing a faulty extension. The scheduler exports cumulative
++`vllm:preemption_policy_events` and `vllm:preemption_policy_enabled` metrics.
++These distinguish a configured policy from one that is still effective.
++
++The API does not expose `Request`, request queues, the KV-cache manager, or
++scheduler mutation methods. This keeps the policy surface versionable and lets
++the scheduler retain ownership of queue ordering, budget rollback, KV release,
++and preemption accounting.
+diff --git a/tests/v1/core/test_preemption_policy.py b/tests/v1/core/test_preemption_policy.py
+new file mode 100644
+index 0000000000..ebe2235ccf
+--- /dev/null
++++ b/tests/v1/core/test_preemption_policy.py
+@@ -0,0 +1,116 @@
++# SPDX-License-Identifier: Apache-2.0
++# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
++
++from dataclasses import FrozenInstanceError
++from types import SimpleNamespace
++
++import pytest
++
++from vllm.v1.core.sched.preemption import (
++    PreemptionCandidate,
++    PreemptionContext,
++    PreemptionPolicyController,
++)
++
++pytestmark = pytest.mark.cpu_test
++
++
++def make_context(policy: str = "fcfs") -> PreemptionContext:
++    return PreemptionContext(
++        candidates=(
++            PreemptionCandidate("first", 1, 1.0, 10, 2, 12, 0, 20),
++            PreemptionCandidate("last", 3, 2.0, 8, 4, 12, 1, 20),
++        ),
++        scheduling_policy=policy,
++        requesting_request_id="first",
++        kv_cache_usage=0.95,
++        now=3.0,
++    )
++
++
++def make_config(policy=None):
++    return SimpleNamespace(scheduler_config=SimpleNamespace(preemption_policy=policy))
++
++
++class SelectFirstPolicy:
++    def select_victim(self, context: PreemptionContext) -> str:
++        return context.candidates[0].request_id
++
++
++class AbstainingPolicy:
++    def select_victim(self, context: PreemptionContext) -> None:
++        return None
++
++
++class InvalidPolicy:
++    def select_victim(self, context: PreemptionContext) -> str:
++        return "missing"
++
++
++class FailingPolicy:
++    calls = 0
++
++    def select_victim(self, context: PreemptionContext) -> str:
++        type(self).calls += 1
++        raise RuntimeError("policy failure")
++
++
++def test_builtin_policy_preserves_fcfs_and_priority() -> None:
++    controller = PreemptionPolicyController(make_config())
++
++    assert controller.select_victim(make_context("fcfs")) == "last"
++    assert controller.select_victim(make_context("priority")) == "last"
++    assert controller.export_stats() == {
++        "policy_name": "builtin",
++        "enabled": False,
++        "calls": 0,
++        "selections": 0,
++        "abstentions": 0,
++        "failures": 0,
++        "invalid_selections": 0,
++    }
++
++
++def test_policy_receives_immutable_snapshots() -> None:
++    context = make_context()
++
++    with pytest.raises(FrozenInstanceError):
++        context.kv_cache_usage = 0.0  # type: ignore[misc]
++    with pytest.raises(FrozenInstanceError):
++        context.candidates[0].num_computed_tokens = 0  # type: ignore[misc]
++
++
++def test_custom_policy_selection_and_abstention() -> None:
++    controller = PreemptionPolicyController(make_config(SelectFirstPolicy))
++    assert controller.select_victim(make_context()) == "first"
++    assert controller.export_stats()["selections"] == 1
++
++    controller = PreemptionPolicyController(make_config(AbstainingPolicy))
++    assert controller.select_victim(make_context()) == "last"
++    assert controller.export_stats()["abstentions"] == 1
++
++
++def test_invalid_selection_disables_policy_and_falls_back() -> None:
++    controller = PreemptionPolicyController(make_config(InvalidPolicy))
++
++    assert controller.select_victim(make_context()) == "last"
++    assert controller.select_victim(make_context()) == "last"
++    assert controller.export_stats() == {
++        "policy_name": f"{__name__}.InvalidPolicy",
++        "enabled": False,
++        "calls": 1,
++        "selections": 0,
++        "abstentions": 0,
++        "failures": 1,
++        "invalid_selections": 1,
++    }
++
++
++def test_policy_exception_disables_policy_and_falls_back() -> None:
++    FailingPolicy.calls = 0
++    controller = PreemptionPolicyController(make_config(FailingPolicy))
++
++    assert controller.select_victim(make_context()) == "last"
++    assert controller.select_victim(make_context()) == "last"
++    assert FailingPolicy.calls == 1
++    assert controller.export_stats()["failures"] == 1
+diff --git a/tests/v1/core/test_scheduler.py b/tests/v1/core/test_scheduler.py
+index 3e2b7dc583..4f1c790ede 100644
+--- a/tests/v1/core/test_scheduler.py
++++ b/tests/v1/core/test_scheduler.py
+@@ -27,6 +27,7 @@ from vllm.utils.hashing import sha256
+ from vllm.v1.core.encoder_cache_manager import EncoderCacheManager
+ from vllm.v1.core.kv_cache_utils import get_request_block_hasher, init_none_hash
+ from vllm.v1.core.sched.output import CachedRequestData, SchedulerOutput
++from vllm.v1.core.sched.preemption import PreemptionContext
+ from vllm.v1.core.sched.scheduler import Scheduler
+ from vllm.v1.engine import FinishReason
+ from vllm.v1.kv_cache_interface import (
+@@ -43,6 +44,13 @@ from .utils import EOS_TOKEN_ID, create_requests, create_scheduler, mock_kv
+ pytestmark = pytest.mark.cpu_test
+ 
+ 
++class SelectFirstPreemptionPolicy:
++    """Select the opposite victim from the built-in FCFS policy."""
++
++    def select_victim(self, context: PreemptionContext) -> str:
++        return context.candidates[0].request_id
++
++
+ def test_add_requests():
+     scheduler = create_scheduler()
+     requests = create_requests(num_requests=10)
+@@ -986,6 +994,41 @@ def test_preempt_during_execution():
+     assert requests[1].output_token_ids[0] == 42
+ 
+ 
++def test_custom_preemption_policy_is_called_during_scheduling():
++    scheduler = create_scheduler(
++        max_num_batched_tokens=100,
++        block_size=16,
++        num_blocks=11,
++        enable_prefix_caching=False,
++        preemption_policy=SelectFirstPreemptionPolicy,
++    )
++    requests = create_requests(num_requests=2, num_tokens=80, block_size=16)
++
++    scheduler.add_request(requests[0])
++    output0 = scheduler.schedule()
++    scheduler.add_request(requests[1])
++    scheduler.schedule()
++    scheduler.update_from_output(
++        output0,
++        ModelRunnerOutput(
++            req_ids=[requests[0].request_id],
++            req_id_to_index={requests[0].request_id: 0},
++            sampled_token_ids=[[0]],
++            logprobs=None,
++            prompt_logprobs_dict={},
++            pooler_output=[],
++        ),
++    )
++
++    scheduler_output = scheduler.schedule()
++
++    assert requests[0].status == RequestStatus.PREEMPTED
++    assert scheduler.running == [requests[1]]
++    assert scheduler_output.preempted_req_ids == {requests[0].request_id}
++    assert scheduler.preemption_policy.export_stats()["calls"] == 1
++    assert scheduler.preemption_policy.export_stats()["selections"] == 1
++
++
+ def test_scheduler_reset_prefix_cache():
+     scheduler = create_scheduler(enable_prefix_caching=True)
+     requests = create_requests(num_requests=10)
+diff --git a/tests/v1/core/utils.py b/tests/v1/core/utils.py
+index 3a375ec757..2a7d148a19 100644
+--- a/tests/v1/core/utils.py
++++ b/tests/v1/core/utils.py
+@@ -61,6 +61,7 @@ def create_scheduler(
+     use_ec_connector: bool = False,
+     ec_role: str | None = None,
+     use_v2_model_runner: bool | None = None,
++    preemption_policy: str | type[object] | None = None,
+ ) -> Scheduler | AsyncScheduler:
+     """Create scheduler under test.
+ 
+@@ -95,6 +96,7 @@ def create_scheduler(
+         is_encoder_decoder=model_config.is_encoder_decoder,
+         # Ensure admission/preemption mechanics are deterministic
+         watermark=0.0,
++        preemption_policy=preemption_policy,
+     )
+     # Cache config, optionally force APC
+     cache_config = CacheConfig(
+diff --git a/vllm/config/scheduler.py b/vllm/config/scheduler.py
+index 3773a47ec9..6f1dbd2062 100644
+--- a/vllm/config/scheduler.py
++++ b/vllm/config/scheduler.py
+@@ -129,6 +129,13 @@ class SchedulerConfig:
+     the default scheduler. Can be a class directly or the path to a class of
+     form "mod.custom_class"."""
+ 
++    preemption_policy: str | type[object] | None = None
++    """Optional request-preemption policy class or import path.
++
++    The policy receives immutable request snapshots only. If it abstains,
++    raises, or returns an invalid request ID, the scheduler restores its
++    built-in FCFS or priority victim selection."""
++
+     disable_hybrid_kv_cache_manager: bool | None = None
+     """If set to True, KV cache manager will allocate the same size of KV cache
+     for all attention layers even if there are multiple type of attention layers
+@@ -228,7 +235,9 @@ class SchedulerConfig:
+         hash_str = safe_hash(str(factors).encode(), usedforsecurity=False).hexdigest()
+         return hash_str
+ 
+-    @field_validator("scheduler_cls", "async_scheduling", mode="wrap")
++    @field_validator(
++        "scheduler_cls", "preemption_policy", "async_scheduling", mode="wrap"
++    )
+     @classmethod
+     def _skip_none_validation(cls, value: Any, handler: Callable) -> Any:
+         """Skip validation if the value is `None` when initialisation is delayed."""
+diff --git a/vllm/engine/arg_utils.py b/vllm/engine/arg_utils.py
+index c7a9335bbe..8b3fad2bfc 100644
+--- a/vllm/engine/arg_utils.py
++++ b/vllm/engine/arg_utils.py
+@@ -652,6 +652,7 @@ class EngineArgs:
+     enable_mm_processor_stats: bool = ObservabilityConfig.enable_mm_processor_stats
+     scheduling_policy: SchedulerPolicy = SchedulerConfig.policy
+     scheduler_cls: str | type[object] | None = SchedulerConfig.scheduler_cls
++    preemption_policy: str | type[object] | None = SchedulerConfig.preemption_policy
+ 
+     pooler_config: PoolerConfig | None = ModelConfig.pooler_config
+     compilation_config: CompilationConfig = get_field(VllmConfig, "compilation_config")
+@@ -1448,6 +1449,9 @@ class EngineArgs:
+         scheduler_group.add_argument(
+             "--scheduler-cls", **scheduler_kwargs["scheduler_cls"]
+         )
++        scheduler_group.add_argument(
++            "--preemption-policy", **scheduler_kwargs["preemption_policy"]
++        )
+         scheduler_group.add_argument(
+             "--scheduler-reserve-full-isl",
+             **scheduler_kwargs["scheduler_reserve_full_isl"],
+@@ -2161,6 +2165,7 @@ class EngineArgs:
+             scheduler_cls=self.scheduler_cls,
+             max_num_partial_prefills=self.max_num_partial_prefills,
+             max_long_partial_prefills=self.max_long_partial_prefills,
++            preemption_policy=self.preemption_policy,
+             long_prefill_token_threshold=self.long_prefill_token_threshold,
+             scheduler_reserve_full_isl=self.scheduler_reserve_full_isl,
+             watermark=self.watermark,
+diff --git a/vllm/v1/core/sched/preemption.py b/vllm/v1/core/sched/preemption.py
+new file mode 100644
+index 0000000000..b3d6d631fa
+--- /dev/null
++++ b/vllm/v1/core/sched/preemption.py
+@@ -0,0 +1,178 @@
++# SPDX-License-Identifier: Apache-2.0
++# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
++"""Extension API for selecting requests to preempt under KV pressure."""
++
++from __future__ import annotations
++
++from dataclasses import asdict, dataclass
++from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
++
++from vllm.logger import init_logger
++from vllm.utils.import_utils import resolve_obj_by_qualname
++
++if TYPE_CHECKING:
++    from vllm.config import VllmConfig
++
++logger = init_logger(__name__)
++
++PreemptionSchedulingPolicy = Literal["fcfs", "priority"]
++PREEMPTION_POLICY_API_VERSION = "1.0"
++
++
++@dataclass(frozen=True, slots=True)
++class PreemptionCandidate:
++    """Immutable request data available to a preemption policy."""
++
++    request_id: str
++    priority: int
++    arrival_time: float
++    num_prompt_tokens: int
++    num_output_tokens: int
++    num_computed_tokens: int
++    num_preemptions: int
++    max_tokens: int
++
++
++@dataclass(frozen=True, slots=True)
++class PreemptionContext:
++    """Immutable snapshot of one scheduler preemption decision."""
++
++    candidates: tuple[PreemptionCandidate, ...]
++    scheduling_policy: PreemptionSchedulingPolicy
++    requesting_request_id: str
++    kv_cache_usage: float
++    now: float
++
++
++@runtime_checkable
++class PreemptionPolicy(Protocol):
++    """Policy contract for request preemption.
++
++    Returning ``None`` delegates the decision to vLLM's built-in policy.
++    Implementations must return an ID from ``context.candidates`` and must not
++    retain references to scheduler-owned mutable state.
++    """
++
++    def select_victim(self, context: PreemptionContext) -> str | None:
++        """Return the request ID to preempt, or ``None`` to abstain."""
++        ...
++
++
++@dataclass(slots=True)
++class PreemptionPolicyStats:
++    """Cumulative policy invocation and failover counters."""
++
++    policy_name: str = "builtin"
++    enabled: bool = False
++    calls: int = 0
++    selections: int = 0
++    abstentions: int = 0
++    failures: int = 0
++    invalid_selections: int = 0
++
++
++def _builtin_victim_id(context: PreemptionContext) -> str:
++    if not context.candidates:
++        raise ValueError("cannot select a preemption victim from an empty set")
++    if context.scheduling_policy == "priority":
++        return max(
++            context.candidates,
++            key=lambda candidate: (candidate.priority, candidate.arrival_time),
++        ).request_id
++    return context.candidates[-1].request_id
++
++
++def _policy_name(policy: PreemptionPolicy) -> str:
++    policy_type = type(policy)
++    return f"{policy_type.__module__}.{policy_type.__qualname__}"
++
++
++def _load_policy(vllm_config: VllmConfig) -> PreemptionPolicy | None:
++    configured: Any = vllm_config.scheduler_config.preemption_policy
++    if configured is None:
++        return None
++    implementation = (
++        resolve_obj_by_qualname(configured)
++        if isinstance(configured, str)
++        else configured
++    )
++    factory = getattr(implementation, "from_vllm_config", None)
++    if callable(factory):
++        policy = factory(vllm_config)
++    elif isinstance(implementation, type):
++        policy = implementation()
++    else:
++        policy = implementation
++    if not isinstance(policy, PreemptionPolicy):
++        raise TypeError(
++            "preemption_policy must resolve to an object implementing PreemptionPolicy"
++        )
++    return policy
++
++
++class PreemptionPolicyController:
++    """Validate an external policy and fail over permanently on a fault."""
++
++    def __init__(self, vllm_config: VllmConfig) -> None:
++        policy = _load_policy(vllm_config)
++        self._policy = policy
++        self.stats = PreemptionPolicyStats(
++            policy_name=_policy_name(policy) if policy is not None else "builtin",
++            enabled=policy is not None,
++        )
++        logger.info(
++            "Preemption policy initialized: policy=%s enabled=%s",
++            self.stats.policy_name,
++            self.stats.enabled,
++        )
++
++    def select_victim(self, context: PreemptionContext) -> str:
++        policy = self._policy
++        if policy is None:
++            return _builtin_victim_id(context)
++
++        self.stats.calls += 1
++        try:
++            selected_id = policy.select_victim(context)
++        except Exception:
++            self._disable_after_failure("raised an exception", exc_info=True)
++            return _builtin_victim_id(context)
++
++        if selected_id is None:
++            self.stats.abstentions += 1
++            return _builtin_victim_id(context)
++
++        candidate_ids = {candidate.request_id for candidate in context.candidates}
++        if selected_id not in candidate_ids:
++            self.stats.invalid_selections += 1
++            self._disable_after_failure(f"returned unknown request ID {selected_id!r}")
++            return _builtin_victim_id(context)
++
++        self.stats.selections += 1
++        return selected_id
++
++    def export_stats(self) -> dict[str, str | int | bool]:
++        """Return a serialization-safe cumulative stats snapshot."""
++        return asdict(self.stats)
++
++    def _disable_after_failure(self, reason: str, *, exc_info: bool = False) -> None:
++        self.stats.failures += 1
++        self.stats.enabled = False
++        self._policy = None
++        logger.error(
++            "Preemption policy %s failed (%s); disabling it and restoring "
++            "the built-in policy for this engine process",
++            self.stats.policy_name,
++            reason,
++            exc_info=exc_info,
++        )
++
++
++__all__ = [
++    "PREEMPTION_POLICY_API_VERSION",
++    "PreemptionCandidate",
++    "PreemptionContext",
++    "PreemptionPolicy",
++    "PreemptionPolicyController",
++    "PreemptionPolicyStats",
++]
+diff --git a/vllm/v1/core/sched/scheduler.py b/vllm/v1/core/sched/scheduler.py
+index 8e01035ae6..bde326009f 100644
+--- a/vllm/v1/core/sched/scheduler.py
++++ b/vllm/v1/core/sched/scheduler.py
+@@ -45,6 +45,11 @@ from vllm.v1.core.sched.output import (
+     NewRequestData,
+     SchedulerOutput,
+ )
++from vllm.v1.core.sched.preemption import (
++    PreemptionCandidate,
++    PreemptionContext,
++    PreemptionPolicyController,
++)
+ from vllm.v1.core.sched.request_queue import (
+     RequestQueue,
+     SchedulingPolicy,
+@@ -182,6 +187,7 @@ class Scheduler(SchedulerInterface):
+         # requests skipped in waiting flow due async deps or constraints.
+         self.skipped_waiting = create_request_queue(self.policy)
+         self.running: list[Request] = []
++        self.preemption_policy = PreemptionPolicyController(vllm_config)
+ 
+         # The request IDs that are finished in between the previous and the
+         # current steps. This is used to notify the workers about the finished
+@@ -542,34 +548,36 @@ class Scheduler(SchedulerInterface):
+                         # The request can be scheduled.
+                         break
+ 
+-                    # The request cannot be scheduled.
+-                    # Preempt the lowest-priority request.
+-                    if self.policy == SchedulingPolicy.PRIORITY:
+-                        preempted_req = max(
+-                            self.running,
+-                            key=lambda r: (r.priority, r.arrival_time),
++                    # The request cannot be scheduled. Select a victim using an
++                    # immutable snapshot so policies cannot mutate scheduler state.
++                    preempted_req = self._select_preemption_victim(
++                        request, scheduled_timestamp
++                    )
++                    # Record the index of the preemption victim to maintain
++                    # accurate loop state for both built-in and custom policies.
++                    victim_index = self.running.index(preempted_req)
++                    del self.running[victim_index]
++                    if victim_index < req_index:
++                        req_index -= 1
++
++                    if preempted_req in scheduled_running_reqs:
++                        preempted_req_id = preempted_req.request_id
++                        scheduled_running_reqs.remove(preempted_req)
++                        restored = num_scheduled_tokens.pop(preempted_req_id)
++                        token_budget += restored
++                        req_to_new_blocks.pop(preempted_req_id)
++                        scheduled_spec_decode_tokens.pop(preempted_req_id, None)
++                        preempted_encoder_inputs = scheduled_encoder_inputs.pop(
++                            preempted_req_id, None
+                         )
+-                        self.running.remove(preempted_req)
+-                        if preempted_req in scheduled_running_reqs:
+-                            preempted_req_id = preempted_req.request_id
+-                            scheduled_running_reqs.remove(preempted_req)
+-                            token_budget += num_scheduled_tokens.pop(preempted_req_id)
+-                            req_to_new_blocks.pop(preempted_req_id)
+-                            scheduled_spec_decode_tokens.pop(preempted_req_id, None)
+-                            preempted_encoder_inputs = scheduled_encoder_inputs.pop(
+-                                preempted_req_id, None
++                        if preempted_encoder_inputs:
++                            # Restore encoder compute budget if the preempted
++                            # request had encoder inputs scheduled in this step.
++                            num_embeds_to_restore = sum(
++                                preempted_req.get_num_encoder_embeds(i)
++                                for i in preempted_encoder_inputs
+                             )
+-                            if preempted_encoder_inputs:
+-                                # Restore encoder compute budget if the preempted
+-                                # request had encoder inputs scheduled in this step.
+-                                num_embeds_to_restore = sum(
+-                                    preempted_req.get_num_encoder_embeds(i)
+-                                    for i in preempted_encoder_inputs
+-                                )
+-                                encoder_compute_budget += num_embeds_to_restore
+-                            req_index -= 1
+-                    else:
+-                        preempted_req = self.running.pop()
++                            encoder_compute_budget += num_embeds_to_restore
+ 
+                     self._preempt_request(preempted_req, scheduled_timestamp)
+                     preempted_reqs.append(preempted_req)
+@@ -1161,6 +1169,30 @@ class Scheduler(SchedulerInterface):
+         self.waiting.prepend_request(request)
+         self.reset_preempted_req_ids.add(request.request_id)
+ 
++    def _select_preemption_victim(self, request: Request, timestamp: float) -> Request:
++        candidates = tuple(
++            PreemptionCandidate(
++                request_id=candidate.request_id,
++                priority=candidate.priority,
++                arrival_time=candidate.arrival_time,
++                num_prompt_tokens=candidate.num_prompt_tokens,
++                num_output_tokens=candidate.num_output_tokens,
++                num_computed_tokens=candidate.num_computed_tokens,
++                num_preemptions=candidate.num_preemptions,
++                max_tokens=candidate.max_tokens,
++            )
++            for candidate in self.running
++        )
++        context = PreemptionContext(
++            candidates=candidates,
++            scheduling_policy=self.policy.value,
++            requesting_request_id=request.request_id,
++            kv_cache_usage=self.kv_cache_manager.usage,
++            now=timestamp,
++        )
++        victim_id = self.preemption_policy.select_victim(context)
++        return self.requests[victim_id]
++
+     def _update_after_schedule(self, scheduler_output: SchedulerOutput) -> None:
+         # Advance the number of computed tokens for the request AFTER
+         # the request is scheduled.
+@@ -2302,6 +2334,7 @@ class Scheduler(SchedulerInterface):
+             num_waiting_reqs=len(self.waiting),
+             num_skipped_waiting_reqs=len(self.skipped_waiting),
+             kv_cache_usage=self.kv_cache_manager.usage,
++            preemption_policy_stats=self.preemption_policy.export_stats(),
+             prefix_cache_stats=prefix_cache_stats,
+             connector_prefix_cache_stats=connector_prefix_cache_stats,
+             kv_cache_eviction_events=eviction_events,
+diff --git a/vllm/v1/metrics/loggers.py b/vllm/v1/metrics/loggers.py
+index 021019dc1c..7131b8b67d 100644
+--- a/vllm/v1/metrics/loggers.py
++++ b/vllm/v1/metrics/loggers.py
+@@ -531,6 +531,23 @@ class PrometheusStatLogger(AggregateStatLoggerBase):
+             gauge_kv_cache_usage, per_engine_labelvalues
+         )
+ 
++        self.gauge_preemption_policy_events = self._gauge_cls(
++            name="vllm:preemption_policy_events",
++            documentation=(
++                "Cumulative preemption-policy events by policy and event kind."
++            ),
++            multiprocess_mode="mostrecent",
++            labelnames=labelnames + ["policy", "event"],
++        )
++        self.gauge_preemption_policy_enabled = self._gauge_cls(
++            name="vllm:preemption_policy_enabled",
++            documentation=(
++                "Whether the configured external preemption policy remains enabled."
++            ),
++            multiprocess_mode="mostrecent",
++            labelnames=labelnames + ["policy"],
++        )
++
+         if envs.VLLM_COMPUTE_NANS_IN_LOGITS:
+             counter_corrupted_requests = self._counter_cls(
+                 name="vllm:corrupted_requests",
+@@ -1084,6 +1101,22 @@ class PrometheusStatLogger(AggregateStatLoggerBase):
+                 scheduler_stats.num_skipped_waiting_reqs
+             )
+             self.gauge_kv_cache_usage[engine_idx].set(scheduler_stats.kv_cache_usage)
++            if (policy_stats := scheduler_stats.preemption_policy_stats) is not None:
++                labels = self.per_engine_labelvalues[engine_idx]
++                policy = str(policy_stats["policy_name"])
++                self.gauge_preemption_policy_enabled.labels(*labels, policy).set(
++                    int(bool(policy_stats["enabled"]))
++                )
++                for event in (
++                    "calls",
++                    "selections",
++                    "abstentions",
++                    "failures",
++                    "invalid_selections",
++                ):
++                    self.gauge_preemption_policy_events.labels(
++                        *labels, policy, event
++                    ).set(int(policy_stats[event]))
+ 
+             self.counter_prefix_cache_queries[engine_idx].inc(
+                 scheduler_stats.prefix_cache_stats.queries
+diff --git a/vllm/v1/metrics/stats.py b/vllm/v1/metrics/stats.py
+index a7a5fb7a2d..c48fc47fb5 100644
+--- a/vllm/v1/metrics/stats.py
++++ b/vllm/v1/metrics/stats.py
+@@ -181,6 +181,7 @@ class SchedulerStats:
+     current_wave: int = 0
+ 
+     kv_cache_usage: float = 0.0
++    preemption_policy_stats: dict[str, str | int | bool] | None = None
+ 
+     prefix_cache_stats: PrefixCacheStats = field(default_factory=PrefixCacheStats)
+     connector_prefix_cache_stats: PrefixCacheStats | None = None
+diff --git a/vllm/v1/worker/gpu_model_runner.py b/vllm/v1/worker/gpu_model_runner.py
+index e9b23f1c61..6bc7590665 100644
+--- a/vllm/v1/worker/gpu_model_runner.py
++++ b/vllm/v1/worker/gpu_model_runner.py
+@@ -896,6 +896,11 @@ class GPUModelRunner(
+         self.valid_sampled_token_count_cpu: torch.Tensor | None = None
+         self.draft_token_ids_cpu: torch.Tensor | None = None
+         self.num_accepted_tokens_event: torch.Event | None = None
++        # Previous-step feedback must not alias the batch rows that condense()
++        # and request admission mutate before _prepare_inputs consumes it.
++        self.accepted_tokens_feedback_cpu = torch.ones_like(
++            self.input_batch.num_accepted_tokens_cpu_tensor, pin_memory=PIN_MEMORY
++        )
+         if self.num_spec_tokens:
+             self.draft_token_ids_event = torch.Event()
+             self.num_accepted_tokens_event = torch.Event()
+@@ -1549,7 +1554,7 @@ class GPUModelRunner(
+                 num_reqs=num_reqs,
+                 num_accepted_tokens_gpu=self.num_accepted_tokens.gpu,
+                 num_accepted_tokens_cpu_tensor=(
+-                    self.input_batch.num_accepted_tokens_cpu_tensor
++                    self.accepted_tokens_feedback_cpu
+                 ),
+                 input_batch=self.input_batch,
+                 kv_cache_config=self.kv_cache_config,
+@@ -2068,24 +2073,29 @@ class GPUModelRunner(
+         if needs_cpu_accepted_counts:
+             assert self.num_accepted_tokens_event is not None
+             self.num_accepted_tokens_event.synchronize()
++            accepted_feedback = (
++                self.accepted_tokens_feedback_cpu.numpy()
++                if self.cache_config.mamba_cache_mode == "align"
++                else self.input_batch.num_accepted_tokens_cpu
++            )
+             # Async mode: condense() reordered indices, use prev_positions mapping
+-            if self.use_async_scheduling and prev_req_id_to_index:
++            if self.use_async_scheduling:
+                 prev_idx = self.prev_positions.np[:num_reqs]
+                 new_mask = prev_idx < 0
+                 self.num_accepted_tokens.np[:num_reqs] = (
+-                    self.input_batch.num_accepted_tokens_cpu[
++                    accepted_feedback[
+                         np.where(new_mask, 0, prev_idx)
+                     ]
+                 )
+                 self.num_accepted_tokens.np[:num_reqs][new_mask] = 1
+-                self.input_batch.num_accepted_tokens_cpu[:num_reqs] = (
+-                    self.num_accepted_tokens.np[:num_reqs]
+-                )
+             else:
+                 # Non-async mode: use values directly
+                 self.num_accepted_tokens.np[:num_reqs] = (
+-                    self.input_batch.num_accepted_tokens_cpu[:num_reqs]
++                    accepted_feedback[:num_reqs]
+                 )
++            self.input_batch.num_accepted_tokens_cpu[:num_reqs] = (
++                self.num_accepted_tokens.np[:num_reqs]
++            )
+             self.num_accepted_tokens.np[num_reqs:].fill(1)
+             self.num_accepted_tokens.copy_to_gpu()
+         else:

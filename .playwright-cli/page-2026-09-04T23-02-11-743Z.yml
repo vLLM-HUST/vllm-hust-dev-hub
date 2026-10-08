@@ -1,0 +1,116 @@
+- generic [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e4]:
+      - link "返回工作站" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e8]:
+        - generic [ref=e9]: 只读浏览
+        - button "管理员登录" [ref=e10] [cursor=pointer]
+        - button "切换到深色主题" [ref=e11] [cursor=pointer]
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - paragraph [ref=e17]: WORKSTATION EXTENSIONS
+          - heading "Mod 中心" [level=1] [ref=e20]
+          - paragraph [ref=e21]: 准备扩展制品，核对兼容性，并管理已登记实例的运行状态。
+        - link "官方插件目录" [ref=e22] [cursor=pointer]:
+          - /url: https://vllm-hust.sage.org.ai/plugins.html
+      - region "推理实例" [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - paragraph [ref=e30]: 目标实例
+            - heading "当前工作站推理" [level=2] [ref=e45]
+          - button "刷新实例" [ref=e32] [cursor=pointer]
+        - generic [ref=e46]:
+          - generic [ref=e47]: 共享实例
+          - generic [ref=e48]: 容器身份已核验
+          - generic [ref=e49]: 生效 Mod：待核验
+        - paragraph [ref=e50]: Qwen/Qwen3.8-27B
+        - group [ref=e51]:
+          - generic "运行版本" [ref=e52] [cursor=pointer]
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - generic [ref=e36]: 搜索 Mod
+          - searchbox "搜索 Mod" [ref=e37]
+        - generic [ref=e38]:
+          - generic [ref=e39]: 筛选 Mod
+          - combobox "筛选 Mod" [ref=e40]:
+            - option "全部 Mod" [selected]
+            - option "已准备制品"
+            - option "外部服务"
+        - button "刷新" [ref=e41] [cursor=pointer]
+      - region "Mod 目录" [ref=e53]:
+        - article [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e56]:
+              - paragraph [ref=e57]: 推理扩展
+              - heading "BidKV" [level=2] [ref=e58]
+            - link "BidKV 源码" [ref=e59] [cursor=pointer]:
+              - /url: https://github.com/vLLM-HUST/vllm-hust-bidkv
+          - paragraph [ref=e64]: KV 压力下的效用感知抢占策略。
+          - group [ref=e65]:
+            - generic "当前实例 · 未核验" [active] [ref=e66] [cursor=pointer]
+            - generic [ref=e124]:
+              - generic [ref=e125]:
+                - term [ref=e126]: 当前判定
+                - definition [ref=e127]: Qwen3.8-27B 的 BidKV TP4 graph（FULL_DECODE_ONLY）候选已通过三轮 A/B、483 次策略选择、正确性、取消与恢复门禁，效果标记为 runtime effective / performance neutral。当前容器身份只证明宿主基线，仍需已安装候选 1462a17、启动配置与非零调用计数见证。
+              - generic [ref=e128]:
+                - term [ref=e129]: 候选资格基线
+                - definition [ref=e130]: Qwen3.8-27B：Core a4d6aa02 · Ascend 2c8c7221 · TP4 graph · 已通过
+              - generic [ref=e131]:
+                - term [ref=e132]: 基线依赖与配置
+                - definition [ref=e133]: 3×真实 A/B 均为 161 次抢占且无额外 prompt 重算；483 次有效选择、0 失败；短输出精确一致，取消后 1 秒排空。吞吐均值 +1.23% 但 95% 区间重叠，不宣称加速。
+            - paragraph [ref=e134]: 候选源码与 Manager 锁仍待人工审查、推送和独立 NPU 资格验证。安装、配置或保存启用意图均不代表运行生效。
+          - generic [ref=e67]:
+            - generic [ref=e68]: 制品未准备
+            - generic [ref=e69]: 未配置
+            - generic [ref=e70]: 未启用
+            - generic [ref=e71]: 运行生效性未知
+          - link "固定源码 024194b3ed4f" [ref=e72] [cursor=pointer]:
+            - /url: https://github.com/vLLM-HUST/vllm-hust-bidkv/commit/024194b3ed4ffcedcc8ecc21a8fe0573924e7494
+        - article [ref=e73]:
+          - generic [ref=e74]:
+            - generic [ref=e75]:
+              - paragraph [ref=e76]: 推理扩展
+              - heading "DiffSpec" [level=2] [ref=e77]
+            - link "DiffSpec 源码" [ref=e78] [cursor=pointer]:
+              - /url: https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec
+          - paragraph [ref=e83]: 面向长序列的差分推测解码。
+          - group [ref=e84]:
+            - generic "当前实例 · 未核验" [ref=e85] [cursor=pointer]
+          - generic [ref=e86]:
+            - generic [ref=e87]: 制品已准备 · 0.2.0
+            - generic [ref=e88]: 未配置
+            - generic [ref=e89]: 未启用
+            - generic [ref=e90]: 运行生效性未知
+          - link "固定源码 762959978514" [ref=e91] [cursor=pointer]:
+            - /url: https://github.com/vLLM-HUST/vllm-ascend-hust-diffspec/commit/762959978514cdd01407b58f1015a75f2ae2c936
+        - article [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e94]:
+              - paragraph [ref=e95]: 推理扩展
+              - heading "LatchMoE" [level=2] [ref=e96]
+            - link "LatchMoE 源码" [ref=e97] [cursor=pointer]:
+              - /url: https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE
+          - paragraph [ref=e102]: 保持地址稳定、兼容计算图的 MoE 专家卸载。
+          - group [ref=e103]:
+            - generic "当前实例 · 未核验" [ref=e104] [cursor=pointer]
+          - generic [ref=e105]:
+            - generic [ref=e106]: 制品未准备
+            - generic [ref=e107]: 未配置
+            - generic [ref=e108]: 未启用
+            - generic [ref=e109]: 运行生效性未知
+          - link "固定源码 53675b58a93b" [ref=e110] [cursor=pointer]:
+            - /url: https://github.com/vLLM-HUST/vllm-ascend-hust-LatchMoE/commit/53675b58a93b8cc455dba6bb630bfd8bef55a134
+        - article [ref=e111]:
+          - generic [ref=e112]:
+            - generic [ref=e113]:
+              - paragraph [ref=e114]: 外部服务
+              - heading "PegaFlow" [level=2] [ref=e115]
+            - link "PegaFlow 源码" [ref=e116] [cursor=pointer]:
+              - /url: https://github.com/vLLM-HUST/pegaflow-hust
+          - paragraph [ref=e121]: 独立的 KV 存储、传输与元数据系统。
+          - paragraph [ref=e122]: 由外部服务运维方管理
+          - paragraph [ref=e123]: Provider 只生成连接配置和健康检查；工作站不启停服务，不删除 KV 数据。
+      - generic [ref=e43]: 制品准备、运行配置与服务生命周期分别记录；只有目标 worker 的执行证据才会标记为生效。
+  - alert [ref=e44]

@@ -1,0 +1,12 @@
+vllm:preemption_policy_events{engine="0",event="calls",model_name="Qwen/Qwen3.8-27B",policy="bidkv.adapters.vllm_hust.selector.BidkvPreemptionPolicy"} 0.0
+vllm:preemption_policy_events{engine="0",event="selections",model_name="Qwen/Qwen3.8-27B",policy="bidkv.adapters.vllm_hust.selector.BidkvPreemptionPolicy"} 0.0
+vllm:preemption_policy_events{engine="0",event="abstentions",model_name="Qwen/Qwen3.8-27B",policy="bidkv.adapters.vllm_hust.selector.BidkvPreemptionPolicy"} 0.0
+vllm:preemption_policy_events{engine="0",event="failures",model_name="Qwen/Qwen3.8-27B",policy="bidkv.adapters.vllm_hust.selector.BidkvPreemptionPolicy"} 0.0
+vllm:preemption_policy_events{engine="0",event="invalid_selections",model_name="Qwen/Qwen3.8-27B",policy="bidkv.adapters.vllm_hust.selector.BidkvPreemptionPolicy"} 0.0
+vllm:preemption_policy_enabled{engine="0",model_name="Qwen/Qwen3.8-27B",policy="bidkv.adapters.vllm_hust.selector.BidkvPreemptionPolicy"} 1.0
+vllm:num_preemptions_total{engine="0",model_name="Qwen/Qwen3.8-27B"} 0.0
+vllm:request_success_total{engine="0",finished_reason="stop",model_name="Qwen/Qwen3.8-27B"} 11.0
+vllm:request_success_total{engine="0",finished_reason="length",model_name="Qwen/Qwen3.8-27B"} 11.0
+vllm:request_success_total{engine="0",finished_reason="abort",model_name="Qwen/Qwen3.8-27B"} 0.0
+vllm:request_success_total{engine="0",finished_reason="error",model_name="Qwen/Qwen3.8-27B"} 0.0
+vllm:request_success_total{engine="0",finished_reason="repetition",model_name="Qwen/Qwen3.8-27B"} 0.0

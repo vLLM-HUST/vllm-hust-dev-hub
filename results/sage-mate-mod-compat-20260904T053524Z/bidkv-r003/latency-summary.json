@@ -1,0 +1,22 @@
+[
+  {
+    "prompt": "Explain why the floating-point represent...",
+    "runs": 10,
+    "ttft_p50_s": 0.314,
+    "ttft_p95_s": 0.3281,
+    "tpot_p50_ms": 20.3,
+    "tpot_p95_ms": 20.91,
+    "throughput_p50_tok_s": 41.385,
+    "throughput_p05_tok_s": 40.221
+  },
+  {
+    "prompt": "Briefly review this thesis topic: 'When ...",
+    "runs": 10,
+    "ttft_p50_s": 0.297,
+    "ttft_p95_s": 0.3017,
+    "tpot_p50_ms": 20.0,
+    "tpot_p95_ms": 20.31,
+    "throughput_p50_tok_s": 45.14,
+    "throughput_p05_tok_s": 44.474
+  }
+]

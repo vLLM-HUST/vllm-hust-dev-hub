@@ -1,0 +1,39 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e4]:
+      - link "返回工作站" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e8]:
+        - generic [ref=e9]: 只读浏览
+        - button "管理员登录" [ref=e10] [cursor=pointer]
+        - button "切换到深色主题" [ref=e11] [cursor=pointer]
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - paragraph [ref=e17]: WORKSTATION EXTENSIONS
+          - heading "Mod 中心" [level=1] [ref=e20]
+          - paragraph [ref=e21]: 准备扩展制品，核对兼容性，并管理已登记实例的运行状态。
+        - link "官方插件目录" [ref=e22] [cursor=pointer]:
+          - /url: https://vllm-hust.sage.org.ai/plugins.html
+      - region "推理实例" [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - paragraph [ref=e30]: 目标实例
+            - heading "推理实例" [level=2] [ref=e31]
+          - button "刷新实例" [disabled] [ref=e32]
+        - status [ref=e33]: 正在核验实例…
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - generic [ref=e36]: 搜索 Mod
+          - searchbox "搜索 Mod" [ref=e37]
+        - generic [ref=e38]:
+          - generic [ref=e39]: 筛选 Mod
+          - combobox "筛选 Mod" [ref=e40]:
+            - option "全部 Mod" [selected]
+            - option "已准备制品"
+            - option "外部服务"
+        - button "刷新" [disabled] [ref=e41]
+      - status [ref=e42]: 正在加载 Mod…
+      - region "Mod 目录"
+      - generic [ref=e43]: 制品准备、运行配置与服务生命周期分别记录；只有目标 worker 的执行证据才会标记为生效。
+  - alert [ref=e44]

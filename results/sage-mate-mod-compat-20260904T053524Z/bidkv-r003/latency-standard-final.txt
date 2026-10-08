@@ -1,0 +1,29 @@
+[bidkv-r003-tp4-graph] target=http://127.0.0.1:8001/v1 model=Qwen/Qwen3.8-27B max_tokens=128
+
+>>> prompt: Explain why the floating-point represent...
+  run 1: ttft=0.310s tpot=20.8ms n=82 total=2.02s tps=40.66
+  run 2: ttft=0.333s tpot=21.0ms n=82 total=2.05s tps=39.96
+  run 3: ttft=0.315s tpot=20.1ms n=82 total=1.97s tps=41.64
+  run 4: ttft=0.322s tpot=20.0ms n=82 total=1.97s tps=41.72
+  run 5: ttft=0.313s tpot=20.3ms n=82 total=1.98s tps=41.39
+  run 6: ttft=0.309s tpot=20.3ms n=82 total=1.98s tps=41.46
+  run 7: ttft=0.312s tpot=20.3ms n=82 total=1.98s tps=41.38
+  run 8: ttft=0.306s tpot=20.8ms n=82 total=2.02s tps=40.67
+  run 9: ttft=0.316s tpot=20.8ms n=82 total=2.02s tps=40.54
+  run 10: ttft=0.321s tpot=20.1ms n=82 total=1.97s tps=41.60
+  median: ttft=0.314s tpot=20.3ms total=1.98s throughput=41.39 tok/s
+  prefix-cache delta: queries=0 hits=0 hit_rate=0.000 block_queries=0 block_hits=0 block_hit_rate=0.000 cached_blocks=0
+
+>>> prompt: Briefly review this thesis topic: 'When ...
+  run 1: ttft=0.304s tpot=20.0ms n=128 total=2.85s tps=44.94
+  run 2: ttft=0.297s tpot=19.9ms n=128 total=2.82s tps=45.37
+  run 3: ttft=0.294s tpot=20.4ms n=128 total=2.89s tps=44.33
+  run 4: ttft=0.299s tpot=19.7ms n=128 total=2.80s tps=45.65
+  run 5: ttft=0.291s tpot=19.7ms n=128 total=2.79s tps=45.86
+  run 6: ttft=0.298s tpot=19.9ms n=128 total=2.82s tps=45.40
+  run 7: ttft=0.298s tpot=20.0ms n=128 total=2.83s tps=45.17
+  run 8: ttft=0.297s tpot=20.0ms n=128 total=2.84s tps=45.11
+  run 9: ttft=0.296s tpot=20.2ms n=128 total=2.87s tps=44.65
+  run 10: ttft=0.296s tpot=20.0ms n=128 total=2.84s tps=45.05
+  median: ttft=0.297s tpot=20.0ms total=2.84s throughput=45.14 tok/s
+  prefix-cache delta: queries=0 hits=0 hit_rate=0.000 block_queries=0 block_hits=0 block_hit_rate=0.000 cached_blocks=0
