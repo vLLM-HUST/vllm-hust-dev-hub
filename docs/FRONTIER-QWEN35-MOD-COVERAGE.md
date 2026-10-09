@@ -1,5 +1,20 @@
 # Qwen3.5-35B-A3B MOD 曲线覆盖进度
 
+> **2026-10-09 增量复核：**本文件下表保留的是固定旧 revision 的历史结论，不能继续代表仓库
+> current main。SimLLM 已由
+> [PR #5](https://github.com/vLLM-HUST/vllm-ascend-simllm-hust/pull/5)
+> 补齐可安装、默认关闭的 runtime MOD、worker-side KV reuse、Qwen3.5 hybrid state
+> 恢复和两次独立 5,000 请求配对回放，因此不再属于“无实现/退役”状态。两次回放吞吐分别
+> 提升 20.39% 与 18.78%，但使用固定卡和单输出 token，相对收益主要属于 prefill 相似任务，
+> 不能外推到长生成。网站规范分类与最新证据见
+> [维护复核](https://github.com/vLLM-HUST/vllm-hust-website/blob/main/docs/PLUGIN-MAINTENANCE-AUDIT-20260926.md)。
+>
+> 同轮复核还确认 Prefix Router、PyramidKV、KNorm、KV Tiering、Request Lifecycle
+> Profiler、KV Transfer Observability 与 SliceGPT 均已有旧表之后的新实现提交；各自应按
+> “已实现但受限”“资格验证中”或“工具已实现”展示，不能继续称为纯空骨架。Unified
+> Communication、Layered Prefill、Activation Sparsity 与 QoS Scheduler 的新合并仍只有
+> metadata 文档，尚不足以恢复运行时身份。
+
 **状态：已完成本轮逐项核查，仍有组件未取得合格曲线。** 下表保留已验证的阻碍；不得把未测项目当作零分或性能结果。
 
 使用同一编译后的 SWE 多轮工作负载、900 秒测量窗口和匹配基线；保留 BF16、256K 上下文容量、MTP2、APC、async 和图执行。每点保留原始请求、窗口内 token、质量检查和服务释放回执。收尾时间不计入吞吐。部署环境只作为来源信息，不能单独命名为 MOD。
