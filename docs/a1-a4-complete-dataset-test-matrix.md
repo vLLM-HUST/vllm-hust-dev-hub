@@ -1,10 +1,66 @@
-# A1—A4 全量数据集测试矩阵
+# 浦江指定 35B B0/B1 与 A1—A4 全量数据集测试大纲
 
-> 状态：派欧云八项物理资产已校验并纳入统一资产清单；授权、oracle、固定 tokenizer 与确定性转换资格项仍保持阻塞
+> 状态：浦江指定范围已登记，但五项中当前没有任何一项达到“已落地且可执行”；MMLU-Pro 只有未冻结的历史服务遥测材料，其余四项缺失。派欧云及 A1—A4 既有资产继续作为补充材料维护。
 >
-> 组织原则：每个指标配置维护一组符合其合同的数据集；测试只分 `REQUIRED`（必测）与 `SUPPLEMENTARY`（补充）两档，不按数据来源设置优先级。
+> 组织原则：“浦江指定范围”决定当前 35B B0/B1 计划首先补齐哪五个数据集；`REQUIRED` / `SUPPLEMENTARY` 决定 A1—A4 各指标合同中的交付档位。这是两个正交维度，不能互相替代。
 >
-> 执行原则：冻结到同一指标配置的多个数据集必须分别执行、分别报告；不得加权平均掩盖任何失败。`SUPPLEMENTARY` 不能代替 `REQUIRED`，公共工程健康数据与 A1—A4 验收合同保持分离。
+> 执行原则：冻结到同一指标配置的多个数据集必须分别执行、分别报告；不得加权平均掩盖任何失败。不得用名称相近的数据集替代浦江指定项；`SUPPLEMENTARY` 不能代替 `REQUIRED`，公共工程健康数据与 A1—A4 验收合同保持分离。
+
+## 0. 浦江指定数据集：Qwen3.5-35B-A3B B0/B1
+
+### 0.1 指定范围与规范来源
+
+浦江指定的数据集名称固定为：
+
+1. MMLU-Pro
+2. HLE-Verified
+3. SWE-bench-Pro
+4. FrontierScience
+5. Terminal-Bench 2.1
+
+名称确认只冻结测试范围，不等于已经冻结发布版本、revision、split、任务 ID、抽样规则、scorer、执行镜像、许可证或哈希。MMLU、SWE-bench Verified、旧版 Terminal-Bench 以及其他名称相近的数据集均不能代替对应指定项。
+
+机器可读规范为 [`vllm-hust-benchmark/leaderboard-data/dataset-validation/dataset_program_v1.json`](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/main/leaderboard-data/dataset-validation/dataset_program_v1.json)，逐项资产审计为 [`reports/pujiang-specified-datasets-20261009`](https://github.com/vLLM-HUST/vllm-hust-benchmark/tree/main/reports/pujiang-specified-datasets-20261009)，执行总账为 [`vllm-hust-benchmark#254`](https://github.com/vLLM-HUST/vllm-hust-benchmark/issues/254)。若本大纲与机器可读规范发生冲突，以 benchmark 仓库通过 checksum 和 schema 校验的版本为准。
+
+### 0.2 当前资产与可执行性
+
+| 数据集 | 当前状态 | 当前证据 | 尚缺的正式合同 |
+|---|---|---|---|
+| MMLU-Pro | `MATERIAL_UNFROZEN` | 历史 Qwen3.5 B0 工作簿含服务吞吐/时延；当前容器另有 200 请求准备说明和截图 | 精确 revision、split、全量任务 manifest、抽样规则、官方或冻结 scorer、执行镜像、许可证记录与 manifest SHA-256；还需任务准确率结果 |
+| HLE-Verified | `MISSING` | 只有规划条目和候选来源 URL | 精确 release/revision、full verified 或命名 verified-gold 子集、任务 manifest、scorer、镜像、许可证与哈希 |
+| SWE-bench-Pro | `MISSING` | 只有规划条目和候选来源 URL | 精确 SWE-bench-Pro release、task IDs、fresh-sandbox 镜像、agent scaffold、工具策略、预算、regrader、许可证与哈希 |
+| FrontierScience | `MISSING` | 只有规划条目和候选来源 URL | 精确 revision；Olympiad 与 Research 分赛道 manifest、scorer、执行环境、许可证与哈希 |
+| Terminal-Bench 2.1 | `MISSING` | 只有规划条目和候选来源 URL | 精确 2.1 release、Harbor 镜像、任务 manifest、agent scaffold、工具策略、预算、scorer、许可证与哈希 |
+
+状态提升为 `EXECUTABLE` 前，必须同时记录实际可读取路径、不可变 revision、split、样本数及抽样规则、逐任务 manifest 与 SHA-256、scorer、运行依赖和许可证。仅有网页链接、下载说明、截图或服务吞吐结果时不能提升状态。
+
+当前实验容器在 2026-10-09 不存在 `/data` 挂载。因此下文 A1—A4 中的 `/data/shared_datasets/...` 是原资产机登记路径，不是本容器已经可执行的证明；迁移到当前机器后必须重新核验字节数、记录数和 SHA-256。
+
+### 0.3 35B B0/B1 配对合同
+
+- 模型固定为 Qwen3.5-35B-A3B；模型 revision、vLLM、vLLM Ascend、硬件拓扑和推理参数必须在每项正式合同中记录。
+- B0 是同一数据集、同一任务 manifest、同一 scorer、同一 agent scaffold/工具策略/预算和同一服务配置下的 Native；B1 每次只启用声明的 MOD 或明确列出的 MOD 组合。
+- 不同数据集可以需要不同 evaluator 或 agent 环境，但同一数据集的 B0/B1 不得改变这些条件。不能跨数据集、跨版本或跨配置借用 Native。
+- 每个性能 MOD 必须先对五项分别给出 `applicable`、`not-exercised` 或 `blocked`。只有真实执行控制路径的 `applicable` 项才能声明优化；其他状态仍需保留并解释。
+- 主指标是任务质量：MMLU-Pro 准确率、冻结 HLE-Verified scorer 的成绩、SWE-bench-Pro fresh-sandbox resolved rate、FrontierScience 分赛道成绩、Terminal-Bench 2.1 Harbor task resolution。吞吐、TTFT、TPOT、P90 和资源占用仅作辅助遥测。
+- 正收益、零收益、负收益、失败和不适用均如实发布。任何正式增益必须由匹配 B0/B1 动态计算，不能手写或从其他 setting 迁移。
+
+### 0.4 结果包和报告大纲
+
+每个“数据集 × B0/B1 × MOD × 重复”结果包至少包含：冻结合同、命令、环境与容器镜像、原始请求/响应、逐任务 scorer 输出、失败分类、token 时间、服务日志、设备状态、资源释放证据和 `SHA256SUMS`。Agent 类任务还必须保留完整 tool/patch/test 轨迹和 fresh-sandbox 复判记录。
+
+后续所有交叉验证报告和缺口清单必须单列“浦江指定数据集”章节，并按上表逐项给出：
+
+1. `已落地且可执行` / `已有材料但版本未冻结` / `缺失`；
+2. 实际路径、revision、split、样本数、manifest/SHA-256、scorer 与运行依赖；
+3. B0/B1 是否严格配对以及 MOD 控制路径是否真正执行；
+4. 阻塞项、负责人、对应 issue/PR 和下一步。
+
+### 0.5 与历史 B0 和 A1—A4 的边界
+
+历史 B0 工作簿的 21 个结果集与浦江指定范围分开标注。五项中只有 MMLU-Pro 出现在该工作簿，而且只有服务遥测，不是任务准确率；不得推定 HLE-Verified、SWE-bench-Pro、FrontierScience 或 Terminal-Bench 2.1 已被覆盖。
+
+A1—A4 矩阵、派欧云、中国移动苏州以及其他既有数据继续保留，默认作为浦江五项之外的补充材料。它们仍可在自身冻结合同下形成有效结果，但不能填补浦江指定项的缺口，也不能通过更名进入浦江五项。
 
 ## 1. 共通规则
 
@@ -31,7 +87,7 @@
 3. 同一物理数据集可以在不同 `config_id` 下有不同档位；结果中必须同时记录 `dataset_id`、`config_id`、`test_tier`、`contract_role` 和 `coverage_role`。
 4. 任何补充项要提升为必测，必须在查看 B0/B1 结果前完成书面变更、阈值冻结和重新 commissioning；测试后不得改档。
 
-统一资产入口：`/data/shared_datasets/vllm-hust-evaluation/a1-a4/assets/`。八个派欧云数据集以 `assets/paio-*` 与 ShareGPT、BFCL、LongBench 等原有资产并列存放；`assets/paio-cloud/20260820/` 只保存来源包、清单、README 和回指链接。按指标整理的只读引用位于 `by-scope/A1/`、`by-scope/A2/`、`by-scope/A3/`、`by-scope/A4/` 和 `by-scope/extensions/`。
+原资产机统一入口：`/data/shared_datasets/vllm-hust-evaluation/a1-a4/assets/`。八个派欧云数据集以 `assets/paio-*` 与 ShareGPT、BFCL、LongBench 等原有资产并列存放；`assets/paio-cloud/20260820/` 只保存来源包、清单、README 和回指链接。按指标整理的只读引用位于 `by-scope/A1/`、`by-scope/A2/`、`by-scope/A3/`、`by-scope/A4/` 和 `by-scope/extensions/`。这些路径必须在实际执行容器重新挂载并复核，不能凭文档状态视为当前可读取。
 
 ## 2. A1：有效计算、固定形状与基础服务开销
 
@@ -93,7 +149,7 @@ BFCL v3 的 25 个任务分组不得合并为一个抽样测试：`simple`、`mu
 | A2-R-MATH500 | MATH-500 | 500 条全部执行 | `HuggingFaceH4/MATH-500` | `READY_DOWNLOADED` |
 | A2-R-GPQA | GPQA | main、diamond、experts、extended 全部公开 split | `idavidrein/gpqa`；数据内置 CC-BY-4.0 | `READY_OFFICIAL_GITHUB` |
 | A2-R-BBH | BIG-Bench Hard | 23 个任务全部执行 | Google BIG-bench 数据派生发布；许可待逐任务核验 | `READY_DATA_LICENSE_REVIEW` |
-| A2-R-MMLUPRO | MMLU-Pro | validation/test 全部执行 | `TIGER-Lab/MMLU-Pro`；MIT | `READY_DOWNLOADED` |
+| A2-R-MMLUPRO | MMLU-Pro | validation/test 全部执行 | `TIGER-Lab/MMLU-Pro`；MIT | `LEGACY_SNAPSHOT_RECORDED_PUJIANG_CONTRACT_PENDING` |
 | A2-R-ARC | AI2 ARC | ARC-Challenge 与 ARC-Easy 的 train/validation/test 全部执行 | `allenai/ai2_arc`；CC-BY-SA-4.0 | `READY_DOWNLOADED` |
 | A2-R-AIME24 | AIME 2024 | 官方快照全部题目 | `HuggingFaceH4/aime_2024`；许可待补 | `READY_DATA_LICENSE_REVIEW` |
 | A2-R-HOTPOT | HotpotQA | distractor/fullwiki 的全部公开 split | `hotpotqa/hotpot_qa`；CC-BY-SA-4.0 | `READY_OFFICIAL_FULL_SNAPSHOT` |
@@ -247,7 +303,7 @@ A4 还必须分别执行 `shared-prefix-multi-tenant-assistant`、`session-affin
 | MATH-500 | HF revision `6e4ed1a2a79af7d8630a6b768ec859cb5af4d3be`；500 条 | 已落盘；数据卡未声明许可，凭证复核中 |
 | GPQA | 官方仓库 commit `56686c06f5e19865c153de0fdb11be3890014df7`；main 448、diamond 198、experts 60、extended 546 | 官方受密码保护归档已按项目说明解包；数据内许可 CC-BY-4.0 |
 | BBH | HF revision `982bb89fd79532a8ac676a61fc42eb1aeec63f99`；29 文件 | 已落盘；逐任务许可复核中 |
-| MMLU-Pro | HF revision `b189ec765aa7ed75c8acfea42df31fdae71f97be`；7 文件；4,207,360 bytes | 官方完整快照已落盘 |
+| MMLU-Pro | 原资产机曾记录 HF revision `b189ec765aa7ed75c8acfea42df31fdae71f97be`、7 文件、4,207,360 bytes；该记录尚未被浦江合同采纳为冻结 revision | 当前容器未挂载原资产；须重新传输、核验文件/许可/哈希、生成任务 manifest 并冻结 scorer 后才能执行 |
 | AI2 ARC | HF revision `210d026faf9955653af8916fad021475a3f00453`；8 文件；1,222,570 bytes | 官方完整快照已落盘 |
 | AIME 2024 | HF revision `2fe88a2f1091d5048c0f36abc874fb997b3dd99a`；30 条 | 已落盘；数据卡未声明许可，凭证复核中 |
 | LongBench-v2 | HF revision `2b48e494f2c7a2f0af81aae178e05c7e1dde0fe9`；503 条；数据 SHA-256 `15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2` | 已落盘并通过记录数核验 |
