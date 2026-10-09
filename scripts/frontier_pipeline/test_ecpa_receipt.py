@@ -10,11 +10,20 @@ def _load(name: str):
 
 
 def test_ecpa_adapter_and_receipt_bind_the_measured_policy() -> None:
-    manifest = _load("frontier_pipeline_adapter/manifests/vllm-hust-extension-v0.2.json")
+    manifest = _load("frontier_pipeline_adapter/manifests/vllm-hust-extension-v0.3.json")
     manager = _load("manager.json")
     receipt = _load("receipt.json")
 
     assert manifest["extension_id"] == "org.vllm-hust.pipeline-frontier-adapter"
+    assert manifest["schema_version"] == "0.3-experimental"
+    assert manifest["requires_extensions"] == []
+    assert manifest["resource_claims"] == [
+        {
+            "resource": "vllm.scheduler.batch-admission-policy",
+            "scope": "vllm-process",
+            "mode": "exclusive",
+        }
+    ]
     component = manifest["components"][0]
     assert component["implementation_ref"] == (
         "vllm_hust_pipeline_microbatch.policy:PipelineMicrobatchPolicy"
@@ -42,7 +51,7 @@ def test_ecpa_adapter_and_receipt_bind_the_measured_policy() -> None:
 
 def test_adapter_files_are_stable_json() -> None:
     for name in (
-        "frontier_pipeline_adapter/manifests/vllm-hust-extension-v0.2.json",
+        "frontier_pipeline_adapter/manifests/vllm-hust-extension-v0.3.json",
         "manager.json",
         "receipt.json",
     ):
