@@ -1,0 +1,61 @@
+{
+  "schema_version": "vllm-hust-test-plan-projection/v1",
+  "test_plan_version": "V5.4",
+  "authority": {
+    "repository": "vLLM-HUST/vllm-hust-benchmark",
+    "declaration_path": "src/vllm_hust_benchmark/data/acceptance_v5_4.json",
+    "semantic_mirror_path": "docs/assets/vLLM-HUST标准交付测试方案_V5.4.docx",
+    "semantic_mirror_sha256": "2423d611fce0cd74be47efcac8e3fb79a472e8304bbfe663dd2127974e1ddd46",
+    "canonical_final_identity_status": "not-supplied-to-container",
+    "byte_identical": false
+  },
+  "mandatory_delivery": {
+    "model": "Qwen/Qwen3.5-35B-A3B",
+    "hardware": "Ascend 910B2",
+    "chip_count": 2,
+    "tensor_parallel_size": 2,
+    "precision": "BF16",
+    "dtype": "bfloat16"
+  },
+  "baseline_roles": ["B0", "B1"],
+  "b1_freeze": {
+    "timing": "test-start",
+    "signed_release_manifest_required": true,
+    "oci_repo_digest_required": true,
+    "predeclared_core_id": null,
+    "predeclared_plugin_id": null,
+    "predeclared_image_id": null
+  },
+  "a3_slo": {
+    "ttft_seconds": {"mean_max": 30, "p95_max": 45, "p99_max": 60},
+    "tpot_ms_per_token": {"mean_max": 40, "p95_max": 60, "p99_max": 80},
+    "prefill_30720_role": "diagnostic-only"
+  },
+  "a4_cost_formula": "complete_lifecycle_cost / successful_output_tokens_meeting_slo_in_30_minute_measurement_window",
+  "optional_deliveries": [
+    {"id": "E1", "active": false, "verdict": "NOT_EXECUTED_OPTIONAL"},
+    {"id": "E2-G", "active": false, "verdict": "NOT_EXECUTED_OPTIONAL"},
+    {"id": "E2-D", "active": false, "verdict": "NOT_EXECUTED_OPTIONAL"}
+  ],
+  "formal_optional_targets": [],
+  "formal_optional_config_ids": [],
+  "formal_optional_measurement_queue": [],
+  "primary_datasets": [
+    "MMLU-Pro",
+    "HLE-Verified",
+    "SWE-bench-Pro",
+    "FrontierScience",
+    "TerminalBench2.1"
+  ],
+  "prompt_policy": {
+    "natural_language_prompt_embedded": false,
+    "references_only": ["prompt_asset_sha256", "tokenizer_sha256", "chat_template_sha256", "input_shape"]
+  },
+  "configuration_policy": {
+    "all_fields_explicit": true,
+    "on_site_tuning": false,
+    "automatic_fallback": false,
+    "best_of_parameter_search": false,
+    "post_hoc_verdict_change": false
+  }
+}
