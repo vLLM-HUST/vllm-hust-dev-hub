@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema_version", "test_plan_version", "authority", "mandatory_delivery", "baseline_roles", "b1_freeze", "a3_slo", "a4_cost_formula", "optional_deliveries", "formal_optional_targets", "formal_optional_config_ids", "formal_optional_measurement_queue", "primary_datasets", "prompt_policy", "configuration_policy"],
+  "properties": {
+    "schema_version": {"const": "vllm-hust-test-plan-projection/v1"},
+    "test_plan_version": {"const": "V5.4"},
+    "authority": {
+      "type": "object",
+      "required": ["repository", "declaration_path", "semantic_mirror_path", "semantic_mirror_sha256", "canonical_final_identity_status", "byte_identical"],
+      "properties": {
+        "repository": {"const": "vLLM-HUST/vllm-hust-benchmark"},
+        "declaration_path": {"type": "string", "minLength": 1},
+        "semantic_mirror_path": {"type": "string", "minLength": 1},
+        "semantic_mirror_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "canonical_final_identity_status": {"const": "not-supplied-to-container"},
+        "byte_identical": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "mandatory_delivery": {
+      "type": "object",
+      "required": ["model", "hardware", "chip_count", "tensor_parallel_size", "precision", "dtype"],
+      "properties": {
+        "model": {"const": "Qwen/Qwen3.5-35B-A3B"},
+        "hardware": {"const": "Ascend 910B2"},
+        "chip_count": {"const": 2},
+        "tensor_parallel_size": {"const": 2},
+        "precision": {"const": "BF16"},
+        "dtype": {"const": "bfloat16"}
+      },
+      "additionalProperties": false
+    },
+    "baseline_roles": {"const": ["B0", "B1"]},
+    "b1_freeze": {"type": "object"},
+    "a3_slo": {"type": "object"},
+    "a4_cost_formula": {"const": "complete_lifecycle_cost / successful_output_tokens_meeting_slo_in_30_minute_measurement_window"},
+    "optional_deliveries": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["id", "active", "verdict"],
+        "properties": {
+          "id": {"enum": ["E1", "E2-G", "E2-D"]},
+          "active": {"const": false},
+          "verdict": {"const": "NOT_EXECUTED_OPTIONAL"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "formal_optional_targets": {"const": []},
+    "formal_optional_config_ids": {"const": []},
+    "formal_optional_measurement_queue": {"const": []},
+    "primary_datasets": {"const": ["MMLU-Pro", "HLE-Verified", "SWE-bench-Pro", "FrontierScience", "TerminalBench2.1"]},
+    "prompt_policy": {"type": "object"},
+    "configuration_policy": {"type": "object"}
+  },
+  "additionalProperties": false
+}

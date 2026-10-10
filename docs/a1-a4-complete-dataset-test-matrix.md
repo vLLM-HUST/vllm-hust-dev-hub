@@ -1,5 +1,9 @@
 # 浦江指定 35B B0/B1 与 A1—A4 全量数据集测试大纲
 
+> 当前测试方案版本：`V5.4`。机器可读投影为
+> [`config/v5.4-test-plan-contract.json`](../config/v5.4-test-plan-contract.json)，权威声明位于
+> [`vllm-hust-benchmark/docs/ACCEPTANCE_V5_4.md`](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/main/docs/ACCEPTANCE_V5_4.md)。必须交付 16 位基线固定为 BF16（`bfloat16`）。
+>
 > 状态：浦江指定五项源数据快照已在当前容器按 revision 和 SHA-256 冻结；完整执行合同仍受 scorer、任务 manifest、运行镜像和许可门禁约束，尚不能将“资产已冻结”描述为“正式结果已完成”。派欧云及 A1—A4 既有资产继续作为补充材料维护。
 >
 > 组织原则：“浦江指定范围”决定当前 35B B0/B1 计划首先补齐哪五个数据集；`REQUIRED` / `SUPPLEMENTARY` 决定 A1—A4 各指标合同中的交付档位。这是两个正交维度，不能互相替代。
@@ -27,7 +31,7 @@
 | 数据集 | 当前状态 | 当前证据 | 尚缺的正式合同 |
 |---|---|---|---|
 | MMLU-Pro | `ASSET_FROZEN` | revision `b189ec765aa7ed75c8acfea42df31fdae71f97be`；validation/test Parquet；历史 Qwen3.5 B0 工作簿另含服务吞吐/时延 | 从快照提取并冻结任务 manifest、记录数、抽样规则、scorer 和执行环境；还需任务准确率结果 |
-| HLE-Verified | `ASSET_FROZEN_CONTRACT_BLOCKED` | revision `b705e0fb541c025a1532ce0d60d70ae2f53b00e0`；Gold/Revision/Uncertain 共 2500 条（668/1143/689），与上游 Git LFS SHA-256 一致 | 上游未声明数据许可；须完成许可核验，再冻结评测子集、judge 模型/提示词、scorer 和镜像 |
+| HLE-Verified | `ASSET_FROZEN_CONTRACT_BLOCKED` | revision `b705e0fb541c025a1532ce0d60d70ae2f53b00e0`；Gold/Revision/Uncertain 共 2500 条（668/1143/689），与上游 Git LFS SHA-256 一致 | 上游未声明数据许可；须完成许可核验，再冻结评测子集、judge 模型、不可变 prompt asset/hash、scorer 和镜像 |
 | SWE-bench-Pro | `ASSET_FROZEN_CONTRACT_BLOCKED` | revision `2d52cb3df914a3fcf80c7f66738b3a88ae37fc50`；default/hard/v1 test Parquet | 上游数据卡未声明许可；须冻结 task IDs、代码仓 revision、fresh-sandbox 镜像 digest、agent scaffold、工具策略、预算和 regrader |
 | FrontierScience | `ASSET_FROZEN` | revision `25ed67db7da8f4591484e764008ff585544f5a30`；Olympiad 100 条、Research 60 条；Apache-2.0 | 两个赛道分别冻结任务 manifest、答案提取、scorer 和执行环境，不得静默合并 |
 | Terminal-Bench 2.1 | `ASSET_FROZEN_RUNTIME_BLOCKED` | revision `7131e4375048a0e408a8fb404b5f499d726b695b`；89 个任务定义和 harness 元数据 | 尚未预拉取约 40 GB Harbor 镜像；须冻结 image digest、agent scaffold、工具策略、预算、scorer 和任务级第三方权利核验 |
@@ -39,7 +43,7 @@
 ### 0.3 35B B0/B1 配对合同
 
 - 模型固定为 Qwen3.5-35B-A3B；模型 revision、vLLM、vLLM Ascend、硬件拓扑和推理参数必须在每项正式合同中记录。
-- B0 是同一数据集、同一任务 manifest、同一 scorer、同一 agent scaffold/工具策略/预算和同一服务配置下的 Native；B1 每次只启用声明的 MOD 或明确列出的 MOD 组合。
+- B0 是同一数据集、同一任务 manifest、同一 scorer、同一 agent scaffold/工具策略/预算和同一服务配置下的 Native；B1 是测试开始时以签名 release manifest 和 OCI RepoDigest 冻结的最终交付推理引擎，当前大纲不得预先硬编码 core/plugin/image ID。
 - 不同数据集可以需要不同 evaluator 或 agent 环境，但同一数据集的 B0/B1 不得改变这些条件。不能跨数据集、跨版本或跨配置借用 Native。
 - 每个性能 MOD 必须先对五项分别给出 `applicable`、`not-exercised` 或 `blocked`。只有真实执行控制路径的 `applicable` 项才能声明优化；其他状态仍需保留并解释。
 - 主指标是任务质量：MMLU-Pro 准确率、冻结 HLE-Verified scorer 的成绩、SWE-bench-Pro fresh-sandbox resolved rate、FrontierScience 分赛道成绩、Terminal-Bench 2.1 Harbor task resolution。吞吐、TTFT、TPOT、P90 和资源占用仅作辅助遥测。
@@ -74,6 +78,8 @@ A1—A4 矩阵、派欧云、中国移动苏州以及其他既有数据继续保
 8. `coverage_role` 说明数据补充了哪种业务或机制覆盖，`contract_role` 说明它能否参与该指标合同；两者均不是优先级。正式 `config_id` 生成前从适用数据集组冻结合同所需资产，之后不得根据 B0/B1 结果换题。
 9. 企业接口请求、API 生成文本和 hybrid/synthetic 数据分别标识，不统称真实线上 trace。原始请求中的 `model`、`max_tokens`、`stream` 不直接重放。
 10. `test_tier` 在请求物化前冻结。`REQUIRED` 缺失或未完成使对应合同为 `CANNOT_DETERMINE`；`SUPPLEMENTARY` 单独报告，不进入硬门槛、几何平均或必测完成率。
+11. 合同不得嵌入自然语言 system/user prompt；只引用不可变 prompt asset/hash、tokenizer、chat-template 合同和输入形状。
+12. 本版 E1、E2-G、E2-D 固定为 `active=false`、`NOT_EXECUTED_OPTIONAL`，不注册正式 target、不生成 config_id、不进入 measurement queue。后续启用必须发布新测试方案版本并完整冻结平台、模型、拓扑、B0/B1 身份、SLO、启动/客户端参数和证据规则。
 
 ### 两档分配规则
 
