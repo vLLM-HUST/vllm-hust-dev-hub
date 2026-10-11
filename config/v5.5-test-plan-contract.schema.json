@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema_version", "test_plan_version", "authority", "mandatory_delivery", "baseline_roles", "b1_freeze", "a3_slo", "a4_cost_formula", "optional_deliveries", "formal_optional_targets", "formal_optional_config_ids", "formal_optional_measurement_queue", "primary_datasets", "prompt_policy", "configuration_policy", "b0_receipt_gate"],
+  "properties": {
+    "schema_version": {"const": "vllm-hust-test-plan-projection/v1"},
+    "test_plan_version": {"const": "V5.5"},
+    "authority": {
+      "type": "object",
+      "required": ["repository", "declaration_path", "semantic_mirror_path", "semantic_mirror_sha256", "semantic_mirror_size_bytes", "canonical_final_identity_status", "canonical_final_sha256", "canonical_final_size_bytes", "canonical_final_page_count", "byte_identical"],
+      "properties": {
+        "repository": {"const": "vLLM-HUST/vllm-hust-benchmark"},
+        "declaration_path": {"type": "string", "minLength": 1},
+        "semantic_mirror_path": {"type": "string", "minLength": 1},
+        "semantic_mirror_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "semantic_mirror_size_bytes": {"const": 571121},
+        "canonical_final_identity_status": {"const": "declared-external-identity"},
+        "canonical_final_sha256": {"const": "bc61b65162952c28cde066ee3829aa58f15bf9ed0843d485e8b1a832410489d2"},
+        "canonical_final_size_bytes": {"const": 637379},
+        "canonical_final_page_count": {"const": 83},
+        "byte_identical": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "mandatory_delivery": {
+      "type": "object",
+      "required": ["model", "hardware", "chip_count", "tensor_parallel_size", "precision", "dtype"],
+      "properties": {
+        "model": {"const": "Qwen/Qwen3.5-35B-A3B"},
+        "hardware": {"const": "Ascend 910B2"},
+        "chip_count": {"const": 2},
+        "tensor_parallel_size": {"const": 2},
+        "precision": {"const": "BF16"},
+        "dtype": {"const": "bfloat16"}
+      },
+      "additionalProperties": false
+    },
+    "baseline_roles": {"const": ["B0", "B1"]},
+    "b1_freeze": {"type": "object"},
+    "a3_slo": {"type": "object"},
+    "a4_cost_formula": {"const": "complete_lifecycle_cost / successful_output_tokens_meeting_slo_in_30_minute_measurement_window"},
+    "optional_deliveries": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["id", "active", "verdict"],
+        "properties": {
+          "id": {"enum": ["E1", "E2-G", "E2-D"]},
+          "active": {"const": false},
+          "verdict": {"const": "NOT_EXECUTED_OPTIONAL"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "formal_optional_targets": {"const": []},
+    "formal_optional_config_ids": {"const": []},
+    "formal_optional_measurement_queue": {"const": []},
+    "primary_datasets": {"const": ["MMLU-Pro", "HLE-Verified", "SWE-bench-Pro", "FrontierScience", "TerminalBench2.1"]},
+    "prompt_policy": {"type": "object"},
+    "configuration_policy": {"type": "object"},
+    "b0_receipt_gate": {
+      "type": "object",
+      "required": ["owner", "owner_zh", "producer", "required_materials", "value_source", "prefill_actual_values", "infer_actual_values"],
+      "properties": {
+        "owner": {"const": "release-and-evaluation-engineering"},
+        "owner_zh": {"const": "课题组（发布与评测工程）"},
+        "producer": {"const": "release-and-evaluation-engineering-process"},
+        "required_materials": {"const": ["signed_release_manifest", "b0_oci_repo_digest", "b1_oci_repo_digest", "complete_server_argv", "complete_client_contract", "effective_runtime_receipt", "startup_receipt"]},
+        "value_source": {"const": "actual-release-artifacts-and-actual-runtime"},
+        "prefill_actual_values": {"const": false},
+        "infer_actual_values": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
