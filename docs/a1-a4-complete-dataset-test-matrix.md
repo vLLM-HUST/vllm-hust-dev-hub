@@ -1,8 +1,8 @@
 # 浦江指定 35B B0/B1 与 A1—A4 全量数据集测试大纲
 
-> 当前测试方案版本：`V5.4`。机器可读投影为
-> [`config/v5.4-test-plan-contract.json`](../config/v5.4-test-plan-contract.json)，权威声明位于
-> [`vllm-hust-benchmark/docs/ACCEPTANCE_V5_4.md`](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/main/docs/ACCEPTANCE_V5_4.md)。必须交付 16 位基线固定为 BF16（`bfloat16`）。
+> 当前测试方案版本：`V5.5`。机器可读投影为
+> [`config/v5.5-test-plan-contract.json`](../config/v5.5-test-plan-contract.json)，权威声明位于
+> [`vllm-hust-benchmark/docs/ACCEPTANCE_V5_5.md`](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/main/docs/ACCEPTANCE_V5_5.md)。必须交付 16 位基线固定为 BF16（`bfloat16`）。
 >
 > 状态：浦江指定五项源数据快照已在当前容器按 revision 和 SHA-256 冻结；完整执行合同仍受 scorer、任务 manifest、运行镜像和许可门禁约束，尚不能将“资产已冻结”描述为“正式结果已完成”。派欧云及 A1—A4 既有资产继续作为补充材料维护。
 >

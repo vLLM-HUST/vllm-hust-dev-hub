@@ -496,9 +496,9 @@ KV 指标同时报告 block 数和折算 token 数；不同 block size 的百分
 
 价格模型必须绑定具体 workload mix、精度、模型、卡数、成功率和 SLO 合规饱和点。不能拿 random synthetic 的最高 token/s 给长上下文、Agent 或结构化输出直接定价。
 
-## 11. V5.4 SLO 与验收指标
+## 11. V5.5 SLO 与验收指标
 
-V5.4 的必须交付 16 位基线固定为 BF16（`bfloat16`），A3 数值为固定验收合同，不再从 B0 Prefill 吞吐动态生成。其余负载的数值仅在对应签名 config 中冻结后生效；任何字段均不得在看到结果后调整。
+V5.5 的必须交付 16 位基线固定为 BF16（`bfloat16`），A3 数值为固定验收合同，不再从 B0 Prefill 吞吐动态生成。其余负载的数值仅在对应签名 config 中冻结后生效；任何字段均不得在看到结果后调整。35B B0 配置与来源回执由发布与评测工程流程生成：签名 release manifest、两侧 OCI RepoDigest、完整 server argv/client contract 和 effective/startup receipt 的实际值均来自发布工件与实际运行，不预填、不推断。
 
 ### 11.1 绝对 SLO
 
