@@ -1440,48 +1440,6 @@
       }
     },
     {
-      "id": "stateharbor",
-      "name": "StateHarbor",
-      "artifact_type": "bridge",
-      "public": false,
-      "repository": "https://github.com/vLLM-HUST/vllm-hust-stateharbor",
-      "local_path": "/home/shuhao/vllm-hust-stateharbor",
-      "source_revision": "e1366f3c33f384437201e70ad482b84fdb1dcf60",
-      "status": "import-only-no-runtime-entrypoint",
-      "source_witnesses": [
-        {
-          "path": "README.md",
-          "line": 6,
-          "text": "**Status: installable contract/reference package (`import_only`). It contains"
-        }
-      ],
-      "manifest_evidence": [
-        {
-          "path": "src/vllm_hust_stateharbor/vllm-hust-extension-v0.2.json",
-          "sha256": "ff8a56b2339d46fffb88a6715b099b251185b351db4c42dc004b88ecdf4ccf58",
-          "implementation": [
-            {
-              "type": "python_module",
-              "module": "vllm_hust_stateharbor",
-              "object": "StateHarborDescriptor",
-              "status": "import_only"
-            }
-          ],
-          "activation": {
-            "entry_points": [],
-            "environment": {},
-            "additional_config": {}
-          }
-        }
-      ],
-      "implementation_constraints": {
-        "scope": "Pinned source/host contract inspection; no hardware activation claimed",
-        "source_path": "README.md",
-        "source_sha256": "a98f4402f72c9feabffc102cb37b1556a5444bbd6da8cea982027a799f97ed58",
-        "finding": "Reference coordinator/worker state machines and window policy only. Actual scheduler, worker, KV allocation, transport and device integration are outside this package; no vLLM activation hook."
-      }
-    },
-    {
       "id": "scheduler-policy-lab",
       "name": "Scheduler Policy Lab",
       "artifact_type": "tool",

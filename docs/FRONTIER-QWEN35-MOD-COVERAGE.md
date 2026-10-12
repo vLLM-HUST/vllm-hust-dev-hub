@@ -51,7 +51,6 @@
 | Activation Sparsity | 当前包仅含配置验证和哈希；实际 CPU 兼容检查拒绝 TP2（TP1 控制通过），且缺少投影变换/稀疏算子的宿主接入。 | [0e4d0628](https://github.com/vLLM-HUST/vllm-hust-activation-sparsity/tree/0e4d0628c1972d5086a217b0007576c1fd8998a3) |
 | Pipeline Microbatch | C1/C2/C4/C8/C16 的 Native 配对观测已发布；每点仍为单次观测，不能据此宣称稳定加速。 | [a15a2296](https://github.com/vLLM-HUST/vllm-hust-pipeline-microbatch/tree/a15a22961a0e4858da74a0ab806575c82cb254e6) |
 | QoS Scheduler | 已有请求期限模型和排序函数，但缺少 QoS API 元数据、排序注册和输出观察接入；本轮请求未携带 SLO，第一阶段契约尚未覆盖 MTP。 | [13d376a7](https://github.com/vLLM-HUST/vllm-hust-qos-scheduler/tree/13d376a7d8990c4dcf5c0903cb6fbf2398ef0fb0) |
-| StateHarbor | 当前只提供协调器/工作进程参考状态机和窗口策略；调度、KV 分配、传输和设备集成尚未接入，没有 vLLM 激活钩子。 | 内部来源，详见覆盖账本 |
 | Scheduler Policy Lab | 已有独立策略函数，尚缺策略注册、KV 预算/请求快照、完成事件和调度后观察接入；共同核心中未找到所需的四个协议标识。 | 内部来源，详见覆盖账本 |
 | Request Lifecycle Causal Profiler | 插件依赖当前共同核心缺少的 kv_recovery_profile 观察接口；诊断功能不等于优化收益。 | [e32a0e91](https://github.com/vLLM-HUST/vllm-hust-request-lifecycle-profiler/tree/e32a0e91027ae7a2b96bf48d2dcb7db1b3c42c87) |
 | KV Materialization Arrival Control | 需要特定请求元数据和分段复用宿主接口；无元数据的软件探针只选择重新计算，不能据此生成优化成绩。 | [10428b81](https://github.com/vLLM-HUST/vllm-hust-kv-materialization-arrival-control/tree/10428b81e2b383cdcb183d4548f38a98929fd0e4) |
