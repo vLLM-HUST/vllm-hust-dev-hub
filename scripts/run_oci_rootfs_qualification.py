@@ -39,6 +39,7 @@ def verified_json(path, expected):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rootfs", type=Path, required=True)
+    parser.add_argument("--purpose", choices=["qualification", "matched-benchmark"], default="qualification")
     parser.add_argument("--provenance", type=Path, required=True)
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -96,6 +97,9 @@ def main():
                    image_custom_op_vendor=VENDOR,
                    binds=binds, command=command,
                    claim_boundary="filesystem translation; not Docker isolation or formal timing")
+    if args.purpose == "matched-benchmark":
+        receipt.update(purpose=args.purpose, carrier="official-oci-rootfs-proot-matched/v1",
+                       claim_boundary="fresh same-carrier online measurements; not native Docker timing; paper admission requires complete verified matched arms and oracle")
     def git_head(path):
         result = subprocess.run(["git", "-C", str(path), "rev-parse", "HEAD"],
                                 text=True, capture_output=True, check=True)
