@@ -20,8 +20,7 @@ CONFIG = "cb25ae391cad9549f884b9ba57877e67b5a1da6f9200b870dde15b38df6696ba"
 
 def verified_json(path, expected):
     raw = path.read_bytes()
-    # crane's JSON printer may append a newline; registry object excludes it.
-    if hashlib.sha256(raw.rstrip(b"\n")).hexdigest() != expected:
+    if hashlib.sha256(raw).hexdigest() != expected:
         raise ValueError(f"OCI object digest mismatch: {path}")
     return json.loads(raw)
 

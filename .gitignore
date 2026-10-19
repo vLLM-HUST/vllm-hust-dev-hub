@@ -8,3 +8,5 @@ Ascend-Machine/build/*
 
 # Shell redirect artifact from conda $* expansion bug (see deploy_workstation.sh)
 =20,
+
+__pycache__/
