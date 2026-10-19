@@ -26,3 +26,9 @@ def test_command_and_new_evidence_directory_required(tmp_path, monkeypatch):
                         "--output", str(tmp_path), "--devices", "0", "--", "true"])
     with pytest.raises(SystemExit):
         MODULE.main()
+
+
+def test_custom_operator_artifacts_come_from_image():
+    env = MODULE.add_image_custom_ops({"LD_LIBRARY_PATH": "/image/framework/libs"})
+    assert env["ASCEND_CUSTOM_OPP_PATH"] == MODULE.VENDOR
+    assert env["LD_LIBRARY_PATH"] == MODULE.VENDOR + "/op_api/lib:/image/framework/libs"

@@ -17,6 +17,16 @@ import sys
 
 MANIFEST = "6c183dfa86cf13ea5fa54ac8f0bcf7316c5b91e7f9774c26dc282dfd94da8ef9"
 CONFIG = "cb25ae391cad9549f884b9ba57877e67b5a1da6f9200b870dde15b38df6696ba"
+VENDOR = "/vllm-workspace/vllm-ascend/vllm_ascend/_cann_ops_custom/vendors/custom_transformer"
+
+
+def add_image_custom_ops(env):
+    # Source imports live in the project submodule, so __file__-relative
+    # discovery there cannot find the image's precompiled operator package.
+    # Expose the unchanged image artifacts before the process/loader starts.
+    env["ASCEND_CUSTOM_OPP_PATH"] = VENDOR
+    env["LD_LIBRARY_PATH"] = VENDOR + "/op_api/lib:" + env.get("LD_LIBRARY_PATH", "")
+    return env
 
 
 def verified_json(path, expected):
@@ -57,6 +67,7 @@ def main():
     if not proot or not os.access(proot, os.X_OK):
         raise ValueError("proot unavailable")
     env = dict(item.split("=", 1) for item in config["config"]["Env"])
+    add_image_custom_ops(env)
     env.update(ASCEND_RT_VISIBLE_DEVICES=args.devices,
                ASCEND_VISIBLE_DEVICES=args.devices,
                VLLM_KVDELTA_SKIP_VENDOR="1", HF_HUB_OFFLINE="1",
@@ -81,6 +92,8 @@ def main():
                    devices=devices, lease_id=os.environ.get("NPU_SHARE_LEASE_ID"),
                    proot_binary=proot,
                    proot_sha256=hashlib.sha256(Path(proot).read_bytes()).hexdigest(),
+                   proot_seccomp_filter=True,
+                   image_custom_op_vendor=VENDOR,
                    binds=binds, command=command,
                    claim_boundary="filesystem translation; not Docker isolation or formal timing")
     def git_head(path):
@@ -104,7 +117,7 @@ def main():
     with (args.output / "runtime.log").open("w") as log:
         child = subprocess.Popen(argv, stdout=log, stderr=subprocess.STDOUT,
                                  start_new_session=True,
-                                 env={"PATH": os.environ["PATH"], "PROOT_NO_SECCOMP": "1"})
+                                 env={"PATH": os.environ["PATH"]})
         def terminate(_signum, _frame):
             if child.poll() is None:
                 os.killpg(child.pid, signal.SIGTERM)
