@@ -98,6 +98,9 @@ fi
 if [[ "$action" == "rootfs-benchmark" ]]; then
   exec python3 "$repo_root/scripts/run_oci_rootfs_qualification.py" --purpose matched-benchmark "$@"
 fi
+if [[ "$action" == "rootfs-prepare" ]]; then
+  exec python3 "$repo_root/scripts/run_oci_rootfs_qualification.py" --purpose dependency-build "$@"
+fi
 json_output=false
 for arg in "$@"; do
   case "$arg" in

@@ -39,12 +39,13 @@ def verified_json(path, expected):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rootfs", type=Path, required=True)
-    parser.add_argument("--purpose", choices=["qualification", "matched-benchmark"], default="qualification")
+    parser.add_argument("--purpose", choices=["qualification", "matched-benchmark", "dependency-build"], default="qualification")
     parser.add_argument("--provenance", type=Path, required=True)
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--devices", required=True)
     parser.add_argument("--proot", type=Path)
+    parser.add_argument("--baseline-overlay", type=Path)
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
@@ -62,7 +63,8 @@ def main():
         raise ValueError("invalid export completion receipt")
     devices = args.devices.split(",")
     leased = os.environ.get("NPU_SHARE_LOGICAL_DEVICES", "").split(",")
-    if not devices or any(d not in {"0", "1"} or d not in leased for d in devices):
+    cpu_only = args.purpose == "dependency-build" and args.devices == "none"
+    if not cpu_only and (not devices or any(d not in {"0", "1"} or d not in leased for d in devices)):
         raise ValueError("requested devices must be part of a live timeshare lease")
     proot = str(args.proot.resolve()) if args.proot else shutil.which("proot")
     if not proot or not os.access(proot, os.X_OK):
@@ -73,6 +75,9 @@ def main():
                ASCEND_VISIBLE_DEVICES=args.devices,
                VLLM_KVDELTA_SKIP_VENDOR="1", HF_HUB_OFFLINE="1",
                TRANSFORMERS_OFFLINE="1", PYTHONUNBUFFERED="1", HOME="/root")
+    if cpu_only:
+        devices = []
+        env.update(ASCEND_RT_VISIBLE_DEVICES="", ASCEND_VISIBLE_DEVICES="")
     env["PYTHONPATH"] = "/workspace/kvdelta-plugin/src:/workspace/kvdelta-plugin/third_party/vllm-hust:/workspace/kvdelta-plugin/third_party/vllm-ascend-hust:" + env.get("PYTHONPATH", "")
     for name in ("VLLM_PLUGINS", "VLLM_HUST_API_KEY", "VLLM_WORKER_MULTIPROC_METHOD"):
         if name in os.environ:
@@ -83,6 +88,15 @@ def main():
              ("/usr/local/Ascend/driver", "/usr/local/Ascend/driver"),
              ("/models", "/models"), (str(repo), "/workspace/kvdelta-plugin"),
              (str(args.output.resolve()), "/run/kvdelta")]
+    if cpu_only:
+        binds = [(a, b) for a, b in binds if a != "/dev"]
+        binds += [(f"/dev/{name}", f"/dev/{name}") for name in ("null", "zero", "random", "urandom", "shm")]
+    if args.baseline_overlay:
+        overlay = args.baseline_overlay.resolve()
+        if not (overlay / "baseline-overlay.json").is_file() or not (overlay / "deps").is_dir():
+            raise ValueError("baseline overlay identity/dependency directory unavailable")
+        binds.append((str(overlay), "/opt/kvdelta-baseline"))
+        env["PYTHONPATH"] = "/opt/kvdelta-baseline/deps:" + env["PYTHONPATH"]
     argv = [proot, "-0", "-r", str(rootfs), "-w", "/workspace/kvdelta-plugin"]
     for source, destination in binds:
         argv.extend(["-b", f"{source}:{destination}"])
