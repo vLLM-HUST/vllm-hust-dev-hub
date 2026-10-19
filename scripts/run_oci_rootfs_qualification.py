@@ -83,6 +83,23 @@ def main():
                    proot_sha256=hashlib.sha256(Path(proot).read_bytes()).hexdigest(),
                    binds=binds, command=command,
                    claim_boundary="filesystem translation; not Docker isolation or formal timing")
+    def git_head(path):
+        result = subprocess.run(["git", "-C", str(path), "rev-parse", "HEAD"],
+                                text=True, capture_output=True, check=True)
+        return result.stdout.strip()
+    receipt["parent_commit"] = git_head(repo)
+    receipt["runtime_commits"] = {
+        name: git_head(repo / "third_party" / name) for name in
+        ("vllm-hust", "vllm-ascend-hust", "vllm-hust-dev-hub",
+         "ascend-runtime-manager", "triton-ascend-hust")}
+    receipt["launcher_sha256"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    receipt["source_command_files"] = {}
+    for item in command:
+        prefix = "/workspace/kvdelta-plugin/"
+        if item.startswith(prefix):
+            path = repo / item[len(prefix):]
+            if path.is_file():
+                receipt["source_command_files"][item] = hashlib.sha256(path.read_bytes()).hexdigest()
     (args.output / "launch.json").write_text(json.dumps(receipt, indent=2) + "\n")
     with (args.output / "runtime.log").open("w") as log:
         child = subprocess.Popen(argv, stdout=log, stderr=subprocess.STDOUT,
