@@ -91,6 +91,10 @@ fi
 
 action="$1"
 shift
+if [[ "$action" == "rootfs-qualify" ]]; then
+  # Environment recovery only: this is not the Docker formal-serving path.
+  exec python3 "$repo_root/scripts/run_oci_rootfs_qualification.py" "$@"
+fi
 json_output=false
 for arg in "$@"; do
   case "$arg" in
