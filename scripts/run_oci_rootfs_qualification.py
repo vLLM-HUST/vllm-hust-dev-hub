@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import sys
 
@@ -32,6 +33,7 @@ def main():
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--devices", required=True)
+    parser.add_argument("--proot", type=Path)
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
@@ -51,7 +53,8 @@ def main():
     leased = os.environ.get("NPU_SHARE_LOGICAL_DEVICES", "").split(",")
     if not devices or any(d not in {"0", "1"} or d not in leased for d in devices):
         raise ValueError("requested devices must be part of a live timeshare lease")
-    if not shutil.which("proot"):
+    proot = str(args.proot.resolve()) if args.proot else shutil.which("proot")
+    if not proot or not os.access(proot, os.X_OK):
         raise ValueError("proot unavailable")
     env = dict(item.split("=", 1) for item in config["config"]["Env"])
     env.update(ASCEND_RT_VISIBLE_DEVICES=args.devices,
@@ -68,7 +71,7 @@ def main():
              ("/usr/local/Ascend/driver", "/usr/local/Ascend/driver"),
              ("/models", "/models"), (str(repo), "/workspace/kvdelta-plugin"),
              (str(args.output.resolve()), "/run/kvdelta")]
-    argv = ["proot", "-0", "-r", str(rootfs), "-w", "/workspace/kvdelta-plugin"]
+    argv = [proot, "-0", "-r", str(rootfs), "-w", "/workspace/kvdelta-plugin"]
     for source, destination in binds:
         argv.extend(["-b", f"{source}:{destination}"])
     argv.extend(["/usr/bin/env", "-i", *[f"{k}={v}" for k, v in env.items()], *command])
@@ -76,16 +79,32 @@ def main():
                    paper_admissible=False, carrier="official-image-proot-qualification",
                    manifest="sha256:" + MANIFEST, config="sha256:" + CONFIG,
                    devices=devices, lease_id=os.environ.get("NPU_SHARE_LEASE_ID"),
+                   proot_binary=proot,
+                   proot_sha256=hashlib.sha256(Path(proot).read_bytes()).hexdigest(),
                    binds=binds, command=command,
                    claim_boundary="filesystem translation; not Docker isolation or formal timing")
     (args.output / "launch.json").write_text(json.dumps(receipt, indent=2) + "\n")
     with (args.output / "runtime.log").open("w") as log:
-        result = subprocess.run(argv, stdout=log, stderr=subprocess.STDOUT,
-                                env={"PATH": os.environ["PATH"], "PROOT_NO_SECCOMP": "1"})
-    receipt["returncode"] = result.returncode
+        child = subprocess.Popen(argv, stdout=log, stderr=subprocess.STDOUT,
+                                 start_new_session=True,
+                                 env={"PATH": os.environ["PATH"], "PROOT_NO_SECCOMP": "1"})
+        def terminate(_signum, _frame):
+            if child.poll() is None:
+                os.killpg(child.pid, signal.SIGTERM)
+                try:
+                    child.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    os.killpg(child.pid, signal.SIGKILL)
+        old_handler = signal.signal(signal.SIGTERM, terminate)
+        try:
+            returncode = child.wait()
+        finally:
+            terminate(None, None)
+            signal.signal(signal.SIGTERM, old_handler)
+    receipt["returncode"] = returncode
     (args.output / "result.json").write_text(json.dumps(receipt, indent=2) + "\n")
-    print(json.dumps({"returncode": result.returncode, "output": str(args.output)}))
-    return result.returncode
+    print(json.dumps({"returncode": returncode, "output": str(args.output)}))
+    return returncode
 
 
 if __name__ == "__main__":
