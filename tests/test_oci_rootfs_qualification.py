@@ -32,3 +32,12 @@ def test_custom_operator_artifacts_come_from_image():
     env = MODULE.add_image_custom_ops({"LD_LIBRARY_PATH": "/image/framework/libs"})
     assert env["ASCEND_CUSTOM_OPP_PATH"] == MODULE.VENDOR
     assert env["LD_LIBRARY_PATH"] == MODULE.VENDOR + "/op_api/lib:/image/framework/libs"
+
+
+def test_process_success_without_completed_artifact_is_not_success(tmp_path):
+    assert MODULE.completion_code(tmp_path, "matched-benchmark", 0) == 125
+    assert MODULE.completion_code(tmp_path, "dependency-build", 0) == 125
+    (tmp_path / "summary.json").write_text('{"completed": false}')
+    assert MODULE.completion_code(tmp_path, "matched-benchmark", 0) == 125
+    (tmp_path / "summary.json").write_text('{"completed": true}')
+    assert MODULE.completion_code(tmp_path, "matched-benchmark", 0) == 0

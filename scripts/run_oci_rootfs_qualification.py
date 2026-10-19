@@ -36,6 +36,19 @@ def verified_json(path, expected):
     return json.loads(raw)
 
 
+def completion_code(output, purpose, returncode):
+    if returncode != 0:
+        return returncode
+    if purpose == "matched-benchmark":
+        path = output / "summary.json"
+        if not path.is_file() or not json.loads(path.read_text()).get("completed"):
+            return 125
+    if purpose == "dependency-build":
+        if not any((output / name).is_file() for name in ("baseline-overlay.json", "baseline-import.json")):
+            return 125
+    return returncode
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rootfs", type=Path, required=True)
@@ -149,6 +162,8 @@ def main():
         finally:
             terminate(None, None)
             signal.signal(signal.SIGTERM, old_handler)
+    receipt["process_returncode"] = returncode
+    returncode = completion_code(args.output, args.purpose, returncode)
     receipt["returncode"] = returncode
     (args.output / "result.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps({"returncode": returncode, "output": str(args.output)}))
