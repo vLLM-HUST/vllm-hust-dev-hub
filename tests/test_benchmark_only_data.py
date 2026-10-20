@@ -21,6 +21,12 @@ def test_added_results_blocked():
     assert MODULE.check([[{"filename": "results/run.json", "status": "added"}]], 1)
 
 
+@pytest.mark.parametrize("path", sorted(MODULE.MEASURED_RECORDS))
+def test_embedded_measured_records_cannot_return(path):
+    assert MODULE.check([[{"filename": path, "status": "added"}]], 1) == [path]
+    assert MODULE.check([[{"filename": path, "status": "removed"}]], 1) == []
+
+
 def test_renamed_results_blocked():
     assert MODULE.check(
         [

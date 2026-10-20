@@ -3,7 +3,12 @@
 Completed **real-online** matched PP2 campaign. All four 900-second observations
 passed and both owned servers released their devices. Observed throughput changes
 are +3.63% at C4 and −0.95% at C16; this single pair does not establish a consistent
-or statistically significant speedup. See RESULTS.json and the public report.
+or statistically significant speedup. The measured results and ECPA receipt are
+maintained exclusively in the
+[benchmark archive](https://github.com/vLLM-HUST/vllm-hust-benchmark/tree/09e0587302387b522f87575fc26cf5f08b8dd0cc/archive/dev-hub-pipeline-20261020).
+Its manifest records the original paths, byte lengths and SHA256 hashes.
+Receipt tests fetch the immutable benchmark revision and verify its hash before
+checking the measured policy; they do not require a duplicate local result.
 
 The fresh comparison uses Qwen3.5-35B-A3B, PP2×TP2 on four devices in the
 user-provided Kubernetes container. It retains the prior SWE workload, BF16,
