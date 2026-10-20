@@ -1,9 +1,0 @@
-the minbytes is 67108864, maxbytes is 67108864, iters is 5, warmup_iters is 2
-hccl interface return errreturn err ./common/src/hccl_test_common.cc:762, retcode: 7 
-hccl interface return errreturn err ./common/src/hccl_test_common.cc:762, retcode: 7 
-hccl interface return errreturn err ./common/src/hccl_test_common.cc:762, retcode: 7 
-hccl interface return errreturn err ./common/src/hccl_test_common.cc:762, retcode: 7 
-hccl interface return errreturn err ./common/src/hccl_test_common.cc:762, retcode: 7 
-hccl interface return errreturn err ./common/src/hccl_test_common.cc:762, retcode: 7 
-hccl interface return errreturn err ./common/src/hccl_test_common.cc:762, retcode: 7 
-hccl interface return errreturn err ./common/src/hccl_test_common.cc:762, retcode: 7 

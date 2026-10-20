@@ -76,7 +76,8 @@
       "fail_to_pass": "1/1",
       "pass_to_pass_module": "139/139",
       "agent_patch_matches_gold_source": true,
-      "evidence": "results/szyn-opencode-qwen35-20261002/django__django-15104"
+      "evidence": "https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/evidence-devhub-20261020-v1/archive/dev-hub-20261020/manifest.json",
+      "evidence_member_prefix": "results/szyn-opencode-qwen35-20261002/django__django-15104/"
     },
     "reason": "The frozen collector and sandbox path passed one deterministic hidden-test qualification case. The remaining 499 tasks have not run, so no 500-task aggregate score exists."
   }

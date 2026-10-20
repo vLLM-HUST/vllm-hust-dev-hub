@@ -1,0 +1,28 @@
+name: Evidence custody tests
+
+on:
+  pull_request:
+    paths:
+      - scripts/check_benchmark_only_data.py
+      - scripts/fetch_benchmark_qualification.py
+      - scripts/evaluation_machine/summarize_szyn_swebench_results.py
+      - tests/test_benchmark_only_data.py
+      - tests/test_szyn_swebench_summary.py
+      - config/szyn-swebench-qwen35-execution-v1.json
+      - .github/workflows/evidence-custody-tests.yml
+
+permissions:
+  contents: read
+
+jobs:
+  custody:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - run: python -m pytest tests/test_benchmark_only_data.py tests/test_szyn_swebench_summary.py -q

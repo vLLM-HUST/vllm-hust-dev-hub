@@ -1,5 +1,10 @@
 # vllm-hust-dev-hub
 
+Datasets, measured results and raw experimental evidence must be submitted only to
+[`vllm-hust-benchmark`](https://github.com/vLLM-HUST/vllm-hust-benchmark), including
+Release assets. Do not submit them to dev-hub or MOD repositories.
+See [evidence custody and migration](docs/benchmark-evidence-custody.md).
+
 `vllm-hust-dev-hub` is the daily development hub for the vLLM-HUST workspace.
 It keeps the commonly used repositories, VS Code workspace, bootstrap scripts,
 Ascend container helpers, and one-command engine service management in one

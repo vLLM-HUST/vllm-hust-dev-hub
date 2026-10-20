@@ -20,7 +20,7 @@
 测试脚本和原始结果：
 
 - [`benchmarks/single_npu_hbm.py`](benchmarks/single_npu_hbm.py)
-- [`results/20260719_single_npu_hbm_npu7/single_npu_hbm.json`](results/20260719_single_npu_hbm_npu7/single_npu_hbm.json)
+- [`results/20260719_single_npu_hbm_npu7/single_npu_hbm.json`（benchmark 归档索引）](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/evidence-devhub-20261020-v1/archive/dev-hub-20261020/manifest.json)
 
 ## 2. 测试方法
 

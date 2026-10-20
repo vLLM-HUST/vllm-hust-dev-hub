@@ -5,7 +5,8 @@
   "declared_denominator": 500,
   "preserved_qualification_instance": "django__django-15104",
   "preserved_qualification": {
-    "evidence_path": "results/szyn-opencode-qwen35-20261002/django__django-15104",
+    "evidence_path": "https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/evidence-devhub-20261020-v1/archive/dev-hub-20261020/manifest.json",
+    "evidence_member_prefix": "results/szyn-opencode-qwen35-20261002/django__django-15104/",
     "qualification_contract_sha256": "900eee57dbc0f0cceaed4370943c9e7d398e78fdf47d2359ad9f61b93b3d6efa",
     "sha256sums_sha256": "ec241ff8eb5f1061f16ead2460375ac48a65c6761f497c31af34a0c7a9fdaeb7"
   },
