@@ -4,7 +4,9 @@
 
 测试主机：train05
 
-结果目录：results/20260407_full
+归档成员目录：`Ascend-Machine/results/20260407_full`。原始文件已迁至
+[benchmark 归档索引](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/evidence-devhub-20261020-v1/archive/dev-hub-20261020/manifest.json)，
+下文 `results/` 路径均为归档内路径，不再指向本仓库工作树。
 
 采集与测试脚本：
 

@@ -1,7 +1,0 @@
-{
-  "python": "3.12.13",
-  "torch": "2.10.0+cpu",
-  "torch_npu": "2.10.0.post4",
-  "vllm_ascend_file": "/workspace/vllm-ascend-hust/vllm_ascend/__init__.py",
-  "vllm_file": "/workspace/vllm-hust/vllm/__init__.py"
-}

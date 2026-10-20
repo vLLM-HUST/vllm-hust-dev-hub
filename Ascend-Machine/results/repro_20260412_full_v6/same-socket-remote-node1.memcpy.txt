@@ -1,1 +1,0 @@
-threads=24 bytes_per_thread=268435456 iters=20 seconds=4.45 total_bandwidth_GBps=28.95

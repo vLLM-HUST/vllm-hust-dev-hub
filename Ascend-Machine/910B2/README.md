@@ -18,7 +18,7 @@ Read the complete methodology and interpretation in
 Artifacts:
 
 - Benchmark: [`benchmarks/single_npu_hbm.py`](benchmarks/single_npu_hbm.py)
-- Raw JSON: [`results/20260719_single_npu_hbm_npu7/single_npu_hbm.json`](results/20260719_single_npu_hbm_npu7/single_npu_hbm.json)
+- Raw JSON: [`results/20260719_single_npu_hbm_npu7/single_npu_hbm.json` (benchmark custody index)](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/evidence-devhub-20261020-v1/archive/dev-hub-20261020/manifest.json)
 
 The 64 MiB result is cache-resident and is intentionally excluded from the HBM
 ceiling. Use the 256 MiB through 4 GiB plateau for operator roofline analysis.

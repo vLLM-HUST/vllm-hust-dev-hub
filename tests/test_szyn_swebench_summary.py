@@ -26,12 +26,22 @@ def tasks() -> list[dict[str, str]]:
     ]
 
 
-def test_real_preserved_qualification_is_task_zero_and_hash_valid() -> None:
+@pytest.fixture(scope="module")
+def qualification_root(tmp_path_factory):
+    script = ROOT / "scripts" / "fetch_benchmark_qualification.py"
+    spec = importlib.util.spec_from_file_location("benchmark_qualification", script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.materialize(tmp_path_factory.mktemp("benchmark-qualification"))
+
+
+def test_real_preserved_qualification_is_task_zero_and_hash_valid(
+    qualification_root,
+) -> None:
     module = load_module()
     contract = module.load_json(
         ROOT / "config" / "szyn-swebench-qwen35-execution-v1.json"
     )
-    qualification_root = ROOT / contract["preserved_qualification"]["evidence_path"]
     result = module.summarize(
         contract=contract,
         tasks=tasks(),
@@ -70,7 +80,7 @@ def test_full_rerun_does_not_reuse_preserved_qualification(tmp_path: Path) -> No
     assert len(result["missing_formal_instances"]) == 500
 
 
-def test_grader_error_blocks_publication(tmp_path: Path) -> None:
+def test_grader_error_blocks_publication(tmp_path: Path, qualification_root) -> None:
     module = load_module()
     contract = module.load_json(
         ROOT / "config" / "szyn-swebench-qwen35-execution-v1.json"
@@ -94,14 +104,14 @@ def test_grader_error_blocks_publication(tmp_path: Path) -> None:
         contract=contract,
         tasks=task_rows,
         formal_results=tmp_path,
-        qualification_root=ROOT / contract["preserved_qualification"]["evidence_path"],
+        qualification_root=qualification_root,
     )
     assert result["formal_status_counts"] == {"grader_error": 1}
     assert result["publication_blockers"]["grader_error"] == 1
     assert result["publishable"] is False
 
 
-def test_grader_timeout_blocks_publication(tmp_path: Path) -> None:
+def test_grader_timeout_blocks_publication(tmp_path: Path, qualification_root) -> None:
     module = load_module()
     contract = module.load_json(
         ROOT / "config" / "szyn-swebench-qwen35-execution-v1.json"
@@ -133,7 +143,7 @@ def test_grader_timeout_blocks_publication(tmp_path: Path) -> None:
         contract=contract,
         tasks=task_rows,
         formal_results=tmp_path,
-        qualification_root=ROOT / contract["preserved_qualification"]["evidence_path"],
+        qualification_root=qualification_root,
     )
     assert result["complete"] is True
     assert result["publication_blockers"]["grader_timeout"] == 1
@@ -183,7 +193,9 @@ def test_task_pool_hash_is_verified_before_parsing(tmp_path: Path) -> None:
         module.load_task_pool(task_pool, "0" * 64)
 
 
-def test_declared_compatible_grader_hash_is_accepted(tmp_path: Path) -> None:
+def test_declared_compatible_grader_hash_is_accepted(
+    tmp_path: Path, qualification_root
+) -> None:
     module = load_module()
     contract = module.load_json(
         ROOT / "config" / "szyn-swebench-qwen35-execution-v1.json"
@@ -208,7 +220,7 @@ def test_declared_compatible_grader_hash_is_accepted(tmp_path: Path) -> None:
         contract=contract,
         tasks=task_rows,
         formal_results=tmp_path,
-        qualification_root=ROOT / contract["preserved_qualification"]["evidence_path"],
+        qualification_root=qualification_root,
     )
     assert instance_id not in result["invalid_formal_instances"]
     assert result["formal_status_counts"] == {"resolved": 1}

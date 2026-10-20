@@ -118,7 +118,8 @@
     "torch_npu_license": "https://github.com/Ascend/pytorch/blob/master/LICENSE",
     "triton_ascend_license": "https://github.com/Ascend/triton-ascend/blob/main/LICENSE",
     "python_license": "https://docs.python.org/3.12/license.html",
-    "hust_a2_openeuler_evidence": "docs/evidence/issue-40-20260819/environment.json"
+    "hust_a2_openeuler_evidence": "https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/evidence-devhub-20261020-v1/archive/dev-hub-20261020/manifest.json",
+    "hust_a2_openeuler_evidence_member": "docs/evidence/issue-40-20260819/environment.json"
   },
   "access_policy": {
     "image": "Anonymous public pull from Quay.io; no credentials are stored. Regional mirrors are not authoritative and are excluded from digest pinning.",
@@ -178,7 +179,8 @@
         "status": "pre_rebuild_not_current",
         "core_commit": "1a06c55468966de8ef471ecb7612c199e15a153a",
         "plugin_commit": "ac2b94f1536090e2cd0d6c2f8bc8087e336193d5",
-        "evidence": "docs/evidence/issue-40-20260819/environment.json"
+        "evidence": "https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/evidence-devhub-20261020-v1/archive/dev-hub-20261020/manifest.json",
+        "evidence_member": "docs/evidence/issue-40-20260819/environment.json"
       },
       "dockerfile_url": "https://github.com/vllm-project/vllm-ascend/blob/5cb98caaadeff42b5b62b996e34bb2aaa29d20fd/Dockerfile.openEuler",
       "install": "docker pull --platform linux/arm64 quay.io/ascend/vllm-ascend@sha256:b2d13e24b295171d8f63678506fad5542f142e81d57e407a0b8c98c16ba0c4f7",

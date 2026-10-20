@@ -17,7 +17,9 @@ environments were not used.
 - Engine Python: `/usr/local/python3.12.13/bin/python` (Python 3.12.13)
 - CANN: 9.1.0; driver: 26.0.rc1; torch_npu: 2.10.0.post4
 - Model: `/data/shared_models/Qwen2.5-3B-Instruct`; per-file hashes are in
-  `docs/evidence/issue-40-20260819/model-SHA256SUMS`
+  `docs/evidence/issue-40-20260819/model-SHA256SUMS`（已迁至
+  [benchmark 归档索引](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/evidence-devhub-20261020-v1/archive/dev-hub-20261020/manifest.json)；
+  本文证据路径均为归档成员名）
 - Hardware: 8 x Ascend 910B2; all devices had no running NPU processes at
   preflight. The recorded runs used the physical device reported as NPU 0.
 - Port: 19146

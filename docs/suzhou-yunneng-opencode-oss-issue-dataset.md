@@ -39,4 +39,6 @@ OpenCode版本、模型、provider、prompt合同或sandbox变化都产生新的
 
 冻结任务排序后的首个样本 `django__django-15104` 已在 Qwen3.5-35B-A3B、BF16、TP2、OpenCode 1.18.19、`thinking=false` 配置上完成真实执行。Agent 在退出前看不到 gold patch 与隐藏测试；评测阶段将其唯一源码改动应用到干净 checkout 后，新增目标用例 `1/1` 通过，完整 `migrations.test_autodetector` 模块 `139/139` 通过，生成源码与 gold patch 结果完全一致。完整脱敏证据位于 `results/szyn-opencode-qwen35-20261002/django__django-15104/`。
 
-这是采集链路和 sandbox 合同的单题 qualification，不是 500 题聚合成绩。其余 499 题尚未执行，不能据此发布完整 resolution rate，也不能将该结果混入 900 秒 SWE prefix 吞吐曲线。
+上述路径已迁至 [benchmark 归档索引](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/evidence-devhub-20261020-v1/archive/dev-hub-20261020/manifest.json)，是归档成员名，不是本仓库内的路径。
+
+这是 2026-10-02 的单题 qualification 记录，不是当前完成进度，也不是 500 题聚合成绩。不能据此发布完整 resolution rate，也不能将该结果混入 900 秒 SWE prefix 吞吐曲线；后续执行结果以 benchmark 的对应批次为准。

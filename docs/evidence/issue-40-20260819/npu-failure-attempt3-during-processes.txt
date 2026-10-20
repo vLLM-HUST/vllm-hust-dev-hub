@@ -1,3 +1,0 @@
-   3409       0 bash /tmp/vllm-hust-engine.cw4EwU.sh
-   3528    3409 /usr/local/python3.12.13/bin/python /workspace/vllm-hust-dev-hub/tests/fixtures/npu_allocating_failure.py serve /data/shared_models/Qwen2.5-3B-Instruct --served-model-name pr46-failure-fixture --host 0.0.0.0 --port 19146 --tensor-parallel-size 1 --max-model-len 512 --max-num-batched-tokens 512 --gpu-memory-utilization 0.35 --dtype bfloat16 --load-format auto --trust-remote-code --max-num-seqs 1 --enable-prefix-caching --enable-chunked-prefill
-/tmp/vllm-hust-engine.cw4EwU.optimization

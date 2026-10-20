@@ -1,4 +1,0 @@
-mode=h2d bytes_per_device=1073741824 iters=20 devices=4
-per_device device=4 seconds=0.85 bandwidth_GBps=25.29
-aggregate_sum_GBps=25.29
-aggregate_wall_GBps=25.29
