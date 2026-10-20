@@ -5,6 +5,7 @@ on:
     paths:
       - scripts/check_benchmark_only_data.py
       - scripts/fetch_benchmark_qualification.py
+      - scripts/frontier_pipeline/**
       - scripts/evaluation_machine/summarize_szyn_swebench_results.py
       - tests/test_benchmark_only_data.py
       - tests/test_szyn_swebench_summary.py
@@ -25,4 +26,4 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install pytest
-      - run: python -m pytest tests/test_benchmark_only_data.py tests/test_szyn_swebench_summary.py -q
+      - run: python -m pytest tests/test_benchmark_only_data.py tests/test_szyn_swebench_summary.py scripts/frontier_pipeline/test_ecpa_receipt.py -q

@@ -26,12 +26,20 @@ SUFFIXES = (
     ".log",
     ".log.gz",
 )
+MEASURED_RECORDS = {
+    "scripts/frontier_pipeline/RESULTS.json",
+    "scripts/frontier_pipeline/ecpa/receipt.json",
+}
 
 
 def prohibited(path):
     if path.startswith("tests/fixtures/"):
         return False
-    return path.startswith(PREFIXES) or path.lower().endswith(SUFFIXES)
+    return (
+        path in MEASURED_RECORDS
+        or path.startswith(PREFIXES)
+        or path.lower().endswith(SUFFIXES)
+    )
 
 
 def check(pages, expected):
