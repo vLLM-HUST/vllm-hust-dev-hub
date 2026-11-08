@@ -134,6 +134,14 @@ def test_rejects_missing_dspark_activity(tmp_path: Path) -> None:
         pair(tmp_path, dspark=dspark)
 
 
+def test_rejects_non_finite_metrics(tmp_path: Path) -> None:
+    dspark = arm("dspark")
+    dspark["benchmark"]["output_throughput"] = float("nan")
+
+    with pytest.raises(acceptance.AcceptanceError, match="must be >="):
+        pair(tmp_path, dspark=dspark)
+
+
 def test_rejects_cancellation_leak(tmp_path: Path) -> None:
     dspark = arm("dspark")
     dspark["cancellation"]["active_tasks_after"] = 1

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import pathlib
 import sys
@@ -63,7 +64,7 @@ def _number(value: Any, name: str, *, minimum: float = 0.0) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise AcceptanceError(f"{name} must be numeric")
     result = float(value)
-    if result < minimum:
+    if not math.isfinite(result) or result < minimum:
         raise AcceptanceError(f"{name} must be >= {minimum:g}")
     return result
 
@@ -122,7 +123,10 @@ def _validate_stack(stack: dict[str, Any], arm: str) -> None:
                 f"{arm}.stack.{field} must be a lowercase 40-hex commit"
             )
     image_digest = _text(stack["image_digest"], f"{arm}.stack.image_digest")
-    if not image_digest.startswith("sha256:") or len(image_digest) != 71:
+    image_hash = image_digest.removeprefix("sha256:")
+    if len(image_hash) != 64 or any(
+        character not in "0123456789abcdef" for character in image_hash
+    ):
         raise AcceptanceError(
             f"{arm}.stack.image_digest must be an immutable SHA-256 digest"
         )
