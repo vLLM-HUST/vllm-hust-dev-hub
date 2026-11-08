@@ -8,7 +8,6 @@ import re
 import shlex
 from collections.abc import Mapping
 
-
 EXPLICIT_KEYS = frozenset(
     {
         "COMPILE_CUSTOM_KERNELS",
@@ -32,6 +31,7 @@ EXPLICIT_KEYS = frozenset(
         "VLLM_ASCEND_KV_CACHE_FREE_MEMORY_FRACTION",
         "VLLM_ASCEND_TORCH_PREFLIGHT",
         "VLLM_ENGINE_CONTAINER_HOME",
+        "VLLM_ENGINE_DSPARK_CAPABILITY_RECEIPT",
         "VLLM_ENGINE_EXTRA_ARGS_JSON",
         "VLLM_ENGINE_INSTALLED_MODULES_JSON",
         "VLLM_ENABLE_RESPONSES_API_STORE",
@@ -72,18 +72,12 @@ def render_exports(environment: Mapping[str, str]) -> list[str]:
     extra_keys = frozenset(
         _csv_items(environment.get("VLLM_ENGINE_EXTRA_ENV_KEYS", ""))
     )
-    extra_prefixes = _csv_items(
-        environment.get("VLLM_ENGINE_EXTRA_ENV_PREFIXES", "")
-    )
+    extra_prefixes = _csv_items(environment.get("VLLM_ENGINE_EXTRA_ENV_PREFIXES", ""))
     keys = []
     for key in environment:
         if is_sensitive_name(key):
             continue
-        if (
-            key in EXPLICIT_KEYS
-            or key in extra_keys
-            or key.startswith(extra_prefixes)
-        ):
+        if key in EXPLICIT_KEYS or key in extra_keys or key.startswith(extra_prefixes):
             keys.append(key)
     return [f"export {key}={shlex.quote(environment[key])}" for key in sorted(keys)]
 

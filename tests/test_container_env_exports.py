@@ -4,7 +4,6 @@ import importlib.util
 import json
 from pathlib import Path
 
-
 MODULE_PATH = Path(__file__).parents[1] / "scripts" / "container_env_exports.py"
 SPEC = importlib.util.spec_from_file_location("container_env_exports", MODULE_PATH)
 assert SPEC is not None and SPEC.loader is not None
@@ -48,6 +47,7 @@ def test_current_explicit_allowlist_is_preserved_and_shell_quoted() -> None:
         {
             "HCCL_BUFFSIZE": "128",
             "VLLM_ENGINE_CONTAINER_HOME": "/workspace/home with spaces",
+            "VLLM_ENGINE_DSPARK_CAPABILITY_RECEIPT": "/runtime/dspark.json",
             "VLLM_ENGINE_INSTALLED_MODULES_JSON": '{"plugin": "1.0"}',
         }
     )
@@ -55,7 +55,8 @@ def test_current_explicit_allowlist_is_preserved_and_shell_quoted() -> None:
     assert exports == [
         "export HCCL_BUFFSIZE=128",
         "export VLLM_ENGINE_CONTAINER_HOME='/workspace/home with spaces'",
-        "export VLLM_ENGINE_INSTALLED_MODULES_JSON='{\"plugin\": \"1.0\"}'",
+        "export VLLM_ENGINE_DSPARK_CAPABILITY_RECEIPT=/runtime/dspark.json",
+        'export VLLM_ENGINE_INSTALLED_MODULES_JSON=\'{"plugin": "1.0"}\'',
     ]
 
 
@@ -78,7 +79,9 @@ def test_responses_runtime_configuration_is_forwarded_without_product_glue() -> 
 
 
 def test_launcher_uses_the_testable_export_renderer() -> None:
-    launcher = (Path(__file__).parents[1] / "scripts/run_vllm_hust_engine.sh").read_text()
+    launcher = (
+        Path(__file__).parents[1] / "scripts/run_vllm_hust_engine.sh"
+    ).read_text()
 
     assert 'python3 "$repo_root/scripts/container_env_exports.py"' in launcher
     assert "safe_token_keys =" not in launcher
@@ -86,16 +89,11 @@ def test_launcher_uses_the_testable_export_renderer() -> None:
 
 def test_qwen38_catalog_has_a_single_matching_slug_and_safe_compaction_limit() -> None:
     catalog_path = (
-        Path(__file__).parents[1]
-        / "config"
-        / "model-catalogs"
-        / "qwen3.8-27b.json"
+        Path(__file__).parents[1] / "config" / "model-catalogs" / "qwen3.8-27b.json"
     )
     payload = json.loads(catalog_path.read_text(encoding="utf-8"))
 
-    assert [model["slug"] for model in payload["models"]] == [
-        "Qwen/Qwen3.8-27B"
-    ]
+    assert [model["slug"] for model in payload["models"]] == ["Qwen/Qwen3.8-27B"]
     model = payload["models"][0]
     assert 0 < model["auto_compact_token_limit"] < model["context_window"]
     assert model["apply_patch_tool_type"] == "freeform"
