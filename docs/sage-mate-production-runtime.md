@@ -164,6 +164,25 @@ VLLM_ASCEND_BUILD_CONTEXT_ROOT=/data/build-tmp scripts/build_locked_vllm_ascend_
 
 ## Deployment receipt
 
+### DeepSeek-V4 DSpark profiles
+
+DSpark validation uses the paired fragments
+`profiles/deepseek-v4-flash-baseline.env.example` and
+`profiles/deepseek-v4-flash-dspark.env.example`. They intentionally contain no
+model path, device list, port, image locator, or credential. The baseline
+profile forbids every `--speculative-config`; the candidate profile generates
+an explicit `method=dspark` configuration and requires a local checkpoint
+`config.json` with DSpark metadata. A DSpark checkpoint combined with legacy
+`method=mtp` is rejected on the host before Docker inspection.
+
+After import-origin verification but before the server starts, the launcher
+parses the active vLLM-Ascend model registry and proposer source. A requested
+candidate is admitted only when `DSparkDraftModel` resolves to the Ascend
+DeepSeek-V4 implementation and `AscendDSparkProposer` exists. The resulting
+`vllm-hust.dspark-capability/v1` JSON includes SHA-256 digests for both source
+files. Set `VLLM_ENGINE_DSPARK_CAPABILITY_RECEIPT` to retain it with mode 0600.
+This is a pre-load capability receipt, not an online-performance result.
+
 After `/health`, `/v1/models`, a real completion, physical NPU mapping, prefix
 cache and graph-mode gates pass, create a `vllm-hust.deployment-receipt/v2` receipt with
 `scripts/deployment_receipt.py`. The public-safe receipt records the served

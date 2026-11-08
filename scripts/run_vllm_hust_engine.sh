@@ -89,6 +89,8 @@ enable_prefix_caching="${VLLM_ENGINE_ENABLE_PREFIX_CACHING:-1}"
 require_prefix_caching="${VLLM_ENGINE_REQUIRE_PREFIX_CACHING:-0}"
 enable_chunked_prefill="${VLLM_ENGINE_ENABLE_CHUNKED_PREFILL:-1}"
 enforce_eager="${VLLM_ENGINE_ENFORCE_EAGER:-0}"
+speculative_mode="${VLLM_ENGINE_SPECULATIVE_MODE:-auto}"
+dspark_num_speculative_tokens="${VLLM_ENGINE_DSPARK_NUM_SPECULATIVE_TOKENS:-}"
 expert_parallel="${VLLM_ENGINE_ENABLE_EXPERT_PARALLEL:-0}"
 legacy_ascend_env="${VLLM_ENGINE_ENABLE_LEGACY_ASCEND_ENV:-0}"
 flashcomm1="${VLLM_ASCEND_ENABLE_FLASHCOMM1:-}"
@@ -115,6 +117,7 @@ optimization_entrypoint_group="${VLLM_OPTIMIZATION_ENTRYPOINT_GROUP:-vllm.genera
 optimization_auto_install="${VLLM_OPTIMIZATION_AUTO_INSTALL:-true}"
 optimization_entrypoint_probe="$(<"$repo_root/scripts/check_optimization_entrypoint.py")"
 optimization_installer="$(<"$repo_root/scripts/prepare_optimization_plugin.py")"
+dspark_preflight="$(<"$repo_root/scripts/dspark_deployment_preflight.py")"
 optimization_env_prefix="${VLLM_OPTIMIZATION_ENV_PREFIX:-}"
 plugins="${VLLM_PLUGINS:-}"
 if [[ -z "$plugins" ]]; then
@@ -177,50 +180,22 @@ if [[ -z "$served_model_name" ]]; then
   served_model_name="$(basename "$model_path")"
 fi
 
-# DeepSeek-V4 DSpark and legacy MTP are different draft architectures.  A
-# DSpark checkpoint carries multiple mtp.<stage> blocks plus dspark metadata;
-# declaring it as method=mtp can appear to start but loads those weights into
-# the wrong model.  Fail before reserving NPUs when a local checkpoint makes
-# this mismatch observable.  DSpark-capable runtimes should use method=dspark.
-if [[ -f "$model_path/config.json" && -n "${VLLM_ENGINE_EXTRA_ARGS_JSON:-}" ]]; then
-  dspark_mtp_mismatch=$(python3 - "$model_path/config.json" <<'PY'
-import json
-import os
-import sys
-
-with open(sys.argv[1], encoding="utf-8") as handle:
-    model_config = json.load(handle)
-
-try:
-    extra_args = json.loads(os.environ.get("VLLM_ENGINE_EXTRA_ARGS_JSON", "[]"))
-except json.JSONDecodeError:
-    print("false")
-    raise SystemExit
-
-spec_config = None
-for index, item in enumerate(extra_args[:-1]):
-    if item == "--speculative-config":
-        try:
-            spec_config = json.loads(extra_args[index + 1])
-        except (TypeError, json.JSONDecodeError):
-            pass
-        break
-
-is_dspark = any(
-    key in model_config
-    for key in ("dspark_block_size", "dspark_target_layer_ids", "dspark_markov_rank")
+# Normalize the selected speculative profile before Docker access or NPU
+# allocation. The DSpark profile cannot silently fall back to legacy MTP or to
+# a non-speculative launch.
+dspark_normalize_args=(
+  normalize
+  --extra-args-json "${VLLM_ENGINE_EXTRA_ARGS_JSON:-[]}"
+  --mode "$speculative_mode"
 )
-print(str(is_dspark and isinstance(spec_config, dict) and spec_config.get("method") == "mtp").lower())
-PY
-  )
-  if [[ "$dspark_mtp_mismatch" == "true" ]]; then
-    echo "ERROR: the selected checkpoint contains DeepSeek-V4 DSpark metadata but" >&2
-    echo "VLLM_ENGINE_EXTRA_ARGS_JSON requests legacy method=mtp." >&2
-    echo "Use a DSpark-capable Ascend runtime with method=dspark, or remove the" >&2
-    echo "speculative config and serve the target model without draft decoding." >&2
-    exit 1
-  fi
+if [[ -f "$model_path/config.json" ]]; then
+  dspark_normalize_args+=(--model-config "$model_path/config.json")
 fi
+if [[ -n "$dspark_num_speculative_tokens" ]]; then
+  dspark_normalize_args+=(--dspark-tokens "$dspark_num_speculative_tokens")
+fi
+VLLM_ENGINE_EXTRA_ARGS_JSON="$("$repo_root/scripts/dspark_deployment_preflight.py" "${dspark_normalize_args[@]}")"
+export VLLM_ENGINE_EXTRA_ARGS_JSON
 
 # Respect an explicitly configured scheduler budget.  Large-context models often
 # need max_model_len > max_num_batched_tokens to keep warmup/compile shapes bounded;
@@ -763,6 +738,28 @@ for module_name in ("vllm", "vllm_ascend"):
         f"(installed {distribution_name}=={actual_version})"
     )
 PY
+
+# Produce a source-bound capability receipt and reject a requested DSpark arm
+# before the server process can allocate an NPU or load model weights. The
+# probe parses source and deliberately does not import either implementation.
+ascend_root="$("$ENGINE_PYTHON" - <<'PY'
+import pathlib
+import vllm_ascend
+
+print(pathlib.Path(vllm_ascend.__file__).resolve().parent)
+PY
+)"
+dspark_probe_args=(
+  probe-runtime
+  --ascend-root "$ascend_root"
+  --extra-args-json "${VLLM_ENGINE_EXTRA_ARGS_JSON:-[]}"
+)
+if [[ -n "${VLLM_ENGINE_DSPARK_CAPABILITY_RECEIPT:-}" ]]; then
+  dspark_probe_args+=(--output "$VLLM_ENGINE_DSPARK_CAPABILITY_RECEIPT")
+fi
+"$ENGINE_PYTHON" - "${dspark_probe_args[@]}" <<'PY'
+__DSPARK_PREFLIGHT__
+PY
 # The contract belongs to the launcher preflight, not to vLLM itself. Avoid
 # leaking launcher-only variables into vLLM's environment validator.
 unset VLLM_ENGINE_INSTALLED_MODULES_JSON
@@ -866,6 +863,7 @@ replace "__OPTIMIZATION_ENTRYPOINT_GROUP__" "$optimization_entrypoint_group"
 replace "__OPTIMIZATION_AUTO_INSTALL__" "$optimization_auto_install"
 replace "__OPTIMIZATION_ENTRYPOINT_PROBE__" "$optimization_entrypoint_probe"
 replace "__OPTIMIZATION_INSTALLER__" "$optimization_installer"
+replace "__DSPARK_PREFLIGHT__" "$dspark_preflight"
 replace "__EXTRA_ENV_EXPORTS__" "$extra_env_exports"
 replace "__CONTAINER_LOG_FILE__" "$container_log_file"
 replace "__CONTAINER_LD_PRELOAD__" "$container_ld_preload"

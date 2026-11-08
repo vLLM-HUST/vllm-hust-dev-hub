@@ -333,6 +333,27 @@ switches, so the launcher removes them by default. An older, separately verified
 plugin profile may set `VLLM_ENGINE_ENABLE_LEGACY_ASCEND_ENV=1` to forward
 explicit legacy values during a bounded migration.
 
+DeepSeek-V4 DSpark deployments have two reusable, machine-independent profile
+fragments:
+
+```bash
+# Control arm: speculation is explicitly forbidden.
+VLLM_ENGINE_ENV_FILE=profiles/deepseek-v4-flash-baseline.env.example ./manage.sh start
+
+# Candidate arm: method=dspark is generated and source capability is verified.
+VLLM_ENGINE_ENV_FILE=profiles/deepseek-v4-flash-dspark.env.example ./manage.sh start
+```
+
+Keep the model path, image identity, NPU mapping, port, and API key in the local
+environment. Before Docker or NPU mutation, the launcher checks local
+`config.json` metadata and rejects legacy MTP or an accidental speculative
+configuration in the control arm. Inside the selected immutable runtime, it
+then emits `vllm-hust.dspark-capability/v1` and refuses to launch the candidate
+unless the active vLLM-Ascend source registers both `DSparkDraftModel` and
+`AscendDSparkProposer`. Set `VLLM_ENGINE_DSPARK_CAPABILITY_RECEIPT` to an
+owner-only path inside a mounted artifact directory when retaining that
+pre-load receipt.
+
 Common `.env` knobs:
 
 ```bash
