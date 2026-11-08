@@ -183,6 +183,42 @@ DeepSeek-V4 implementation and `AscendDSparkProposer` exists. The resulting
 files. Set `VLLM_ENGINE_DSPARK_CAPABILITY_RECEIPT` to retain it with mode 0600.
 This is a pre-load capability receipt, not an online-performance result.
 
+The online comparison is admitted only through the paired verifier:
+
+```bash
+python3 scripts/dspark_online_acceptance.py \
+  --baseline artifacts/baseline-arm.json \
+  --dspark artifacts/dspark-arm.json \
+  --output artifacts/dspark-online-pair.json
+```
+
+Collect each arm with the same pinned dataset and the upstream benchmark's
+detailed output. Include warmup count as numeric metadata so it remains in the
+saved JSON, and request the required percentiles:
+
+```bash
+vllm bench serve --backend openai-chat --num-warmups 2 --num-prompts 10 \
+  --save-result --save-detailed --percentile-metrics ttft,tpot \
+  --metric-percentiles 50,95 --metadata num_warmups=2
+```
+
+The arm receipt combines that output with HBM samples, cancellation
+observations, stack/workload identity, and the capability receipt. The verifier
+accepts the benchmark CLI's decimal `num_warmups` metadata value.
+
+Each arm binds an exact model/core/plugin/image/hardware stack, one immutable
+workload digest, a distinct engine start, the pre-load capability receipt,
+vLLM benchmark output, per-device HBM observations, and a cancellation probe.
+The verifier requires Graph Mode, at least one warmup followed by ten measured
+repetitions, zero failures, TTFT/TPOT p50 and p95, positive throughput, complete
+error arrays, and at least two HBM samples. The DSpark arm must report real
+draft and accepted tokens; the baseline must report none. A client disconnect
+must leave zero active engine/proposer tasks inside the declared cleanup window,
+while the engine remains healthy and completes a subsequent request. Both arms
+must use identical stack/workload objects and distinct engine starts. The
+mode-0600 pair receipt contains the source-arm hashes and derived ratios; it is
+the only accepted input to benchmark custody for this deployment slice.
+
 After `/health`, `/v1/models`, a real completion, physical NPU mapping, prefix
 cache and graph-mode gates pass, create a `vllm-hust.deployment-receipt/v2` receipt with
 `scripts/deployment_receipt.py`. The public-safe receipt records the served
